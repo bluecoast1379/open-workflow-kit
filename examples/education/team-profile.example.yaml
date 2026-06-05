@@ -1,22 +1,22 @@
 schema_version: "1.0"
 generated_at: "2026-06-05T00:00:00.000Z"
-generated_by: "agent-workflow-init (logistics example)"
+generated_by: "agent-workflow-init (education example)"
 
-# Example profile for a logistics platform team that operates a multi-service
-# backend, dispatcher console, and driver mobile clients. Replace placeholders
-# before use; do not commit real fleet, customer, or driver records.
+# Example profile for a learning platform team that runs a learner-facing
+# web app, an instructor console, and backend services. Replace placeholders
+# before use; do not commit real learner, instructor, school, or billing data.
 
 team:
-  name: "Example Logistics Platform"
-  business_definition: "Multi-tenant logistics platform with dispatcher and driver clients."
+  name: "Example Learning Platform"
+  business_definition: "Learning platform for course delivery, assessments, and instructor operations."
   target_users:
-    - "dispatcher"
-    - "driver"
-    - "operations admin"
-    - "merchant integration"
+    - "learner"
+    - "instructor"
+    - "school admin"
+    - "support operator"
 
 industries:
-  - logistics
+  - education
 
 enabled_tools:
   - codex
@@ -36,13 +36,13 @@ source_materials:
     status: "provided_by_user"
     paths:
       - "docs/product/"
-      - "docs/integration/"
+      - "docs/learning-content/"
   ui_specs:
     label: "UI 设计文件"
     status: "provided_by_user"
     paths:
-      - "docs/design/dispatcher-tokens.md"
-      - "docs/design/driver-tokens.md"
+      - "docs/design/learner-tokens.md"
+      - "docs/design/instructor-tokens.md"
   frontend_rules:
     label: "前端开发规范"
     status: "provided_by_user"
@@ -60,45 +60,48 @@ source_materials:
       - "docs/testing-rules.md"
 
 repos:
-  - path: "apps/dispatcher-console"
+  - path: "apps/learner-web"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "react"
+      - "typescript"
+    family: "frontend-web"
+    role: "learner-facing web app"
+  - path: "apps/instructor-console"
     marker: "node"
     tech_stack:
       - "node"
       - "vue"
       - "typescript"
     family: "frontend-web"
-    role: "dispatcher console"
-  - path: "apps/driver-app"
+    role: "instructor operations console"
+  - path: "services/course"
     marker: "node"
     tech_stack:
       - "node"
-      - "react-native"
       - "typescript"
-    family: "mobile-native"
-    role: "driver client"
-  - path: "services/dispatch"
-    marker: "maven"
-    tech_stack:
-      - "java-maven"
     family: "backend-service"
-    role: "dispatch and routing"
-  - path: "services/billing"
-    marker: "maven"
+    role: "course catalog and enrollment"
+  - path: "services/assessment"
+    marker: "node"
     tech_stack:
-      - "java-maven"
+      - "node"
+      - "typescript"
     family: "backend-service"
-    role: "billing and settlement"
-  - path: "services/integration-gateway"
-    marker: "maven"
+    role: "quiz and assessment workflow"
+  - path: "services/notification"
+    marker: "node"
     tech_stack:
-      - "java-maven"
-    family: "backend-api"
-    role: "merchant integration gateway"
+      - "node"
+      - "typescript"
+    family: "backend-service"
+    role: "email and in-app notifications"
 
 branch_model:
-  type: "prod-test"
-  production_branch: "prod"
-  integration_branch: "test"
+  type: "trunk-based"
+  production_branch: "main"
+  integration_branch: "main"
   feature_branch_rule: "feature/{ticket}-{slug}"
   worktree_dir: "_worktrees"
 
@@ -112,13 +115,11 @@ risk_policy:
     - "ci/**"
     - "deploy/**"
     - "*.env*"
-    - "application*.yml"
-    - "application*.yaml"
-    - "bootstrap*.yml"
-    - "bootstrap*.yaml"
-    - "pom.xml"
+    - "infra/**"
+    - "package.json"
     - "lockfiles"
-    - "integration/credentials/**"
+    - "content-import/**"
+    - "privacy/**"
 
 workflow:
   features_dir: "features"
@@ -128,16 +129,15 @@ workflow:
   require_feature_branch_for_code: true
   same_repo_parallel_policy: "worktree-required-after-implementation-stage"
 
-# Logistics platforms benefit from strong release safety, repo baseline,
-# contract tracing across dispatch/billing/integration, and verification of
-# settlement-related changes.
+# Learning platforms should prioritize contract tracing for course and
+# assessment flows, privacy review for learner data, and evidence-based
+# verification of learner and instructor journeys.
 enabled_capabilities:
   - branch-gatekeeper
-  - worktree-isolator
   - release-safety-checker
   - prd-code-diff-checker
   - contract-tracer
-  - repo-baseline-scanner
-  - impact-scope-analyzer
+  - ui-baseline-reviewer
   - security-reviewer
+  - test-evidence-reviewer
   - verify-app

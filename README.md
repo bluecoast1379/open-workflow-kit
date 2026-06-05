@@ -92,6 +92,13 @@ node open-workflow-kit/bin/check-sanitized.cjs
 - 工具入口由初始化器或 adapter 生成，不把业务规则硬编码到单个工具里。
 - 对外发布前先跑脱敏检查，再由人工复核许可证、示例和文档。
 
+## 开源协作
+
+- 贡献说明见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+- 安全报告说明见 [SECURITY.md](./SECURITY.md)。
+- 行为准则见 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。
+- GitHub issue 和 PR 模板位于 `.github/`。
+
 ## 本地验证
 
 ```bash

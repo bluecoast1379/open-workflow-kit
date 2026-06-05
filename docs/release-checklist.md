@@ -12,6 +12,8 @@ Use this checklist before publishing the starter kit to a public repository, pac
 - `package.json#license` is Apache-2.0, or a deliberately chosen replacement license is documented.
 - License text is present if a public license is chosen.
 - `NOTICE` is present.
+- `CONTRIBUTING.md`, `SECURITY.md`, and `CODE_OF_CONDUCT.md` are present and generic.
+- `.github/` issue, pull request, and CI templates are present for the source repository.
 - README and INIT instructions use generic examples only.
 - `docs/maintainer-handoff.md` is current and uses generic examples only.
 - Generated examples are synthetic and cannot be traced to a real customer, employee, project, incident, or production system.
@@ -34,6 +36,10 @@ Automated scanning is not enough. A human reviewer must still inspect:
 
 - `README.md`
 - `INIT.md`
+- `CONTRIBUTING.md`
+- `SECURITY.md`
+- `CODE_OF_CONDUCT.md`
+- `.github/`
 - `workflow/core/`
 - `templates/`
 - `examples/`

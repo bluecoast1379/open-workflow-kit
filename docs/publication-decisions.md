@@ -7,9 +7,9 @@ The starter kit is ready for local validation and local release packaging. Remot
 | Decision | Options | Current |
 | --- | --- | --- |
 | License | MIT / Apache-2.0 / internal custom / dual license | Apache-2.0 |
-| Distribution channel | public Git repository / private Git repository / package registry / template repository / documentation site | manual decision before remote publication |
-| Package name | `agent-workflow-starter-kit` or renamed project brand | draft |
-| Contribution model | closed / issue-only / pull requests accepted / contributor license agreement required | issue-only recommended for first public trial |
+| Distribution channel | public Git repository / private Git repository / package registry / template repository / documentation site | public GitHub repository: `bluecoast1379/open-workflow-kit` |
+| Package name | `agent-workflow-starter-kit` or renamed project brand | `agent-workflow-starter-kit` |
+| Contribution model | closed / issue-only / pull requests accepted / contributor license agreement required | issues and pull requests accepted with templates |
 | Support boundary | best-effort / internal-only / paid support / no support | best-effort recommended |
 | Telemetry | none / local-only logs / opt-in analytics | none |
 | Private examples | excluded / separate private add-on | excluded |
@@ -18,7 +18,7 @@ The starter kit is ready for local validation and local release packaging. Remot
 
 - Use Apache-2.0.
 - Keep telemetry disabled.
-- Share a read-only archive or private repository with one trusted pilot team before broad publication.
+- Publish the sanitized source repository first; defer package-registry publication until the first public feedback cycle is complete.
 - Require the pilot team to run `agent-workflow-init --target . --yes` and fill `workflow/INITIALIZATION_QUESTIONS.md`.
 - Collect feedback before broad public announcement.
 

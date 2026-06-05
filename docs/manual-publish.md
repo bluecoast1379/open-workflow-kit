@@ -35,11 +35,10 @@ Manual steps:
 
 ```bash
 cd /path/to/open-workflow-kit
-git init
 git add .
-git commit -m "Initial agent workflow starter kit"
+git commit -m "Prepare open workflow kit for public release"
 git branch -M main
-git remote add origin <YOUR_REPOSITORY_URL>
+git remote add origin git@github.com:bluecoast1379/open-workflow-kit.git
 git push -u origin main
 git tag v0.1.0
 git push origin v0.1.0
@@ -49,8 +48,10 @@ Receiver install command from Git:
 
 ```bash
 cd /path/to/target-workspace
-npx --yes --package git+<YOUR_REPOSITORY_URL> agent-workflow-init --target . --tools codex,claude,cursor
+npx --yes --package git+https://github.com/bluecoast1379/open-workflow-kit.git agent-workflow-init --target . --tools codex,claude,cursor
 ```
+
+If `origin` already exists, verify it manually with `git remote -v` instead of adding it again. If tag `v0.1.0` already exists locally, move or recreate it only after confirming the release commit is the intended one.
 
 ## Option C: Publish To A Package Registry
 

@@ -20,10 +20,10 @@ If the maintainer gives you a Git URL:
 
 ```bash
 cd /path/to/target-workspace
-npx --yes --package git+https://example.com/org/agent-workflow-starter-kit.git agent-workflow-init --target . --tools codex,claude,cursor
+npx --yes --package git+https://github.com/bluecoast1379/open-workflow-kit.git agent-workflow-init --target . --tools codex,claude,cursor
 ```
 
-Replace the URL with the real repository address. The initializer runs locally in your workspace.
+Replace the URL if you are using a fork or private mirror. The initializer runs locally in your workspace.
 
 ## From A Package Registry
 
