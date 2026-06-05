@@ -1,0 +1,69 @@
+schema_version: "1.0"
+generated_at: "2026-06-05T00:00:00.000Z"
+generated_by: "agent-workflow-init 0.1.0"
+
+team:
+  name: "Example Team"
+  business_definition: "A placeholder product team used for starter-kit demonstration."
+  target_users:
+    - "internal users"
+    - "external customers"
+
+enabled_tools:
+  - codex
+  - claude
+  - cursor
+
+source_materials:
+  business_intro:
+    label: "业务介绍"
+    status: "detected"
+    paths:
+      - "docs/business-overview.md"
+  project_docs:
+    label: "项目资料"
+    status: "detected"
+    paths:
+      - "docs/product/"
+  ui_specs:
+    label: "UI 设计文件"
+    status: "missing"
+    paths: []
+  frontend_rules:
+    label: "前端开发规范"
+    status: "detected"
+    paths:
+      - "docs/frontend-rules.md"
+  backend_rules:
+    label: "后端开发规范"
+    status: "detected"
+    paths:
+      - "docs/backend-rules.md"
+  testing_rules:
+    label: "测试规范"
+    status: "detected"
+    paths:
+      - "docs/testing-rules.md"
+
+repos:
+  - path: "apps/web"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "react"
+      - "typescript"
+    family: "frontend-web"
+    role: "customer web app"
+  - path: "services/api"
+    marker: "maven"
+    tech_stack:
+      - "java-maven"
+    family: "backend-api"
+    role: "business API"
+
+branch_model:
+  type: "prod-test"
+  production_branch: "main"
+  integration_branch: "develop"
+  feature_branch_rule: "feature/{ticket}-{slug}"
+  worktree_dir: "_worktrees"

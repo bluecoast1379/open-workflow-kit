@@ -1,0 +1,73 @@
+schema_version: "1.0"
+generated_at: "<ISO timestamp>"
+generated_by: "agent-workflow-init"
+
+team:
+  name: "<TODO>"
+  business_definition: "<TODO>"
+  target_users: []
+
+enabled_tools: []
+detected_tools: []
+
+source_materials:
+  business_intro:
+    label: "业务介绍"
+    status: "missing"
+    paths: []
+  project_docs:
+    label: "项目资料"
+    status: "missing"
+    paths: []
+  ui_specs:
+    label: "UI 设计文件"
+    status: "missing"
+    paths: []
+  frontend_rules:
+    label: "前端开发规范"
+    status: "missing"
+    paths: []
+  backend_rules:
+    label: "后端开发规范"
+    status: "missing"
+    paths: []
+  testing_rules:
+    label: "测试规范"
+    status: "missing"
+    paths: []
+
+repos: []
+
+branch_model:
+  type: "<TODO>"
+  production_branch: "<TODO>"
+  integration_branch: "<TODO>"
+  feature_branch_rule: "<TODO>"
+  worktree_dir: "_worktrees"
+
+risk_policy:
+  remote_git_operations: "manual-only"
+  branch_creation: "manual-only"
+  push_and_release: "manual-only"
+  database_writes: "manual-only"
+  config_writes: "manual-only"
+  high_risk_files:
+    - "ci/**"
+    - "cd/**"
+    - "deploy/**"
+    - "*.env*"
+    - "application*.yml"
+    - "application*.yaml"
+    - "bootstrap*.yml"
+    - "bootstrap*.yaml"
+    - "pom.xml"
+    - "package.json"
+    - "lockfiles"
+
+workflow:
+  features_dir: "features"
+  core_dir: "workflow/core"
+  adapters_dir: "workflow/adapters"
+  require_stage_gate_for_code: true
+  require_feature_branch_for_code: true
+  same_repo_parallel_policy: "worktree-required-after-implementation-stage"

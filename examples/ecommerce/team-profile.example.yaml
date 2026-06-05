@@ -1,0 +1,141 @@
+schema_version: "1.0"
+generated_at: "2026-06-05T00:00:00.000Z"
+generated_by: "agent-workflow-init (ecommerce example)"
+
+# Example profile for an ecommerce team that runs both a customer-facing
+# storefront and a backoffice for merchants. Replace placeholders before use.
+
+team:
+  name: "Example Storefront Team"
+  business_definition: "Direct-to-consumer storefront and merchant backoffice."
+  target_users:
+    - "shopper"
+    - "merchant operator"
+    - "fulfillment partner"
+
+industries:
+  - ecommerce
+
+enabled_tools:
+  - codex
+  - claude
+  - cursor
+  - copilot
+
+detected_tools: []
+
+source_materials:
+  business_intro:
+    label: "业务介绍"
+    status: "provided_by_user"
+    paths:
+      - "docs/product/overview.md"
+  project_docs:
+    label: "项目资料"
+    status: "provided_by_user"
+    paths:
+      - "docs/product/"
+      - "docs/merchant-runbook.md"
+  ui_specs:
+    label: "UI 设计文件"
+    status: "provided_by_user"
+    paths:
+      - "docs/design/storefront-tokens.md"
+      - "docs/design/backoffice-tokens.md"
+  frontend_rules:
+    label: "前端开发规范"
+    status: "provided_by_user"
+    paths:
+      - "docs/frontend-rules.md"
+  backend_rules:
+    label: "后端开发规范"
+    status: "provided_by_user"
+    paths:
+      - "docs/backend-rules.md"
+  testing_rules:
+    label: "测试规范"
+    status: "provided_by_user"
+    paths:
+      - "docs/testing-rules.md"
+
+repos:
+  - path: "apps/storefront"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "react"
+      - "next"
+      - "typescript"
+    family: "frontend-web"
+    role: "customer storefront"
+  - path: "apps/backoffice"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "vue"
+      - "typescript"
+    family: "frontend-web"
+    role: "merchant backoffice"
+  - path: "services/catalog"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "typescript"
+    family: "backend-service"
+    role: "catalog and search"
+  - path: "services/orders"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "typescript"
+    family: "backend-service"
+    role: "order lifecycle"
+  - path: "services/payments"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "typescript"
+    family: "backend-service"
+    role: "payment integration"
+
+branch_model:
+  type: "gitflow"
+  production_branch: "main"
+  integration_branch: "develop"
+  feature_branch_rule: "feature/{ticket}-{slug}"
+  worktree_dir: "_worktrees"
+
+risk_policy:
+  remote_git_operations: "manual-only"
+  branch_creation: "manual-only"
+  push_and_release: "manual-only"
+  database_writes: "manual-only"
+  config_writes: "manual-only"
+  high_risk_files:
+    - "ci/**"
+    - "deploy/**"
+    - "*.env*"
+    - "infra/**"
+    - "package.json"
+    - "lockfiles"
+    - "openapi/**"
+    - "payments/config/**"
+
+workflow:
+  features_dir: "features"
+  core_dir: "workflow/core"
+  adapters_dir: "workflow/adapters"
+  require_stage_gate_for_code: true
+  require_feature_branch_for_code: true
+  same_repo_parallel_policy: "worktree-required-after-implementation-stage"
+
+# Ecommerce teams should prioritize release safety, contract tracing
+# (between catalog/orders/payments), and UI baseline review for the storefront.
+enabled_capabilities:
+  - branch-gatekeeper
+  - release-safety-checker
+  - prd-code-diff-checker
+  - contract-tracer
+  - ui-baseline-reviewer
+  - security-reviewer
+  - test-evidence-reviewer

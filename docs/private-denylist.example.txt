@@ -1,0 +1,11 @@
+# Copy this file outside the starter kit and replace the placeholders.
+# Do not commit a filled private denylist.
+
+<company-name>
+<legal-entity-name>
+<internal-repository-prefix>
+<private-domain>
+<customer-name>
+<internal-system-name>
+<sensitive-business-term>
+<incident-code-name>

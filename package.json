@@ -1,0 +1,33 @@
+{
+  "name": "agent-workflow-starter-kit",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Tool-agnostic agent workflow starter kit with local initialization and multi-tool adapters.",
+  "files": [
+    "README.md",
+    "INIT.md",
+    "LICENSE",
+    "NOTICE",
+    "install.sh",
+    "bin/",
+    "scripts/",
+    "workflow/",
+    "templates/",
+    "examples/",
+    "docs/",
+    "test/"
+  ],
+  "bin": {
+    "agent-workflow-init": "bin/init-workspace.cjs",
+    "agent-workflow-check-sanitized": "bin/check-sanitized.cjs"
+  },
+  "scripts": {
+    "check": "node --check bin/init-workspace.cjs && node --check bin/check-sanitized.cjs && node --check test/smoke.cjs && node --check scripts/build-release.cjs && node bin/check-sanitized.cjs && node test/smoke.cjs",
+    "build:release": "node scripts/build-release.cjs",
+    "init:dry-run": "node bin/init-workspace.cjs --target . --dry-run"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "Apache-2.0"
+}

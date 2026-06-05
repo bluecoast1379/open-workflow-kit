@@ -1,0 +1,130 @@
+schema_version: "1.0"
+generated_at: "2026-06-05T00:00:00.000Z"
+generated_by: "agent-workflow-init (saas-to-b example)"
+
+# Example profile for a SaaS to B team building a multi-tenant web product.
+# Replace placeholders with real, non-confidential information before use.
+
+team:
+  name: "Example B2B SaaS"
+  business_definition: "Multi-tenant workflow product for mid-size operations teams."
+  target_users:
+    - "operations admin"
+    - "team lead"
+    - "external auditor"
+
+industries:
+  - saas-to-b
+
+enabled_tools:
+  - codex
+  - claude
+  - cursor
+
+detected_tools: []
+
+source_materials:
+  business_intro:
+    label: "业务介绍"
+    status: "provided_by_user"
+    paths:
+      - "docs/product/overview.md"
+  project_docs:
+    label: "项目资料"
+    status: "provided_by_user"
+    paths:
+      - "docs/product/"
+  ui_specs:
+    label: "UI 设计文件"
+    status: "provided_by_user"
+    paths:
+      - "docs/design/tokens.md"
+      - "docs/design/components.md"
+  frontend_rules:
+    label: "前端开发规范"
+    status: "provided_by_user"
+    paths:
+      - "docs/frontend-rules.md"
+  backend_rules:
+    label: "后端开发规范"
+    status: "provided_by_user"
+    paths:
+      - "docs/backend-rules.md"
+  testing_rules:
+    label: "测试规范"
+    status: "provided_by_user"
+    paths:
+      - "docs/testing-rules.md"
+
+repos:
+  - path: "apps/web"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "react"
+      - "typescript"
+      - "vite"
+    family: "frontend-web"
+    role: "tenant-facing web app"
+  - path: "apps/admin"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "react"
+      - "typescript"
+    family: "frontend-web"
+    role: "internal admin console"
+  - path: "services/api"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "typescript"
+      - "fastify"
+    family: "backend-api"
+    role: "tenant-facing API gateway"
+  - path: "services/billing"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "typescript"
+    family: "backend-service"
+    role: "subscription billing"
+
+branch_model:
+  type: "trunk-based"
+  production_branch: "main"
+  integration_branch: "main"
+  feature_branch_rule: "feature/{ticket}-{slug}"
+  worktree_dir: "_worktrees"
+
+risk_policy:
+  remote_git_operations: "manual-only"
+  branch_creation: "manual-only"
+  push_and_release: "manual-only"
+  database_writes: "manual-only"
+  config_writes: "manual-only"
+  high_risk_files:
+    - "ci/**"
+    - "deploy/**"
+    - "*.env*"
+    - "infra/**"
+    - "package.json"
+    - "lockfiles"
+    - "openapi/**"
+
+workflow:
+  features_dir: "features"
+  core_dir: "workflow/core"
+  adapters_dir: "workflow/adapters"
+  require_stage_gate_for_code: true
+  require_feature_branch_for_code: true
+  same_repo_parallel_policy: "worktree-required-after-implementation-stage"
+
+# Recommended capabilities to adopt first for a SaaS to B product.
+enabled_capabilities:
+  - branch-gatekeeper
+  - release-safety-checker
+  - prd-code-diff-checker
+  - contract-tracer
+  - security-reviewer
+  - ui-baseline-reviewer

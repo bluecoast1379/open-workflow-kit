@@ -1,0 +1,143 @@
+schema_version: "1.0"
+generated_at: "2026-06-05T00:00:00.000Z"
+generated_by: "agent-workflow-init (logistics example)"
+
+# Example profile for a logistics platform team that operates a multi-service
+# backend, dispatcher console, and driver mobile clients. Replace placeholders
+# before use; do not commit real fleet, customer, or driver records.
+
+team:
+  name: "Example Logistics Platform"
+  business_definition: "Multi-tenant logistics platform with dispatcher and driver clients."
+  target_users:
+    - "dispatcher"
+    - "driver"
+    - "operations admin"
+    - "merchant integration"
+
+industries:
+  - logistics
+
+enabled_tools:
+  - codex
+  - claude
+  - cursor
+
+detected_tools: []
+
+source_materials:
+  business_intro:
+    label: "业务介绍"
+    status: "provided_by_user"
+    paths:
+      - "docs/product/overview.md"
+  project_docs:
+    label: "项目资料"
+    status: "provided_by_user"
+    paths:
+      - "docs/product/"
+      - "docs/integration/"
+  ui_specs:
+    label: "UI 设计文件"
+    status: "provided_by_user"
+    paths:
+      - "docs/design/dispatcher-tokens.md"
+      - "docs/design/driver-tokens.md"
+  frontend_rules:
+    label: "前端开发规范"
+    status: "provided_by_user"
+    paths:
+      - "docs/frontend-rules.md"
+  backend_rules:
+    label: "后端开发规范"
+    status: "provided_by_user"
+    paths:
+      - "docs/backend-rules.md"
+  testing_rules:
+    label: "测试规范"
+    status: "provided_by_user"
+    paths:
+      - "docs/testing-rules.md"
+
+repos:
+  - path: "apps/dispatcher-console"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "vue"
+      - "typescript"
+    family: "frontend-web"
+    role: "dispatcher console"
+  - path: "apps/driver-app"
+    marker: "node"
+    tech_stack:
+      - "node"
+      - "react-native"
+      - "typescript"
+    family: "mobile-native"
+    role: "driver client"
+  - path: "services/dispatch"
+    marker: "maven"
+    tech_stack:
+      - "java-maven"
+    family: "backend-service"
+    role: "dispatch and routing"
+  - path: "services/billing"
+    marker: "maven"
+    tech_stack:
+      - "java-maven"
+    family: "backend-service"
+    role: "billing and settlement"
+  - path: "services/integration-gateway"
+    marker: "maven"
+    tech_stack:
+      - "java-maven"
+    family: "backend-api"
+    role: "merchant integration gateway"
+
+branch_model:
+  type: "prod-test"
+  production_branch: "prod"
+  integration_branch: "test"
+  feature_branch_rule: "feature/{ticket}-{slug}"
+  worktree_dir: "_worktrees"
+
+risk_policy:
+  remote_git_operations: "manual-only"
+  branch_creation: "manual-only"
+  push_and_release: "manual-only"
+  database_writes: "manual-only"
+  config_writes: "manual-only"
+  high_risk_files:
+    - "ci/**"
+    - "deploy/**"
+    - "*.env*"
+    - "application*.yml"
+    - "application*.yaml"
+    - "bootstrap*.yml"
+    - "bootstrap*.yaml"
+    - "pom.xml"
+    - "lockfiles"
+    - "integration/credentials/**"
+
+workflow:
+  features_dir: "features"
+  core_dir: "workflow/core"
+  adapters_dir: "workflow/adapters"
+  require_stage_gate_for_code: true
+  require_feature_branch_for_code: true
+  same_repo_parallel_policy: "worktree-required-after-implementation-stage"
+
+# Logistics platforms benefit from strong release safety, repo baseline,
+# contract tracing across dispatch/billing/integration, and verification of
+# settlement-related changes.
+enabled_capabilities:
+  - branch-gatekeeper
+  - worktree-isolator
+  - release-safety-checker
+  - prd-code-diff-checker
+  - contract-tracer
+  - repo-baseline-scanner
+  - impact-scope-analyzer
+  - security-reviewer
+  - verify-app
