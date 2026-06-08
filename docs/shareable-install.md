@@ -41,7 +41,7 @@ npx --yes --package agent-workflow-starter-kit agent-workflow-init --target . --
 - `workflow/adapters/`
 - `AGENTS.md` for Codex when selected
 - `CLAUDE.md` and `.claude/commands/` for Claude Code when selected
-- `.cursor/rules/` for Cursor when selected
+- `.cursor/rules/` and `.cursor/commands/` for Cursor when selected
 - `.codebuddy/`, `.kiro/`, `.trae/`, or `.github/` adapter files when selected
 - `workflow/INITIALIZATION_QUESTIONS.md` when local source materials are missing
 

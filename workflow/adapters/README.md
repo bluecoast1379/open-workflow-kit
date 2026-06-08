@@ -6,7 +6,7 @@ Supported tools:
 
 - Codex: `AGENTS.md` and `.codex/prompts/`
 - Claude Code: `CLAUDE.md` and `.claude/commands/`
-- Cursor: `.cursor/rules/`
+- Cursor: `.cursor/rules/` and `.cursor/commands/` (custom slash commands, Cursor 1.6+)
 - GitHub Copilot: `.github/copilot-instructions.md`
 - CodeBuddy: `.codebuddy/instructions.md`
 - Kiro: `.kiro/instructions.md`

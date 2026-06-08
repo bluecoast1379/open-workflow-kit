@@ -50,7 +50,7 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --dry-run
 4. 生成跨工具入口：
    - Codex: `AGENTS.md`、`.codex/prompts/`
    - Claude Code: `CLAUDE.md`、`.claude/commands/`
-   - Cursor: `.cursor/rules/`
+   - Cursor: `.cursor/rules/` 和 `.cursor/commands/`
    - Copilot: `.github/copilot-instructions.md`
    - CodeBuddy / Kiro / Trae: 各自 `instructions.md`
 5. 不执行远程 Git 操作，不创建分支，不推送，不触发构建部署，不写数据库。

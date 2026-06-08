@@ -85,6 +85,24 @@ assertContains('workflow/team-profile.yaml', 'apps/web');
 assertContains('workflow/team-profile.yaml', 'services/api');
 assertContains('workflow/INSTALL_REPORT.md', 'The initializer did not run remote Git commands');
 
+// AGENTS.md must contain the comprehensive usage guide, not just hard gates.
+assertContains('AGENTS.md', '## Quick Start');
+assertContains('AGENTS.md', '## Workflow Commands');
+assertContains('AGENTS.md', '## Task Briefing Template');
+assertContains('AGENTS.md', '## Tool-Specific Usage');
+assertContains('AGENTS.md', '### Cursor');
+assertContains('AGENTS.md', '/04-代码实现');
+// The command table must list every stage.
+assertContains('AGENTS.md', '/12-复盘总结');
+
+// The Cursor rule must explain how to run a stage via Cursor custom commands.
+assertContains('.cursor/rules/agent-workflow-core.mdc', '.cursor/commands/');
+assertContains('.cursor/rules/agent-workflow-core.mdc', 'workflow/core/commands/04-代码实现.md');
+// Cursor custom slash command adapters must be generated for every stage.
+assertFile('.cursor/commands/04-代码实现.md');
+assertFile('.cursor/commands/12-复盘总结.md');
+assertContains('.cursor/commands/04-代码实现.md', 'workflow/core/commands/04-代码实现.md');
+
 run(['--target', tmp, '--tools', 'codex', '--yes']);
 assertFile('workflow/team-profile.yaml.agent-workflow-new');
 
@@ -115,6 +133,27 @@ const upgradeStrayFiles = fs
   .filter((name) => name.endsWith('.agent-workflow-new'));
 if (upgradeStrayFiles.length) {
   throw new Error(`upgrade --force should not produce new .agent-workflow-new files, found: ${upgradeStrayFiles.join(',')}`);
+}
+
+// Cursor-only install must still generate AGENTS.md (the tool-neutral usage guide),
+// even though codex is not selected.
+const cursorTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-cursor-'));
+spawnSync(process.execPath, [init, '--target', cursorTmp, '--tools', 'cursor', '--yes'], {
+  cwd: cursorTmp,
+  encoding: 'utf8'
+});
+for (const rel of [
+  'AGENTS.md',
+  '.cursor/rules/agent-workflow-core.mdc',
+  '.cursor/commands/04-代码实现.md'
+]) {
+  if (!fs.existsSync(path.join(cursorTmp, rel))) {
+    throw new Error(`cursor-only install missing file: ${rel}`);
+  }
+}
+const cursorAgents = fs.readFileSync(path.join(cursorTmp, 'AGENTS.md'), 'utf8');
+if (!cursorAgents.includes('### Cursor')) {
+  throw new Error('cursor-only AGENTS.md missing the Cursor usage section');
 }
 
 console.log('Smoke test passed.');

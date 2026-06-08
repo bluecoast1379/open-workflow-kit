@@ -36,6 +36,7 @@ agent-workflow-init --target . --tools cursor
 Generated files:
 
 - `.cursor/rules/agent-workflow-core.mdc`
+- `.cursor/commands/*.md` (custom slash commands, Cursor 1.6+)
 - `workflow/`
 
 ## GitHub Copilot
