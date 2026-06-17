@@ -1,28 +1,27 @@
 # Workflow Core
 
-`workflow/core` is the tool-agnostic part of the workflow. It defines stages, gates, templates, and reusable checks. It must not contain company-specific business facts, internal repository names, private URLs, credentials, customer data, or tool-specific private capabilities.
+`workflow/core` 是工具无关的工作流层，定义阶段、闸门、模板和可复用检查能力。它不得包含公司特定业务事实、内部仓库名、私有 URL、凭证、客户数据或某个工具的私有能力。
 
-## Core Rules
+## Core 规则
 
-- Source of truth is local evidence: code, docs, test output, runtime evidence, and team-profile paths.
-- Keep verified facts separate from assumptions, design intent, and missing evidence.
-- Business code implementation requires both:
-  - a valid feature branch or registered implementation worktree;
-  - an explicit implementation stage request (`/04`, `/04A`, or `/04B`).
-- Remote Git refresh, branch creation, push, tag, merge, build/deploy triggers, database writes, and production config writes are manual-only.
-- Same-repository parallel implementation must use separate worktrees after implementation stage begins.
-- Tool adapters may enhance or downgrade behavior, but they must not weaken core gates.
+- 同一套 core，多个工具 adapter 分层增强。
+- 不承诺所有工具体验完全一致。
+- 业务代码修改必须通过功能分支闸门和实现阶段闸门。
+- 远程 Git 刷新、创建分支、push、tag、merge、构建 / 部署触发、数据库写入和生产配置写入必须人工执行。
+- 同仓多需求进入实现阶段后必须使用独立 worktree。
+- adapter 可以增强或降级体验，但不能削弱 core 闸门。
 
-## Directory Map
+## 目录地图
 
-- `commands/`: stage command contracts.
-- `templates/`: generic document templates.
-- `capabilities/`: reusable checks such as branch gates, release safety, PRD/diff consistency, and test evidence review.
+- `commands/`: 每个阶段的契约。
+- `templates/`: 通用文档模板。
+- `capabilities/`: 可复用检查能力。
 
-## Team Specialization
+## 团队特化
 
-Do not edit core files to add team-specific business facts. Put those facts in:
+不要为了加入团队业务事实而修改 core 文件。团队特化内容应放在：
 
 - `workflow/team-profile.yaml`
-- local business docs referenced by the profile
-- feature documents under `features/{feature}/`
+- `features/{feature}/`
+- 目标团队自己的规范和本地资料
+- 工具 adapter 的薄入口

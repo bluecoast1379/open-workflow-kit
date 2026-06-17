@@ -22,7 +22,7 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target .
 /path/to/open-workflow-kit/install.sh . --tools codex,claude,cursor
 ```
 
-如果你拿到的是 Git 地址或 npm 包地址，见 [Shareable Install](./docs/shareable-install.md)。
+如果你拿到的是 Git 地址或 npm 包地址，见 [可分享安装方式](./docs/shareable-install.md)。
 
 常用参数：
 
@@ -117,6 +117,6 @@ npm run build:release
 
 该命令会在 `dist/` 下生成本地 tarball 和 `RELEASE_MANIFEST.md`。它不创建远程仓库、不 push、不打 tag、不执行 npm publish。
 
-远程发布步骤见 [Manual Publish Guide](./docs/manual-publish.md)。发布、push、tag、npm publish 必须由维护者手动执行。
+远程发布步骤见 [手动发布指南](./docs/manual-publish.md)。发布、push、tag、npm publish 必须由维护者手动执行。
 
-维护者发布、接收方验收和支持边界见 [Maintainer Handoff](./docs/maintainer-handoff.md)。
+维护者发布、接收方验收和支持边界见 [维护者交接](./docs/maintainer-handoff.md)。

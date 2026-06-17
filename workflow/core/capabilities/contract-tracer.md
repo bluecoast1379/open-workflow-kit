@@ -1,56 +1,53 @@
 # Capability: contract-tracer
 
 - **Tier**: essential
-- **Stage**: `/03`, `/05` (architecture, review)
-- **Purpose**: Trace contracts that cross service, layer, or frontend/backend boundaries so that reviewers do not stop at DTOs, method signatures, or compatibility annotations.
+- **Stage**: `/03`, `/05`
+- **Purpose**: 追踪跨服务、跨层或前后端契约，防止只看 DTO、方法签名或兼容注解就结束审查。
 
-## Why
+## 为什么需要
 
-Cross-layer contract drift is a documented cause of review escapes: a value tagged "compatible" in the API doc may flow through two different downstream paths, and a money or identity field may be filtered correctly at the facade but lost at the data layer. Forcing the reviewer to follow the call chain end to end catches the cases where the surface looks fine but the deep behavior diverges.
+字段、状态、金额、身份、权限等契约可能在入口层看似兼容，但在下游过滤、默认值、持久化或页面展示处发生偏移。关键契约必须从入口追到真实终点。
 
-## Inputs
+## 输入
 
-- The PRD and technical plan for the current feature
-- The real Git diff
-- The call graph or static analysis for the affected modules (when available)
-- Cross-repo facade or contract files referenced by `workflow/team-profile.yaml#repos[*].family`
+- PRD 和技术方案
+- 真实 Git diff
+- 受影响模块的调用链、引用关系或静态分析结果
+- team-profile 中登记的跨仓、前后端或外部接口边界
 
-## Outputs
+## 输出
 
 ```yaml
 result: PASS | WARN | BLOCK
 contracts:
-  - name: "<contract or facade>"
+  - name: "<contract>"
     upstream_entry: "<file:line>"
     downstream_terminals:
       - "<file:line>"
-      - "<file:line>"
-    filters_or_predicates:
-      - "<file:line> applies <predicate> on <field>"
+    predicates:
+      - "<file:line applies rule>"
     verdict: pass | drift | block
-    notes: "..."
 missing_traces:
-  - "<contract>: terminal not located"
-recommended_action: "Read the actual terminal query, persistence call, or rendering call for each contract listed above."
+  - "<无法追到终点的契约>"
 ```
 
-## Blocking Rules
+## 阻断规则
 
-- Block when a contract that touches money, ordering, identity, or access scope cannot be traced to its actual terminal.
-- Block when two entries declared as "compatible" have divergent downstream behavior (different filters, different defaults, different error semantics).
-- Downgrade to WARN when the trace stops at a third-party library that the team has flagged as out of scope; record the gap explicitly.
+- 涉及金额、身份、权限、订单、状态等关键字段但无法追到终点时阻断。
+- 两个入口声称兼容但下游过滤、默认值或错误语义不同步时阻断。
+- 追踪停止在第三方库或黑盒能力时，必须记录缺口并降级为 WARN。
 
-## Adapter Examples
+## Adapter 示例
 
-- **L0**: A review rule that says "no money or identity contract closes review on DTO inspection alone."
-- **L1**: A prompt that asks the reviewer to paste the trace from the entry to the terminal query.
-- **L2**: A slash command that scaffolds the trace table and prompts the reviewer to fill it.
-- **L3**: A static analysis hook that records and surfaces the call chain.
-- **L4**: A subagent that follows references across files and returns the traced terminals.
+- **L0**: 规定关键契约不能只看 DTO。
+- **L1**: prompt 要求贴出入口到终点的调用链。
+- **L2**: slash command 生成契约追踪表。
+- **L3**: 静态分析 hook 暴露引用链。
+- **L4**: subagent 跨文件追踪终点并给出结论。
 
-## Anti-Patterns
+## 反模式
 
-- Stopping at the DTO or method signature.
-- Trusting an "compatible" annotation without examining both entries.
-- Assuming the data layer applies the same filter as the facade.
-- Treating a passing unit test as a substitute for the actual end-to-end trace.
+- 停在 DTO 或方法签名。
+- 相信“兼容”字样而不查两条路径。
+- 默认数据层过滤与入口层一致。
+- 用单测通过替代端到端契约追踪。

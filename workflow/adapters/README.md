@@ -1,20 +1,16 @@
 # Adapters
 
-Adapters are thin tool-specific entry points generated from the same workflow core and `team-profile.yaml`.
+Adapters 是从同一套 workflow core 和 `team-profile.yaml` 生成的工具特定薄入口。
 
-Supported tools:
+它们的职责：
 
-- Codex: `AGENTS.md` and `.codex/prompts/`
-- Claude Code: `CLAUDE.md` and `.claude/commands/`
-- Cursor: `.cursor/rules/` and `.cursor/commands/` (custom slash commands, Cursor 1.6+)
-- GitHub Copilot: `.github/copilot-instructions.md`
-- CodeBuddy: `.codebuddy/instructions.md`
-- Kiro: `.kiro/instructions.md`
-- Trae: `.trae/instructions.md`
+- 帮当前工具找到 `AGENTS.md`、`workflow/core/` 和 `workflow/team-profile.yaml`。
+- 按当前工具能力暴露 slash commands、prompts、rules 或 instructions。
+- 保持工具入口轻量，不复制或改写 core 规则。
 
-Rules:
+它们不能：
 
-- An adapter must not weaken workflow/core hard gates.
-- An adapter must not call another tool's private capability.
-- If a tool cannot support hooks or subagents, downgrade to prompt, rule, or checklist behavior.
-- If a local tool entry already exists, the initializer writes a `.agent-workflow-new` file unless `--force` is used.
+- 削弱 `workflow/core` 的硬闸门。
+- 调用另一个工具的私有能力。
+- 承诺所有工具体验完全一致。
+- 写入凭证、真实客户数据、私有 URL 或生产配置。

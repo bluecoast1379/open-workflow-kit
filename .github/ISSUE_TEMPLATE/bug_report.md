@@ -1,33 +1,33 @@
 ---
 name: Bug report
-about: Report a reproducible issue in the starter kit
+about: 报告 starter kit 中可复现的问题
 title: "[Bug] "
 labels: bug
 assignees: ""
 ---
 
-## Summary
+## 摘要
 
 
-## Reproduction
+## 复现步骤
 
 1. 
 2. 
 3. 
 
-## Expected Behavior
+## 期望行为
 
 
-## Actual Behavior
+## 实际行为
 
 
-## Environment
+## 环境
 
 - OS:
 - Node.js:
-- Install method:
-- Selected tools:
+- 安装方式:
+- 选择工具:
 
-## Privacy Check
+## 隐私检查
 
-Do not paste private source code, credentials, internal URLs, customer data, logs, database exports, or production configuration. Use synthetic paths and redacted examples.
+不要粘贴私有源码、凭证、内部 URL、客户数据、日志、数据库导出或生产配置。请使用合成路径和脱敏示例。

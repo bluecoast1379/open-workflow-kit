@@ -2,53 +2,47 @@
 
 - **Tier**: recommended
 - **Stage**: `/05`
-- **Purpose**: Review the security surface of a change, focusing on credentials, authentication, authorization, privacy, audit, and configuration that influence the production blast radius.
+- **Purpose**: 审查凭证、认证、授权、隐私、审计、配置和生产影响面，补足功能测试覆盖不到的安全风险。
 
-## Why
+## 为什么需要
 
-Security regressions rarely appear in functional tests. A dedicated review pass with a small, explicit checklist catches the cases that ordinary feature review misses: credentials added to plaintext, authorization predicates removed, audit fields skipped, configuration files moved from secret storage to source control.
+安全回归往往不会在普通功能测试中暴露。需要独立检查明文凭证、权限谓词、隐私字段、审计字段、配置来源和高风险文件改动。
 
-## Inputs
+## 输入
 
-- The real Git diff
-- `workflow/team-profile.yaml#risk_policy.high_risk_files`
-- The team's compliance requirements declared in `team-profile.yaml`
-- Existing security baseline documents referenced by the team profile
+- 真实 Git diff
+- `workflow/team-profile.yaml#risk_policy`
+- 当前团队的合规、隐私和安全要求
+- 运行或测试证据
 
-## Outputs
+## 输出
 
 ```yaml
 result: PASS | WARN | BLOCK
 findings:
-  - category: credentials | auth | authz | privacy | audit | config | dependency
-    severity: P0 | P1 | P2 | P3
-    file: "<path>"
-    summary: "..."
+  - severity: P0 | P1 | P2 | P3
+    category: credential | auth | privacy | audit | config | dependency
+    evidence: "<file:line 或验证证据>"
     recommendation: "..."
-compliance:
-  - requirement: "<e.g. data export rule>"
-    status: satisfied | unclear | violated
-    evidence: "..."
 ```
 
-## Blocking Rules
+## 阻断规则
 
-- Block when credentials, tokens, or private keys appear in the diff.
-- Block when authorization predicates are removed or weakened on endpoints that handle user data, money, or admin actions.
-- Block when audit, retention, or access-log calls are removed.
-- Downgrade to WARN when a high-risk configuration file is modified within scope but the change is documented and reviewed.
+- 明文凭证、私有 token、生产配置或真实敏感数据进入仓库时阻断。
+- 删除或放宽授权、访问控制、数据脱敏、审计记录且无明确需求依据时阻断。
+- 高风险配置文件被改动但没有发布影响说明时阻断。
 
-## Adapter Examples
+## Adapter 示例
 
-- **L0**: A small checklist inside `05-代码审查.md` template.
-- **L1**: A prompt that walks the categories above and asks for evidence for each.
-- **L2**: A slash command that runs the checklist and returns a structured report.
-- **L3**: A pre-commit or pre-merge hook that scans for credential patterns and high-risk file edits.
-- **L4**: A subagent that focuses on this surface and returns a verdict that the reviewer combines with other findings.
+- **L0**: 在代码审查模板中固定安全章节。
+- **L1**: prompt 按安全分类逐项审查。
+- **L2**: slash command 扫描高风险文件和敏感模式。
+- **L3**: pre-commit 或 pre-review hook 阻断敏感内容。
+- **L4**: subagent 专门做安全边界审查。
 
-## Anti-Patterns
+## 反模式
 
-- Combining security review with general code review and skipping security checks under time pressure.
-- Treating "no test failure" as evidence of secure behavior.
-- Ignoring removed audit calls because the new code "still functions".
-- Failing to record an unclear compliance verdict and silently moving forward.
+- 只看功能是否可用，不看权限是否变宽。
+- 将本地 `.env`、token 或私有 URL 写进示例。
+- 以“测试环境能跑”为理由跳过审计字段。
+- 忽略依赖升级和构建配置带来的生产影响。

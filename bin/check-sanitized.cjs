@@ -56,14 +56,14 @@ function walk(dir) {
 walk(kitRoot);
 
 if (hits.length) {
-  console.error('Sanitization check failed. Remove project-specific terms before external distribution.');
+  console.error('脱敏检查失败。对外分发前请移除项目特定词和敏感内容。');
   for (const hit of hits) {
-    console.error(`- ${hit.rel}:${hit.line} contains ${JSON.stringify(hit.term)}`);
+    console.error(`- ${hit.rel}:${hit.line} 包含 ${JSON.stringify(hit.term)}`);
   }
   process.exit(1);
 }
 
-console.log('Sanitization check passed.');
+console.log('脱敏检查通过。');
 
 function parseArgs(argv) {
   const parsed = { extraBanned: '' };
@@ -71,14 +71,13 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === '--extra-banned') parsed.extraBanned = argv[++i] || '';
     else if (arg === '--help' || arg === '-h') {
-      console.log(`Usage: node bin/check-sanitized.cjs [--extra-banned file]
+      console.log(`用法: node bin/check-sanitized.cjs [--extra-banned file]
 
-The built-in scan checks generic secret and private URL patterns. Use --extra-banned
-with a private local denylist before external distribution. The private denylist
-must not be committed into the starter kit.`);
+内置扫描会检查通用密钥和私有 URL 模式。对外分发前，请使用 --extra-banned
+指定本地私有 denylist。该私有 denylist 不得提交到 starter kit。`);
       process.exit(0);
     } else {
-      throw new Error(`Unknown argument: ${arg}`);
+      throw new Error(`未知参数: ${arg}`);
     }
   }
   return parsed;

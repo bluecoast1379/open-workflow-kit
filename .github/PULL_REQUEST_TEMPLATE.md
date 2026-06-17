@@ -1,24 +1,24 @@
-## Summary
+## 摘要
 
 - 
 
-## Type
+## 类型
 
-- [ ] Documentation
-- [ ] Initializer behavior
+- [ ] 文档
+- [ ] 初始化器行为
 - [ ] Workflow core
-- [ ] Tool adapter
-- [ ] Example profile
-- [ ] Release or packaging
+- [ ] 工具 adapter
+- [ ] 示例 team-profile
+- [ ] 发布或打包
 
-## Checks
+## 检查
 
-- [ ] `npm run check` passes
-- [ ] `npm run build:release` passes
-- [ ] Examples are synthetic
-- [ ] No private company, customer, repository, URL, log, SQL, or credential data is included
-- [ ] Generated adapters do not weaken workflow core hard gates
+- [ ] `npm run check` 通过
+- [ ] `npm run build:release` 通过
+- [ ] 示例均为合成数据
+- [ ] 不包含私有公司、客户、仓库、URL、日志、SQL 或凭证数据
+- [ ] 生成的 adapters 没有削弱 workflow core 硬闸门
 
-## Notes
+## 备注
 
 -

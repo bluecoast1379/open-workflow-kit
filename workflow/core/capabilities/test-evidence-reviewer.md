@@ -2,52 +2,49 @@
 
 - **Tier**: optional
 - **Stage**: `/06`, `/07`
-- **Purpose**: Verify that the test suite actually proves the intended behavior, including negative cases, boundary cases, compatibility matrices, and explicitly skipped paths.
+- **Purpose**: 检查测试是否真正证明了需求行为，包括正常流、异常流、边界、兼容和明确跳过路径。
 
-## Why
+## 为什么需要
 
-A passing suite is not the same as adequate coverage. Reviews documented after the fact frequently surface defects that were never represented in any test case. A focused review pass on test evidence catches the missing matrix rows that an ordinary "are tests passing" check ignores.
+“测试通过”不等于覆盖充分。很多缺陷来自测试矩阵缺行，尤其是异常分支、重复请求、权限边界、旧数据兼容和跨端展示不一致。
 
-## Inputs
+## 输入
 
-- The PRD acceptance criteria from `02-产品文档.md`
-- The implementation scope from `04-代码实现.md`
-- The test plan from `06-测试用例.md`
-- Real test output from `07-测试执行.md`
+- `02-产品文档.md` 的验收标准
+- `04-代码实现.md` 的实现范围
+- `06-测试用例.md`
+- `07-测试执行报告.md` 的真实结果
 
-## Outputs
+## 输出
 
 ```yaml
 result: PASS | WARN | BLOCK
-coverage_review:
-  - acceptance: "<acceptance criterion>"
-    direct_tests:
-      - "<test name>"
-    missing_paths:
-      - "negative case"
-      - "compatibility entry"
-      - "boundary"
-    verdict: covered | partial | missing
-recommended_followup:
-  - "Add a negative path test for <criterion>."
+coverage:
+  - requirement: "<验收项>"
+    test_case: "<测试用例>"
+    execution: pass | fail | not-run
+    evidence: "<证据>"
+gaps:
+  - "<缺失用例或未执行原因>"
 ```
 
-## Blocking Rules
+## 阻断规则
 
-- Block when an explicit acceptance criterion has no direct test and the team has not recorded a documented exception.
-- Downgrade to WARN when a negative or boundary path is missing but the impact is documented.
+- P0/P1 验收项没有测试用例或执行证据时阻断。
+- 缺少关键异常路径、边界路径或权限路径时降级为 WARN 或 BLOCK。
+- 被跳过的路径必须记录原因和后续复测计划。
 
-## Adapter Examples
+## Adapter 示例
 
-- **L0**: A required mapping table in the test plan template.
-- **L1**: A prompt that reads the acceptance criteria and asks the user to list a test per criterion.
-- **L2**: A slash command that builds the mapping table automatically.
-- **L3**: A hook that warns when the test plan has unmapped criteria.
-- **L4**: A subagent dedicated to coverage review.
+- **L0**: 测试报告固定覆盖矩阵。
+- **L1**: prompt 按验收项逐条核对。
+- **L2**: slash command 生成测试证据审查表。
+- **L3**: hook 阻止无执行证据的测试完成状态。
+- **L4**: subagent 独立复核测试充分性。
 
-## Anti-Patterns
+## 反模式
 
-- Counting "tests passing" as coverage.
-- Skipping negative cases because "the happy path looks correct".
-- Considering compatibility entries covered when only one entry has tests.
-- Promoting partial coverage to "covered" because the timeline is tight.
+- 只记录“通过”，不记录用例和证据。
+- 没有负例、边界和权限验证。
+- 把未执行项从报告中删掉。
+- 用开发自测替代验收用例。

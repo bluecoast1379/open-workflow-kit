@@ -23,7 +23,7 @@ let packed;
 try {
   packed = JSON.parse(pack.stdout)[0];
 } catch (error) {
-  throw new Error(`Unable to parse npm pack output: ${pack.stdout}`);
+  throw new Error(`无法解析 npm pack 输出: ${pack.stdout}`);
 }
 
 const tarball = path.join(dist, packed.filename);
@@ -49,13 +49,13 @@ for (const rel of [
   'workflow/INITIALIZATION_QUESTIONS.md'
 ]) {
   const file = path.join(installTarget, rel);
-  if (!fs.existsSync(file)) throw new Error(`Release install smoke missing ${rel}`);
+  if (!fs.existsSync(file)) throw new Error(`发布包安装 smoke 缺少 ${rel}`);
 }
 
 const bytes = fs.readFileSync(tarball);
 const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
 const manifest = [
-  '# Release Manifest',
+  '# 发布清单',
   '',
   `- package: ${packageJson.name}`,
   `- version: ${packageJson.version}`,
@@ -67,13 +67,13 @@ const manifest = [
   '- install_smoke: passed',
   `- generated_at: ${new Date().toISOString()}`,
   '',
-  '## Contents',
+  '## 文件内容',
   '',
   ...packed.files.map((file) => `- ${file.path} (${file.size} bytes)`),
   '',
-  '## Manual Publish Boundary',
+  '## 人工发布边界',
   '',
-  'This manifest is generated locally. Remote repository creation, git push, tag creation, npm publish, or any other remote write must be performed manually by the user.',
+  '本清单由本地构建生成。创建远程仓库、git push、创建 tag、npm publish 或其他远程写入动作都必须由维护者手动执行。',
   ''
 ].join('\n');
 
@@ -95,7 +95,7 @@ function run(cmd, args) {
     })
   });
   if (result.status !== 0) {
-    throw new Error(`${cmd} ${args.join(' ')} failed\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+    throw new Error(`${cmd} ${args.join(' ')} 执行失败\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
   }
   return result;
 }

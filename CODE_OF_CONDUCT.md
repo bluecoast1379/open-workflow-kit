@@ -1,25 +1,25 @@
-# Code Of Conduct
+# 行为准则
 
-## Our Standard
+## 基本标准
 
-Participants are expected to communicate respectfully, focus on evidence, and keep discussions tied to improving the workflow.
+参与者应保持专业、尊重和聚焦问题本身。讨论工作流、工具限制、风险边界和实现方案时，请给出可验证依据，避免人身攻击、骚扰、歧视或泄露他人隐私。
 
-Examples of expected behavior:
+鼓励的行为：
 
-- use clear technical reasoning;
-- assume good intent while still challenging weak arguments;
-- respect privacy and do not request unnecessary private data;
-- keep examples synthetic and broadly reusable.
+- 清楚描述问题、复现步骤和影响范围；
+- 尊重不同团队的工具差异和流程约束；
+- 在公开材料中使用脱敏、合成示例；
+- 对安全、隐私和远程操作保持谨慎。
 
-Examples of unacceptable behavior:
+不接受的行为：
 
-- harassment, insults, or personal attacks;
-- publishing private company, customer, employee, account, log, credential, or incident data;
-- pressuring maintainers or users to bypass security, review, or manual approval boundaries;
-- introducing tool-specific behavior that silently weakens documented hard gates.
+- 发布他人的私有信息、凭证、日志或业务数据；
+- 用攻击性语言针对个人或群体；
+- 故意引导 agent 绕过安全闸门；
+- 在公共渠道要求他人提供敏感资料。
 
-## Enforcement
+## 执行
 
-Maintainers may remove comments, close issues, reject contributions, or block participants who violate this code of conduct.
+维护者可以编辑、隐藏或关闭违反准则的 issue、PR 或讨论。严重或重复违反时，维护者可以限制参与。
 
-When reporting conduct issues, include the minimum context needed for maintainers to assess the issue. Do not include private or sensitive data unless a private reporting channel has been agreed.
+报告行为问题时，请只提供维护者判断所需的最小上下文。除非已约定私有报告渠道，不要包含私有或敏感数据。

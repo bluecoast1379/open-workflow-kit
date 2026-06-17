@@ -12,7 +12,7 @@ const TOOL_ALIASES = {
   github_copilot: 'copilot',
   'github-copilot': 'copilot'
 };
-const GENERATED_BY = 'agent-workflow-init 0.2.0';
+const GENERATED_BY = 'agent-workflow-init 0.3.0';
 
 const STAGES = [
   ['init-workspace', '初始化工作区', '扫描本地资料、生成 team-profile、缺资料提问，并生成当前工具 adapter。'],
@@ -38,38 +38,38 @@ const STAGES = [
 const REQUIRED_SOURCES = [
   {
     key: 'business_intro',
-    label: 'Business overview / 业务介绍',
-    question: 'Path to business or product overview / 请提供业务介绍或产品概览文件路径',
+    label: '业务介绍',
+    question: '请提供业务介绍或产品概览文件路径',
     match: /(业务介绍|业务概览|产品介绍|company|business|overview|readme)/i
   },
   {
     key: 'project_docs',
-    label: 'Project documents / 项目资料',
-    question: 'Path to project, PRD, requirements, or architecture documents / 请提供项目资料、PRD、需求或架构文档目录',
+    label: '项目资料',
+    question: '请提供项目资料、PRD、需求或架构文档目录',
     match: /(项目资料|需求|prd|product|docs|architecture|spec)/i
   },
   {
     key: 'ui_specs',
-    label: 'UI design / UI 设计文件',
-    question: 'Path to UI design, prototype, or design system files / 请提供 UI 规范、设计稿、原型或设计系统文件路径',
+    label: 'UI 设计文件',
+    question: '请提供 UI 规范、设计稿、原型或设计系统文件路径',
     match: /(ui|design|figma|prototype|mockup|原型|设计|视觉|规范)/i
   },
   {
     key: 'frontend_rules',
-    label: 'Frontend rules / 前端开发规范',
-    question: 'Path to frontend development rules / 请提供前端开发规范目录或文件路径',
+    label: '前端开发规范',
+    question: '请提供前端开发规范目录或文件路径',
     match: /(frontend|front-end|前端|web.*规范|ui.*规范)/i
   },
   {
     key: 'backend_rules',
-    label: 'Backend rules / 后端开发规范',
-    question: 'Path to backend development rules / 请提供后端开发规范目录或文件路径',
+    label: '后端开发规范',
+    question: '请提供后端开发规范目录或文件路径',
     match: /(backend|back-end|server|后端|服务端)/i
   },
   {
     key: 'testing_rules',
-    label: 'Testing rules / 测试规范',
-    question: 'Path to testing rules, test cases, or QA materials / 请提供测试规范、测试用例或 QA 资料路径',
+    label: '测试规范',
+    question: '请提供测试规范、测试用例或 QA 资料路径',
     match: /(test|testing|qa|测试|用例|验收)/i
   }
 ];
@@ -97,6 +97,10 @@ const CAPABILITY_FILES = [
   'impact-scope-analyzer.md',
   'security-reviewer.md',
   'verify-app.md',
+  'deployment-readiness-checker.md',
+  'runtime-evidence-triage.md',
+  'data-change-safety-checker.md',
+  'protocol-state-machine-checker.md',
   'test-evidence-reviewer.md',
   'ui-baseline-reviewer.md',
   'memory-curator.md',
@@ -112,7 +116,7 @@ async function main() {
   const options = parseArgs(process.argv.slice(2));
   const target = path.resolve(options.target || process.cwd());
   if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
-    throw new Error(`Target directory does not exist: ${target}`);
+    throw new Error(`目标目录不存在: ${target}`);
   }
 
   const detectedTools = detectTools(target);
@@ -121,7 +125,7 @@ async function main() {
 
   if (!enabledTools.length && interactive) {
     const answer = await promptLine(
-      `Select AI tools (${SUPPORTED_TOOLS.join(', ')}). Leave empty to generate all thin adapters: `
+      `请选择 AI 工具（${SUPPORTED_TOOLS.join(', ')}）。留空会生成全部薄 adapter: `
     );
     enabledTools = normalizeTools(answer || SUPPORTED_TOOLS.join(','));
   }
@@ -163,10 +167,10 @@ async function main() {
     writeManagedFile(write.file, write.content, options);
   }
 
-  console.log(`Initialized agent workflow in ${target}`);
-  console.log(`Enabled tools: ${enabledTools.join(', ')}`);
+  console.log(`已在 ${target} 初始化 agent 工作流`);
+  console.log(`启用工具: ${enabledTools.join(', ')}`);
   if (profile.missing.length) {
-    console.log('Some source materials were not found. See workflow/INITIALIZATION_QUESTIONS.md.');
+    console.log('部分必要资料未找到，请查看 workflow/INITIALIZATION_QUESTIONS.md。');
   }
 }
 
@@ -184,25 +188,25 @@ function parseArgs(argv) {
       printHelp();
       process.exit(0);
     }
-    else throw new Error(`Unknown argument: ${arg}`);
+    else throw new Error(`未知参数: ${arg}`);
   }
   return options;
 }
 
 function printHelp() {
-  console.log(`Usage: node bin/init-workspace.cjs [options]
+  console.log(`用法: node bin/init-workspace.cjs [options]
 
-Options:
-  --target <dir>       Target workspace root. Defaults to current directory.
-  --tools <list>       Comma-separated tools: ${SUPPORTED_TOOLS.join(', ')}.
-  --yes, -y            Non-interactive mode. Missing materials are written to a question file.
-  --force              Overwrite existing generated entry files.
-  --upgrade            Refresh generated files while preserving team-profile.yaml when present.
-  --dry-run            Show planned writes without changing files.
-  --help, -h           Show this help.
+选项:
+  --target <dir>       目标工作区根目录，默认是当前目录。
+  --tools <list>       逗号分隔的工具列表: ${SUPPORTED_TOOLS.join(', ')}。
+  --yes, -y            非交互模式，缺失资料会写入问题清单。
+  --force              覆盖已生成的入口文件。
+  --upgrade            刷新生成文件；存在 team-profile.yaml 时按当前策略处理。
+  --dry-run            只展示计划写入的文件，不修改磁盘。
+  --help, -h           显示帮助。
 
-This command never runs remote Git operations, never creates branches, never pushes code,
-and never triggers builds, deployments, or database writes.`);
+该命令不会执行远程 Git 操作，不会创建分支，不会 push 代码，
+也不会触发构建、部署或数据库写入。`);
 }
 
 function normalizeTools(value) {
@@ -213,7 +217,7 @@ function normalizeTools(value) {
     const tool = TOOL_ALIASES[input] || input;
     if (!tool) continue;
     if (!SUPPORTED_TOOLS.includes(tool)) {
-      throw new Error(`Unsupported tool: ${tool}. Supported: ${SUPPORTED_TOOLS.join(', ')}`);
+      throw new Error(`不支持的工具: ${tool}。支持的工具: ${SUPPORTED_TOOLS.join(', ')}`);
     }
     if (!normalized.includes(tool)) normalized.push(tool);
   }
@@ -391,7 +395,7 @@ function buildInstallPlan(target, profile, options) {
     for (const [id] of STAGES) add(`.codex/prompts/${id}.md`, makePrompt(id));
   }
   if (profile.enabledTools.includes('claude')) {
-    add('CLAUDE.md', 'Read AGENTS.md first, then follow workflow/core and workflow/team-profile.yaml. Tool-specific commands under .claude/commands are thin adapters only.\n');
+    add('CLAUDE.md', '先读取 AGENTS.md，再遵循 workflow/core 和 workflow/team-profile.yaml。.claude/commands 下的工具命令只是薄 adapter。\n');
     for (const [id] of STAGES) add(`.claude/commands/${id}.md`, makeThinCommand('Claude Code', id));
   }
   if (profile.enabledTools.includes('cursor')) {
@@ -437,12 +441,12 @@ function writeManagedFile(file, content, options) {
 }
 
 function printDryRun(target, profile, writes) {
-  console.log(`Dry run target: ${target}`);
-  console.log(`Detected tools: ${profile.detectedTools.join(', ') || '(none)'}`);
-  console.log(`Enabled tools: ${profile.enabledTools.join(', ')}`);
-  console.log(`Detected repos: ${profile.repos.length}`);
-  console.log(`Missing source groups: ${profile.missing.map((item) => item.key).join(', ') || '(none)'}`);
-  console.log('Planned writes:');
+  console.log(`Dry run 目标目录: ${target}`);
+  console.log(`已识别工具: ${profile.detectedTools.join(', ') || '(无)'}`);
+  console.log(`启用工具: ${profile.enabledTools.join(', ')}`);
+  console.log(`已识别仓库: ${profile.repos.length}`);
+  console.log(`缺失资料组: ${profile.missing.map((item) => item.key).join(', ') || '(无)'}`);
+  console.log('计划写入:');
   for (const write of writes) console.log(`- ${path.relative(target, write.file)}`);
 }
 
@@ -453,8 +457,8 @@ function makeTeamProfileYaml(profile) {
   lines.push(`generated_by: "${GENERATED_BY}"`);
   lines.push('');
   lines.push('team:');
-  lines.push('  name: "<TODO: team name>"');
-  lines.push('  business_definition: "<TODO: short business description>"');
+  lines.push('  name: "<TODO: 团队名称>"');
+  lines.push('  business_definition: "<TODO: 简短业务描述>"');
   lines.push('  target_users: []');
   lines.push('');
   lines.push('enabled_tools:');
@@ -482,8 +486,8 @@ function makeTeamProfileYaml(profile) {
       lines.push(`    marker: ${yamlString(repo.marker)}`);
       lines.push('    tech_stack:');
       for (const tech of repo.tech_stack) lines.push(`      - ${yamlString(tech)}`);
-      lines.push('    family: "<TODO: classify project family>"');
-      lines.push('    role: "<TODO: service or product role>"');
+      lines.push('    family: "<TODO: 项目族分类>"');
+      lines.push('    role: "<TODO: 服务或产品角色>"');
     }
   } else {
     lines.push('  []');
@@ -533,42 +537,42 @@ function yamlString(value) {
 function makeWorkflowReadme() {
   return `# Workflow
 
-This directory is generated by ${GENERATED_BY}.
+本目录由 ${GENERATED_BY} 生成。
 
-- \`team-profile.yaml\`: local team configuration.
-- \`core/\`: tool-agnostic workflow rules, commands, templates, and capabilities.
-- \`adapters/\`: adapter notes for supported AI tools.
-- \`INITIALIZATION_QUESTIONS.md\`: created when required local source materials are missing.
+- \`team-profile.yaml\`: 当前团队的本地配置。
+- \`core/\`: 工具无关的工作流规则、命令、模板和能力。
+- \`adapters/\`: 支持工具的 adapter 说明。
+- \`INITIALIZATION_QUESTIONS.md\`: 缺少必要本地资料时生成的问题清单。
 
-Do not put credentials, real customer secrets, or private URLs into generic core files. Keep local business knowledge in team-profile or local source documents.
+不要把凭证、真实客户秘密或私有 URL 写入通用 core 文件。团队业务知识应保留在 \`team-profile.yaml\` 或本地资料中。
 `;
 }
 
 function makeInstallReport(profile, options) {
-  return `# Install Report
+  return `# 安装报告
 
-- Generated by: ${GENERATED_BY}
-- Generated at: ${new Date().toISOString()}
-- Enabled tools: ${profile.enabledTools.join(', ')}
-- Detected tools: ${profile.detectedTools.join(', ') || '(none)'}
-- Detected repositories: ${profile.repos.length}
-- Force overwrite: ${options.force ? 'yes' : 'no'}
-- Upgrade mode: ${options.upgrade ? 'yes' : 'no'}
+- 生成器: ${GENERATED_BY}
+- 生成时间: ${new Date().toISOString()}
+- 启用工具: ${profile.enabledTools.join(', ')}
+- 已识别工具: ${profile.detectedTools.join(', ') || '(无)'}
+- 已识别仓库: ${profile.repos.length}
+- 强制覆盖: ${options.force ? '是' : '否'}
+- 升级模式: ${options.upgrade ? '是' : '否'}
 
-## Missing Source Groups
+## 缺失资料组
 
-${profile.missing.length ? profile.missing.map((item) => `- ${item.label} (${item.key})`).join('\n') : '- None'}
+${profile.missing.length ? profile.missing.map((item) => `- ${item.label} (${item.key})`).join('\n') : '- 无'}
 
-## Safety Boundary
+## 安全边界
 
-The initializer did not run remote Git commands, create branches, push code, trigger build or deployment jobs, or execute database writes.
+初始化器没有执行远程 Git 命令、创建分支、push 代码、触发构建 / 部署任务，也没有执行数据库写入。
 `;
 }
 
 function makeQuestions(profile) {
-  return `# Initialization Questions
+  return `# 初始化待补资料
 
-The initializer could not find all required local materials. Fill these paths, then rerun the initializer or update \`workflow/team-profile.yaml\` manually.
+初始化器未找到全部必要本地资料。请补充路径后重新运行初始化器，或手动更新 \`workflow/team-profile.yaml\`。
 
 ${profile.missing.map((item) => `## ${item.label}\n\n${item.question}\n\n- path: <TODO>\n`).join('\n')}
 `;
@@ -580,37 +584,37 @@ function makeCoreCommand(id, title, description) {
   const prepStage = id === '03-06-研发准备';
   return `# /${id}
 
-## Goal
+## 目标
 
 ${title}: ${description}
 
-## Required Inputs
+## 必要输入
 
 - \`AGENTS.md\`
 - \`workflow/team-profile.yaml\`
-- Previous stage documents under \`features/{feature}/\`
-- Local code, local docs, and user-provided source materials listed in team-profile
+- \`features/{feature}/\` 下的前序阶段文档
+- team-profile 中登记的本地代码、本地文档和用户提供资料
 
-## Execution Rules
+## 执行规则
 
-- Read local facts before writing conclusions.
-- Distinguish verified facts, design intent, assumptions, and missing evidence.
-- Do not claim tests, builds, screenshots, deployments, or reviews passed unless they were actually executed.
-- Remote Git refresh, branch creation, push, tag, merge, build/deploy trigger, database write, and production config write are manual-only actions.
-${codeStage ? '- Code changes are allowed only after the feature branch gate, implementation stage gate, and same-repo parallel gate all pass.' : '- This stage does not authorize business code changes unless the current command is an implementation command and all gates pass.'}
-${prepStage ? '- This orchestration command only prepares documents from 03 to 06; it does not authorize code implementation.' : ''}
-${reviewStage ? '- Findings lead the output. Order issues by severity and cite files, diffs, tests, or runtime evidence.' : ''}
+- 先读取本地事实，再写结论。
+- 区分已验证事实、设计意图、假设和缺失证据。
+- 未真实执行的测试、构建、截图、部署或审查，不得写成已通过。
+- 远程 Git 刷新、创建分支、push、tag、merge、构建 / 部署触发、数据库写入和生产配置写入都必须人工执行。
+${codeStage ? '- 只有功能分支闸门、实现阶段闸门和同仓并行闸门全部通过后，才允许修改业务代码。' : '- 本阶段不授权修改业务代码；除非当前命令是实现命令且所有闸门已通过。'}
+${prepStage ? '- 本编排命令只准备 03 到 06 文档，不授权代码实现。' : ''}
+${reviewStage ? '- 审查输出以问题优先，按严重级别排序，并引用文件、diff、测试或运行证据。' : ''}
 
-## Required Outputs
+## 必要输出
 
-- Update or create the corresponding file under \`features/{feature}/\`.
-- Update \`features/{feature}/00-工作流状态.md\` when stage status changes.
-- Record unresolved questions and evidence gaps explicitly.
+- 更新或创建 \`features/{feature}/\` 下对应阶段文件。
+- 阶段状态变化时更新 \`features/{feature}/00-工作流状态.md\`。
+- 明确记录未解决问题和证据缺口。
 `;
 }
 
 function makeCommandTable() {
-  const header = '| Command | Stage | What it does |\n| --- | --- | --- |';
+  const header = '| 命令 | 阶段 | 作用 |\n| --- | --- | --- |';
   const rows = STAGES.map(
     ([id, title, description]) => `| \`/${id}\` | ${title} | ${description} |`
   );
@@ -624,46 +628,46 @@ function makeToolUsage(profile) {
   if (tools.includes('claude')) {
     blocks.push(`### Claude Code
 
-- Stage commands are registered from \`.claude/commands/\`. Type the command directly, for example \`/04-代码实现 <feature>\`.
-- For multi-file or complex changes, enter plan mode first, then execute.
-- Each command file is a thin adapter that points back to \`workflow/core/commands/\`.`);
+- 阶段命令来自 \`.claude/commands/\`，可直接输入，例如 \`/04-代码实现 <feature>\`。
+- 多文件或复杂改动先进入 plan mode，再执行。
+- 每个命令文件都是薄 adapter，最终都指向 \`workflow/core/commands/\`。`);
   }
 
   if (tools.includes('codex')) {
     blocks.push(`### Codex
 
-- Codex reads this \`AGENTS.md\` automatically.
-- Stage prompts live in \`.codex/prompts/\`. Invoke a stage prompt, or tell Codex to follow \`workflow/core/commands/<stage>.md\`.`);
+- Codex 会自动读取本 \`AGENTS.md\`。
+- 阶段 prompt 位于 \`.codex/prompts/\`。可以调用阶段 prompt，或要求 Codex 按 \`workflow/core/commands/<stage>.md\` 执行。`);
   }
 
   if (tools.includes('cursor')) {
     blocks.push(`### Cursor
 
-- This kit generates Cursor custom slash commands under \`.cursor/commands/\` (Cursor 1.6+, Sept 2025). Type \`/\` in the Agent input, pick a stage such as \`/04-代码实现\`, then describe the feature.
-- The rule in \`.cursor/rules/agent-workflow-core.mdc\` is applied automatically to every request.
-- As a fallback, you can @-mention the stage contract directly, for example \`@workflow/core/commands/04-代码实现.md\`.
-- The agent then reads the stage contract, \`workflow/team-profile.yaml\`, and the previous \`features/<feature>/\` documents, and writes the stage output.
-- Hard gates still apply: implementation requires the feature branch gate and the stage gate.`);
+- 本 kit 会在 \`.cursor/commands/\` 生成 Cursor 自定义斜杠命令（Cursor 1.6+）。在 Agent 输入框输入 \`/\`，选择 \`/04-代码实现\` 等阶段，再描述功能。
+- \`.cursor/rules/agent-workflow-core.mdc\` 会自动应用到每次请求。
+- 兜底方式：直接 @ 阶段契约，例如 \`@workflow/core/commands/04-代码实现.md\`。
+- agent 会读取阶段契约、\`workflow/team-profile.yaml\` 和前序 \`features/<feature>/\` 文档，再写阶段产物。
+- 硬闸门仍然生效：实现必须先通过功能分支闸门和阶段闸门。`);
   }
 
   if (tools.includes('copilot')) {
     blocks.push(`### GitHub Copilot
 
-- \`.github/copilot-instructions.md\` is applied automatically.
-- To run a stage, reference \`workflow/core/commands/<stage>.md\` in chat and describe the feature.`);
+- \`.github/copilot-instructions.md\` 会自动生效。
+- 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
   }
 
   for (const [tool, label] of [['codebuddy', 'CodeBuddy'], ['kiro', 'Kiro'], ['trae', 'Trae']]) {
     if (tools.includes(tool)) {
       blocks.push(`### ${label}
 
-- \`.${tool}/instructions.md\` is applied automatically.
-- To run a stage, reference \`workflow/core/commands/<stage>.md\` in chat and describe the feature.`);
+- \`.${tool}/instructions.md\` 会自动生效。
+- 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
     }
   }
 
   if (!blocks.length) {
-    blocks.push(`No specific tool adapter was selected. Read \`workflow/core/commands/<stage>.md\` and follow it directly.`);
+    blocks.push(`未选择特定工具 adapter。请直接读取并执行 \`workflow/core/commands/<stage>.md\`。`);
   }
 
   return blocks.join('\n\n');
@@ -672,159 +676,157 @@ function makeToolUsage(profile) {
 function makeAgentsEntry(profile) {
   return `# Agent Workflow
 
-This workspace uses a tool-agnostic agent workflow generated by ${GENERATED_BY}. It runs as a staged delivery flow: clarify the requirement, design, implement behind gates, review, test, accept, and retrospect. The same workflow core is shared across AI tools; each tool gets a thin adapter, so behavior is enhanced or downgraded by tool but the flow is the same.
+本工作区使用 ${GENERATED_BY} 生成的工具无关 agent 工作流。它按阶段推进：需求澄清、产品文档、技术架构、闸门后的实现、审查、测试、验收、上线通知和复盘。不同 AI 工具共享同一套 workflow core，每个工具只生成薄 adapter；体验会随工具能力增强或降级，但流程口径一致。
 
-## Quick Start
+## 快速开始
 
-1. Read \`workflow/team-profile.yaml\` to load this team's repositories, branch model, and source materials.
-2. Start a feature with \`/new-feature <name>\`. It creates \`features/<name>/\` with a status file.
-3. Move through the stages in order: \`/01-需求讨论\` -> \`/02-产品文档\` -> \`/03-技术架构\` -> \`/04-代码实现\` -> \`/05-代码审查\` -> \`/06-测试用例\` -> \`/07-测试执行\` -> \`/08-验收表格\` -> \`/09-验收\` -> \`/10-培训文档\` -> \`/11-上线邮件通知\` -> \`/12-复盘总结\`.
-4. Each stage reads the previous stage documents under \`features/<name>/\` and writes its own output there.
-5. Run \`/workflow-status\` at any time to see every feature's stage, blockers, and next step.
+1. 先读取 \`workflow/team-profile.yaml\`，加载当前团队的仓库、分支模型和资料来源。
+2. 用 \`/new-feature <name>\` 初始化需求，它会创建 \`features/<name>/\` 和状态文件。
+3. 按顺序推进阶段：\`/01-需求讨论\` -> \`/02-产品文档\` -> \`/03-技术架构\` -> \`/04-代码实现\` -> \`/05-代码审查\` -> \`/06-测试用例\` -> \`/07-测试执行\` -> \`/08-验收表格\` -> \`/09-验收\` -> \`/10-培训文档\` -> \`/11-上线邮件通知\` -> \`/12-复盘总结\`。
+4. 每个阶段都必须读取 \`features/<name>/\` 下的前序文档，并把本阶段产物写回同目录。
+5. 随时可执行 \`/workflow-status\` 汇总全部需求的阶段、阻塞和下一步。
 
-How you trigger a stage depends on your tool. See "Tool-Specific Usage" below.
+不同工具触发阶段的方式不同，见下方“工具使用方式”。
 
-## Workflow Commands
+## 工作流命令
 
 ${makeCommandTable()}
 
-## Task Briefing Template
+## 任务描述模板
 
-When you start a stage, state the work as three parts so the agent has enough context:
+启动阶段时，尽量用三段描述任务，保证 agent 有足够上下文：
 
-- **Goal**: what the finished change must achieve.
-- **Constraints**: what must not change (public APIs, database schema, auth flow, unrelated modules).
-- **Acceptance**: how to prove it is correct (tests, scripts, API calls, browser checks, screenshots).
+- **目标**：完成后必须达成什么。
+- **约束**：哪些内容不能改，例如公开 API、数据库结构、鉴权链路、无关模块。
+- **验收**：如何证明正确，例如测试、脚本、API 调用、浏览器检查、截图。
 
-## Single Source of Truth
+## 单一事实源
 
-- Workflow rules: \`workflow/core/\`
-- Team configuration: \`workflow/team-profile.yaml\`
-- Reusable checks: \`workflow/core/capabilities/\`
-- Feature deliverables: \`features/<feature>/\`
-- Tool adapters: generated thin entries only
+- 工作流规则：\`workflow/core/\`
+- 团队配置：\`workflow/team-profile.yaml\`
+- 可复用检查能力：\`workflow/core/capabilities/\`
+- 需求产物：\`features/<feature>/\`
+- 工具 adapter：仅作为生成的薄入口
 
-## Hard Gates
+## 硬闸门
 
-- Do not modify business code before the feature branch gate and implementation stage gate pass.
-- \`/03-06-研发准备\` and stages 01/02/03 only authorize analysis and workflow documents.
-- Remote Git operations are manual-only: no automatic fetch, pull, clone, remote update, branch creation, push, tag, merge, or remote deletion.
-- Build, deployment, database write, production config write, and release actions are manual-only unless the team profile explicitly defines a safe read-only adapter.
-- Same-repository parallel implementation requires separate worktrees after entering implementation stage.
+- 功能分支闸门和实现阶段闸门通过前，禁止修改业务代码。
+- \`/03-06-研发准备\` 以及 01/02/03 阶段只授权分析和工作流文档。
+- 远程 Git 操作必须人工执行：禁止自动 fetch、pull、clone、remote update、创建分支、push、tag、merge 或删除远端。
+- 构建、部署、数据库写入、生产配置写入和发布动作必须人工执行；除非 team-profile 明确定义了安全的只读 adapter。
+- 同仓多需求进入实现阶段后，必须使用独立 worktree。
 
-## Tool Capability Policy
+## 工具能力策略
 
-The workflow core is shared. Tool adapters may enhance or downgrade behavior according to the current tool:
+workflow core 是共享的。工具 adapter 可按当前工具能力增强或降级：
 
-- L0: document rules
-- L1: prompts and command templates
-- L2: tool-native rules or slash commands
-- L3: hooks or pre-flight checks
-- L4: subagents or multi-agent routing
+- L0：文档规则
+- L1：prompt 和命令模板
+- L2：工具原生规则或 slash commands
+- L3：hooks 或前置检查
+- L4：subagents 或多 agent 路由
 
-Do not promise identical behavior across all tools. Use the current tool's own adapter only.
+不要承诺所有工具体验完全一致。只能使用当前工具自己的 adapter。
 
-## Tool-Specific Usage
+## 工具使用方式
 
 ${makeToolUsage(profile)}
 
-## Enabled Tools
+## 已启用工具
 
 ${profile.enabledTools.map((tool) => `- ${tool}`).join('\n')}
 
-## References
+## 参考文件
 
-- \`workflow/README.md\`: workflow overview.
-- \`workflow/core/commands/\`: the contract for each stage.
-- \`workflow/core/capabilities/README.md\`: reusable checks and how each tool implements them.
-- \`workflow/team-profile.yaml\`: this team's configuration and any missing source materials.
+- \`workflow/README.md\`：工作流总览。
+- \`workflow/core/commands/\`：各阶段契约。
+- \`workflow/core/capabilities/README.md\`：可复用检查能力及工具适配方式。
+- \`workflow/team-profile.yaml\`：当前团队配置和缺失资料记录。
 
-## Start
+## 开始
 
-Read \`workflow/team-profile.yaml\`, then follow \`workflow/core/commands/\` for the requested stage.
+先读取 \`workflow/team-profile.yaml\`，再按用户请求的阶段读取 \`workflow/core/commands/\`。
 `;
 }
 
 function makeThinCommand(toolName, id) {
   return `# ${toolName} adapter for /${id}
 
-This is a thin adapter. Follow:
+这是薄 adapter。执行时必须按顺序读取：
 
 1. \`AGENTS.md\`
 2. \`workflow/team-profile.yaml\`
 3. \`workflow/core/commands/${id}.md\`
 
-Do not add tool-specific behavior that conflicts with workflow/core.
+不得加入与 workflow/core 冲突的工具特定行为。
 `;
 }
 
 function makePrompt(id) {
   return `# ${id}
 
-Read \`AGENTS.md\`, \`workflow/team-profile.yaml\`, and \`workflow/core/commands/${id}.md\`.
+读取 \`AGENTS.md\`、\`workflow/team-profile.yaml\` 和 \`workflow/core/commands/${id}.md\`。
 
-Use local evidence first. If required source materials are missing, update \`workflow/INITIALIZATION_QUESTIONS.md\` or ask the user for the missing paths.
+优先使用本地证据。必要资料缺失时，更新 \`workflow/INITIALIZATION_QUESTIONS.md\` 或向用户索要缺失路径。
 `;
 }
 
 function makeCursorRule() {
   return `---
-description: "Shared agent workflow: staged feature delivery, review, testing, and release preparation."
+description: "共享 agent 工作流：分阶段交付、审查、测试和发布准备。"
 alwaysApply: true
 ---
 
 # Agent Workflow (Cursor)
 
-This workspace uses a tool-agnostic staged workflow. This rule is applied automatically to
-every request. The full usage guide is in \`AGENTS.md\`.
+本工作区使用工具无关的分阶段工作流。本规则会自动应用到每次请求。
+完整使用说明见 \`AGENTS.md\`。
 
-## How To Run A Stage In Cursor
+## 在 Cursor 中执行阶段
 
-This kit generates Cursor custom slash commands under \`.cursor/commands/\` (Cursor 1.6+).
-Type \`/\` in the Agent input, pick a stage, then describe the feature. Examples:
+本 kit 会在 \`.cursor/commands/\` 生成 Cursor 自定义 slash commands（Cursor 1.6+）。
+在 Agent 输入框输入 \`/\`，选择阶段，再描述功能。例如：
 
-- \`/01-需求讨论\` start a new feature called billing-export
-- \`/04-代码实现\` for feature billing-export
+- \`/01-需求讨论\` 开始一个新需求
+- \`/04-代码实现\` 对指定需求进入实现阶段
 
-As a fallback, you can @-mention the stage contract directly, for example
+兜底方式：可以直接 @ 阶段契约，例如
 \`@workflow/core/commands/04-代码实现.md\`.
 
-The agent then reads the stage contract, \`workflow/team-profile.yaml\`, and the previous
-\`features/<feature>/\` documents, and writes the stage output under \`features/<feature>/\`.
+agent 随后读取阶段契约、\`workflow/team-profile.yaml\` 和前序
+\`features/<feature>/\` 文档，并把阶段产物写入 \`features/<feature>/\`。
 
-## Stage Order
+## 阶段顺序
 
 new-feature -> 01-需求讨论 -> 02-产品文档 -> 03-技术架构 -> 04-代码实现 -> 05-代码审查 ->
 06-测试用例 -> 07-测试执行 -> 08-验收表格 -> 09-验收 -> 10-培训文档 -> 11-上线邮件通知 -> 12-复盘总结
 
-For a status summary across all features, follow \`workflow/core/commands/workflow-status.md\`.
+查看全部需求状态时，执行 \`workflow/core/commands/workflow-status.md\`。
 
-## Task Briefing
+## 任务描述
 
-State each task as Goal (what to achieve), Constraints (what must not change), and
-Acceptance (how to prove it is correct).
+每个任务尽量写清目标、约束和验收方式。
 
-## Sources
+## 事实源
 
-- Workflow rules: \`workflow/core/\`
-- Team configuration: \`workflow/team-profile.yaml\`
-- Reusable checks: \`workflow/core/capabilities/\`
-- Full usage guide: \`AGENTS.md\`
+- 工作流规则：\`workflow/core/\`
+- 团队配置：\`workflow/team-profile.yaml\`
+- 可复用检查能力：\`workflow/core/capabilities/\`
+- 完整使用说明：\`AGENTS.md\`
 
-## Hard Gates
+## 硬闸门
 
-- Do not modify business code before the feature branch gate and the implementation stage gate pass.
-- Remote Git operations, branch creation, push, build/deploy triggers, database writes, and
-  production config writes are manual-only.
-- Same-repository parallel implementation requires separate worktrees after implementation starts.
+- 功能分支闸门和实现阶段闸门通过前，禁止修改业务代码。
+- 远程 Git 操作、创建分支、push、构建 / 部署触发、数据库写入和生产配置写入必须人工执行。
+- 同仓并行实现进入实现阶段后必须使用独立 worktree。
 `;
 }
 
 function makeGenericInstructions(toolName) {
-  return `# ${toolName} Workflow Instructions
+  return `# ${toolName} 工作流说明
 
-Read AGENTS.md first. Then use workflow/team-profile.yaml and workflow/core/commands for the requested stage.
+先读取 AGENTS.md，再按用户请求的阶段读取 workflow/team-profile.yaml 和 workflow/core/commands。
 
-This file is a thin adapter. It must not override workflow/core hard gates.
+本文件是薄 adapter，不得覆盖 workflow/core 的硬闸门。
 `;
 }

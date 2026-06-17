@@ -2,50 +2,47 @@
 
 - **Tier**: optional
 - **Stage**: `/12`
-- **Purpose**: Propose generic, redacted workflow rule updates derived from real incidents, so that retrospectives feed the workflow core instead of dying inside a single project.
+- **Purpose**: 从真实复盘中提炼可进入 workflow core 的通用规则候选，让工作流持续进化。
 
-## Why
+## 为什么需要
 
-A team that runs retrospectives without a rule-extraction step typically improves only the project that ran them. A small extraction pass converts incident-specific lessons into tool-agnostic rules suitable for `workflow/core/` or `workflow/team-profile.yaml`, and surfaces them for explicit human approval before they take effect.
+复盘结论只有进入模板、命令、闸门或 checklist，才会影响下一次交付。但不是所有经验都适合做硬规则，必须区分项目级结论、团队级建议和通用 core 规则。
 
-## Inputs
+## 输入
 
-- The curated memory entries produced by `memory-curator`
-- The current `workflow/core/` rules
-- The current `workflow/team-profile.yaml`
-- A redaction policy
+- `memory-curator` 输出的结构化记忆
+- 当前 `workflow/core/` 规则
+- `workflow/team-profile.yaml`
+- 用户对规则强度的确认
 
-## Outputs
+## 输出
 
 ```yaml
 result: PASS | WARN
-proposed_changes:
-  - target: "workflow/core/<file>" | "team-profile.yaml" | "AGENTS.md"
-    summary: "<rule change, redacted>"
-    rationale: "<why this rule is generalizable>"
-    risk_if_ignored: "..."
-    needs_human_approval: true
-discarded_proposals:
-  - reason: "specific to a single business context"
-recommended_followup:
-  - "Open a change proposal for proposal #N."
+proposals:
+  - target: core | team-profile | adapter | example | docs
+    rule_type: hard_gate | checklist | template_field | guidance
+    wording: "<建议规则>"
+    rationale: "<为什么需要>"
+    scope_limit: "<适用边界>"
+    requires_human_approval: true
 ```
 
-## Blocking Rules
+## 阻断规则
 
-This capability does not block. Every proposal requires explicit human approval before any rule change.
+本能力不直接阻断。任何规则变更都必须由维护者确认，不能由 agent 自动把复盘经验升级为全局硬闸门。
 
-## Adapter Examples
+## Adapter 示例
 
-- **L0**: A required section in the retrospective template that lists candidate rule changes.
-- **L1**: A prompt that walks the memory entries and proposes rule changes.
-- **L2**: A slash command that produces the structured proposal list.
-- **L3**: A hook that prevents marking the retrospective as done without a proposal section, even when the proposal is "no changes".
-- **L4**: A subagent that drafts proposals and links them to the relevant rule files.
+- **L0**: 复盘模板要求标注规则候选。
+- **L1**: prompt 给出规则草案和适用范围。
+- **L2**: slash command 生成待审 PR 草稿。
+- **L3**: hook 检查 core 规则变更是否有复盘依据。
+- **L4**: subagent 比较多次复盘，提炼稳定规则。
 
-## Anti-Patterns
+## 反模式
 
-- Approving rule changes silently without recording who approved them.
-- Allowing the agent to update `workflow/core/` directly without human review.
-- Letting incident-specific terminology leak into a generic rule.
-- Discarding lessons that "do not fit" the existing structure instead of explaining why.
+- 把公司特有流程写进通用 core。
+- 缺少维护者确认就改硬闸门。
+- 只增加规则，不说明触发条件和边界。
+- 新规则与既有 adapter 能力不兼容。

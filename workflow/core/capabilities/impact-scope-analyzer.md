@@ -2,58 +2,49 @@
 
 - **Tier**: recommended
 - **Stage**: `/03`
-- **Purpose**: Map the affected surface of a feature across repositories, APIs, UI, data, configuration, jobs, and tests, so that subsequent stages do not silently miss a layer.
+- **Purpose**: 扫描需求影响面，覆盖仓库、API、UI、数据、配置、任务、消息、测试和发布资产。
 
-## Why
+## 为什么需要
 
-Feature scope is rarely confined to a single layer. A change that "only updates a UI label" can hide changes in API contracts, persistence, batch jobs, and analytics. Producing an explicit impact matrix at the architecture stage prevents later stages from inheriting an undercounted scope.
+需求遗漏通常不是单点代码问题，而是影响面没画全。架构阶段必须把调用链、仓库边界、数据边界和验证边界列清楚，后续实现和审查才有依据。
 
-## Inputs
+## 输入
 
-- The PRD and the architecture document
-- `workflow/team-profile.yaml#repos[*].family`
-- Local code references found in the affected repositories
+- PRD、需求讨论和技术方案
+- 本地代码、文档和 team-profile 中登记的项目资料
+- 用户补充的影响端、影响仓库或接口说明
 
-## Outputs
+## 输出
 
 ```yaml
 result: PASS | WARN
-impact_matrix:
-  api:
-    affected: ["<endpoint>"]
-    notes: "..."
-  ui:
-    affected: ["<screen or component>"]
-    notes: "..."
-  data:
-    affected: ["<table or collection>"]
-    migration_required: true | false
-  config:
-    affected: ["<config key>"]
-    high_risk: true | false
-  jobs_or_messaging:
-    affected: ["<job or topic>"]
-  tests:
-    affected_suites: ["<suite>"]
+scope:
+  repos: ["..."]
+  apis: ["..."]
+  ui_surfaces: ["..."]
+  data_changes: ["..."]
+  config_changes: ["..."]
+  jobs_or_messages: ["..."]
+  tests: ["..."]
 unknowns:
-  - "<layer>: needs confirmation"
+  - "<需确认的影响面>"
 ```
 
-## Blocking Rules
+## 阻断规则
 
-This capability does not block. It exposes scope so that branch and stage gates, PRD/diff comparison, and release safety checks can use a complete map. Unknowns must be recorded explicitly rather than left implicit.
+本能力通常不直接阻断，但高影响未知项必须在文档中显式记录。若未知项涉及数据写入、鉴权、安全、发布或生产配置，应交给对应高风险能力处理。
 
-## Adapter Examples
+## Adapter 示例
 
-- **L0**: A required table in `03-技术架构.md`.
-- **L1**: A prompt that walks through each layer and asks for evidence.
-- **L2**: A slash command that prefills the table based on detected references.
-- **L3**: A hook that flags PRs which change a layer not listed in the impact matrix.
-- **L4**: A subagent that produces the matrix and updates it as the diff evolves.
+- **L0**: 在 `/03` 中固定影响面矩阵。
+- **L1**: prompt 按层级提问。
+- **L2**: slash command 结合代码搜索生成草稿。
+- **L3**: hook 检查 04 前是否存在影响面矩阵。
+- **L4**: subagent 跨仓补全影响面。
 
-## Anti-Patterns
+## 反模式
 
-- Listing only the obvious surface and treating other layers as "no change".
-- Recording the matrix once at the architecture stage and never revisiting it.
-- Omitting `config` and `jobs_or_messaging` from the matrix because they are "invisible to users".
-- Marking unknowns as "no change" instead of recording them as unknowns.
+- 只写“改后端”或“改前端”，没有仓库和文件级边界。
+- 架构阶段记录一次后，后续 diff 变化不回看。
+- 忽略配置、数据脚本、定时任务和发布资产。
+- 未知项不写入文档。

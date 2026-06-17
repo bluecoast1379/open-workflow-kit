@@ -25,7 +25,7 @@ function run(args, options = {}) {
     ...options
   });
   if (result.status !== 0) {
-    throw new Error(`command failed: ${result.stderr || result.stdout}`);
+    throw new Error(`命令执行失败: ${result.stderr || result.stdout}`);
   }
   return result;
 }
@@ -75,7 +75,11 @@ for (const rel of [
   'workflow/core/capabilities/branch-gatekeeper.md',
   'workflow/core/capabilities/release-safety-checker.md',
   'workflow/core/capabilities/prd-code-diff-checker.md',
-  'workflow/core/capabilities/contract-tracer.md'
+  'workflow/core/capabilities/contract-tracer.md',
+  'workflow/core/capabilities/deployment-readiness-checker.md',
+  'workflow/core/capabilities/runtime-evidence-triage.md',
+  'workflow/core/capabilities/data-change-safety-checker.md',
+  'workflow/core/capabilities/protocol-state-machine-checker.md'
 ]) {
   assertFile(rel);
 }
@@ -83,13 +87,13 @@ for (const rel of [
 assertContains('workflow/team-profile.yaml', '- trae');
 assertContains('workflow/team-profile.yaml', 'apps/web');
 assertContains('workflow/team-profile.yaml', 'services/api');
-assertContains('workflow/INSTALL_REPORT.md', 'The initializer did not run remote Git commands');
+assertContains('workflow/INSTALL_REPORT.md', '初始化器没有执行远程 Git 命令');
 
 // AGENTS.md must contain the comprehensive usage guide, not just hard gates.
-assertContains('AGENTS.md', '## Quick Start');
-assertContains('AGENTS.md', '## Workflow Commands');
-assertContains('AGENTS.md', '## Task Briefing Template');
-assertContains('AGENTS.md', '## Tool-Specific Usage');
+assertContains('AGENTS.md', '## 快速开始');
+assertContains('AGENTS.md', '## 工作流命令');
+assertContains('AGENTS.md', '## 任务描述模板');
+assertContains('AGENTS.md', '## 工具使用方式');
 assertContains('AGENTS.md', '### Cursor');
 assertContains('AGENTS.md', '/04-代码实现');
 // The command table must list every stage.

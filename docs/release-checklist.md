@@ -1,62 +1,57 @@
-# External Release Checklist
+# 外部分发检查清单
 
-Use this checklist before publishing the starter kit to a public repository, package registry, template repository, or document site.
+发布到公共仓库、package registry、template repository 或文档站点前，使用本清单做最终检查。
 
-## Required
+## 必须完成
 
-- `npm run check` passes from `open-workflow-kit/`.
-- `npm run build:release` passes and leaves only `dist/agent-workflow-starter-kit-<version>.tgz` plus `dist/RELEASE_MANIFEST.md`.
-- `install.sh` is executable and can initialize a target workspace through the same `bin/init-workspace.cjs` entry.
-- A private denylist scan has been run with `--extra-banned` from a local file that is not committed.
-- No company names, internal paths, real repository names, real URLs, credentials, customer data, logs, SQL, or incident originals are present in the distributable.
-- `package.json#license` is Apache-2.0, or a deliberately chosen replacement license is documented.
-- License text is present if a public license is chosen.
-- `NOTICE` is present.
-- `CONTRIBUTING.md`, `SECURITY.md`, and `CODE_OF_CONDUCT.md` are present and generic.
-- `.github/` issue, pull request, and CI templates are present for the source repository.
-- README and INIT instructions use generic examples only.
-- `docs/maintainer-handoff.md` is current and uses generic examples only.
-- Generated examples are synthetic and cannot be traced to a real customer, employee, project, incident, or production system.
-- Tool adapters only point to workflow core and do not weaken hard gates.
-- The initializer does not perform remote Git operations, branch creation, push, build/deploy triggers, database writes, or production config writes.
+- `npm run check` 通过。
+- `npm run build:release` 通过。
+- `dist/RELEASE_MANIFEST.md` 已人工检查。
+- tarball 文件列表已人工检查。
+- README、INIT、CONTRIBUTING、SECURITY、CODE_OF_CONDUCT、LICENSE、NOTICE 已检查。
+- 示例数据均为合成数据，不能追溯到真实客户、员工、项目、事故或生产系统。
+- 工具 adapter 只指向 workflow core，不削弱硬闸门。
+- 初始化器不会执行远程 Git、创建分支、push、构建 / 部署触发、数据库写入或生产配置写入。
 
-## Private Denylist Scan
+## 私有 denylist 扫描
 
-Create a local file outside the starter kit, then run:
+在 starter kit 外部创建私有 denylist 文件，然后运行：
 
 ```bash
-node open-workflow-kit/bin/check-sanitized.cjs --extra-banned /path/to/private-denylist.txt
+node bin/check-sanitized.cjs --extra-banned /path/to/private-denylist.txt
 ```
 
-The private denylist should include company names, internal repository prefixes, internal systems, customer names, private domains, sensitive business terms, and known incident names. Do not commit that file into the starter kit.
+私有 denylist 应包含公司名、内部仓库前缀、内部系统、客户名、私有域名、敏感业务术语和已知事故名称。不要把该文件提交到 starter kit。
 
-## Manual Review
+## 人工复核
 
-Automated scanning is not enough. A human reviewer must still inspect:
+自动扫描不够。仍需人工检查：
 
-- `README.md`
-- `INIT.md`
-- `CONTRIBUTING.md`
-- `SECURITY.md`
-- `CODE_OF_CONDUCT.md`
-- `.github/`
-- `workflow/core/`
-- `templates/`
-- `examples/`
-- `docs/`
-- `bin/init-workspace.cjs`
-- `bin/check-sanitized.cjs`
-- `dist/RELEASE_MANIFEST.md` after local release build
-- `docs/manual-publish.md`
-- `docs/maintainer-handoff.md`
+- commit message；
+- README 和 docs；
+- examples；
+- install 脚本；
+- workflow core；
+- adapter 输出；
+- package files 列表；
+- tarball 内容。
 
-## Release Decision
+重点关注：
 
-Do not publish until these decisions are explicit:
+- 是否出现真实组织、真实仓库、真实 URL；
+- 是否包含业务数据、日志、SQL、截图或凭证；
+- 是否承诺“所有工具体验完全一致”；
+- 是否引导 agent 自动远程操作；
+- 是否把私有流程写成通用规则。
 
-- public repository or private share;
-- license changes from Apache-2.0, if any;
-- issue and contribution policy;
-- versioning policy;
-- support boundary;
-- whether commercial/internal variants will exist.
+## 发布决策
+
+以下事项明确前不要发布：
+
+- license；
+- 发布渠道；
+- 版本号；
+- 支持边界；
+- issue / PR 接收方式；
+- 私有安全报告渠道；
+- 是否允许提交 `dist/` 产物。

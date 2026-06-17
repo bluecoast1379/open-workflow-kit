@@ -1,28 +1,28 @@
 ---
 name: Feature request
-about: Suggest a generic workflow improvement
+about: 建议一个通用工作流改进
 title: "[Feature] "
 labels: enhancement
 assignees: ""
 ---
 
-## Problem
+## 问题
 
 
-## Proposed Behavior
+## 期望行为
 
 
-## Target Layer
+## 目标层
 
 - [ ] `workflow/core`
 - [ ] `workflow/team-profile.yaml`
 - [ ] `workflow/adapters`
-- [ ] Initializer
-- [ ] Documentation
+- [ ] 初始化器
+- [ ] 文档
 
-## Tool Impact
+## 工具影响
 
-- [ ] Tool-agnostic
+- [ ] 工具无关
 - [ ] Codex
 - [ ] Claude Code
 - [ ] Cursor
@@ -31,6 +31,6 @@ assignees: ""
 - [ ] Kiro
 - [ ] Trae
 
-## Privacy Check
+## 隐私检查
 
-Keep the request generic. Do not include private company, customer, repository, URL, log, SQL, credential, or incident data.
+请保持请求通用。不要包含私有公司、客户、仓库、URL、日志、SQL、凭证或事故数据。

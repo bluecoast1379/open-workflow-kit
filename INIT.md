@@ -1,82 +1,82 @@
-# Init Guide
+# 初始化指南
 
-This guide describes how a target team initializes the workflow after receiving the starter kit path or repository address.
+本文说明目标团队拿到 starter kit 路径、Git 地址或发布包后，如何在自己的工作区初始化工作流。
 
-## Recommended Flow
+## 推荐流程
 
-1. Put the starter kit somewhere outside the target product repository.
-2. Open the target product repository root.
-3. Run the initializer from the target root.
-4. Review generated `workflow/team-profile.yaml`.
-5. Fill any missing items in `workflow/INITIALIZATION_QUESTIONS.md`.
-6. Re-run the initializer with the selected tool list if needed.
+1. 把 starter kit 放在目标产品仓库之外。
+2. 打开目标产品工作区根目录。
+3. 从目标根目录运行初始化器。
+4. 检查生成的 `workflow/team-profile.yaml`。
+5. 如果存在 `workflow/INITIALIZATION_QUESTIONS.md`，补齐缺失资料。
+6. 如需调整工具列表，重新运行初始化器。
 
-## Local Path Install
+## 本地路径安装
 
 ```bash
 cd /path/to/target-workspace
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,claude,cursor
 ```
 
-Shell wrapper:
+Shell wrapper：
 
 ```bash
 cd /path/to/target-workspace
 /path/to/open-workflow-kit/install.sh . --tools codex,claude,cursor
 ```
 
-## Package Bin Install
+## package bin 安装
 
-If the starter kit has been installed as a local package:
+如果 starter kit 已作为本地 package 安装：
 
 ```bash
 cd /path/to/target-workspace
 agent-workflow-init --target . --tools codex,claude,cursor
 ```
 
-## Non-Interactive Install
+## 非交互安装
 
-For agent-driven or CI-like initialization where questions cannot be answered in the terminal:
+在 agent 驱动或 CI-like 初始化中，终端无法回答问题时使用：
 
 ```bash
 agent-workflow-init --target . --tools codex,claude,cursor --yes
 ```
 
-Missing source materials are recorded in `workflow/INITIALIZATION_QUESTIONS.md`.
+缺失资料会记录到 `workflow/INITIALIZATION_QUESTIONS.md`。
 
-## Upgrade Existing Workspace
+## 升级已有工作区
 
 ```bash
 agent-workflow-init --target . --tools codex,claude,cursor --upgrade
 ```
 
-If existing files would be overwritten, the initializer writes `.agent-workflow-new` files unless `--force` is passed.
+如果已有文件会被覆盖，初始化器默认写出 `.agent-workflow-new` 文件；只有显式传入 `--force` 才会覆盖。
 
-## Safety Boundary
+## 安全边界
 
-The initializer does not:
+初始化器不会：
 
-- run remote Git commands;
-- create or switch branches;
-- push code;
-- trigger builds or deployments;
-- execute database writes;
-- modify production configuration.
+- 执行远程 Git 命令；
+- 创建或切换分支；
+- push 代码；
+- 触发构建或部署；
+- 执行数据库写入；
+- 修改生产配置。
 
-Those actions remain user-manual.
+这些动作必须由用户手动执行。
 
-## Tool Alias
+## 工具别名
 
-The initializer accepts `trea` as an alias for `trae`, then writes `.trae/instructions.md`.
+初始化器接受 `trea` 作为 `trae` 的别名，并写入 `.trae/instructions.md`。
 
-## Receiver Acceptance
+## 接收方验收
 
-After initialization, verify the generated workflow before using it for real feature delivery:
+正式用于需求交付前，请先确认：
 
-- review `workflow/team-profile.yaml`;
-- answer items in `workflow/INITIALIZATION_QUESTIONS.md`, if present;
-- confirm selected tool adapters were generated;
-- confirm existing files were not overwritten unexpectedly;
-- confirm no remote Git, branch, push, deploy, database, or production config action was performed.
+- 已检查 `workflow/team-profile.yaml`；
+- 如存在 `workflow/INITIALIZATION_QUESTIONS.md`，已补齐待补资料；
+- 选中的工具 adapter 已生成；
+- 已有文件没有被意外覆盖；
+- 初始化期间没有发生远程 Git、分支、push、部署、数据库或生产配置动作。
 
-For the full acceptance checklist, see `docs/maintainer-handoff.md`.
+完整验收清单见 `docs/maintainer-handoff.md`。

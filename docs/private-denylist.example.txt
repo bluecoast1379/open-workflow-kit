@@ -1,5 +1,5 @@
-# Copy this file outside the starter kit and replace the placeholders.
-# Do not commit a filled private denylist.
+# 将本文件复制到 starter kit 目录之外，再替换下面的占位符。
+# 填写后的私有 denylist 不得提交到仓库。
 
 <company-name>
 <legal-entity-name>

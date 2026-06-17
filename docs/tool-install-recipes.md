@@ -1,94 +1,103 @@
-# Tool Install Recipes
+# 工具安装示例
 
-The same workflow core is shared across tools. Each tool receives a thin adapter only.
+同一套 workflow core 会被多个工具共享。每个工具只获得自己的薄 adapter。
 
 ## Codex
 
 ```bash
-agent-workflow-init --target . --tools codex
+agent-workflow-init --target . --tools codex --yes
 ```
 
-Generated files:
+生成文件：
 
 - `AGENTS.md`
-- `.codex/prompts/init-workspace.md`
-- `.codex/prompts/workflow-status.md`
+- `.codex/prompts/`
 - `workflow/`
 
 ## Claude Code
 
 ```bash
-agent-workflow-init --target . --tools claude
+agent-workflow-init --target . --tools claude --yes
 ```
 
-Generated files:
+生成文件：
 
+- `AGENTS.md`
 - `CLAUDE.md`
-- `.claude/commands/*.md`
+- `.claude/commands/`
 - `workflow/`
 
 ## Cursor
 
 ```bash
-agent-workflow-init --target . --tools cursor
+agent-workflow-init --target . --tools cursor --yes
 ```
 
-Generated files:
+生成文件：
 
+- `AGENTS.md`
 - `.cursor/rules/agent-workflow-core.mdc`
-- `.cursor/commands/*.md` (custom slash commands, Cursor 1.6+)
+- `.cursor/commands/`
 - `workflow/`
 
 ## GitHub Copilot
 
 ```bash
-agent-workflow-init --target . --tools copilot
+agent-workflow-init --target . --tools copilot --yes
 ```
 
-Generated files:
+生成文件：
 
+- `AGENTS.md`
 - `.github/copilot-instructions.md`
 - `workflow/`
 
 ## CodeBuddy
 
 ```bash
-agent-workflow-init --target . --tools codebuddy
+agent-workflow-init --target . --tools codebuddy --yes
 ```
 
-Generated files:
+生成文件：
 
+- `AGENTS.md`
 - `.codebuddy/instructions.md`
 - `workflow/`
 
 ## Kiro
 
 ```bash
-agent-workflow-init --target . --tools kiro
+agent-workflow-init --target . --tools kiro --yes
 ```
 
-Generated files:
+生成文件：
 
+- `AGENTS.md`
 - `.kiro/instructions.md`
 - `workflow/`
 
 ## Trae
 
 ```bash
-agent-workflow-init --target . --tools trae
+agent-workflow-init --target . --tools trae --yes
 ```
 
-`trea` is accepted as an alias and is normalized to `trae`.
+或使用别名：
 
-Generated files:
+```bash
+agent-workflow-init --target . --tools trea --yes
+```
 
+生成文件：
+
+- `AGENTS.md`
 - `.trae/instructions.md`
 - `workflow/`
 
-## Multi-Tool Install
+## 多工具安装
 
 ```bash
-agent-workflow-init --target . --tools codex,claude,cursor,copilot,codebuddy,kiro,trae
+agent-workflow-init --target . --tools codex,claude,cursor,copilot,codebuddy,kiro,trae --yes
 ```
 
-Do not expect every tool to provide the same runtime behavior. The core is the same; adapter capability depends on the tool.
+不要期待每个工具提供完全相同的运行体验。core 是同一套，adapter 能力取决于当前工具。

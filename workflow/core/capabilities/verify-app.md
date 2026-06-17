@@ -1,53 +1,51 @@
 # Capability: verify-app
 
 - **Tier**: recommended
-- **Stage**: end of `/04`; throughout `/07`
-- **Purpose**: Replace "I think it works" with an executed verification plan, recording build, unit, integration, browser, or manual evidence appropriate to the technology stack.
+- **Stage**: `/04` 结束前，`/07` 全程
+- **Purpose**: 用真实执行的验证计划替代“看起来可用”，记录构建、单测、集成、浏览器或人工验证证据。
 
-## Why
+## 为什么需要
 
-Verification quality is the single largest lever on review outcome. A documented verification loop, even a small one, repeatedly distinguishes "looks like it works" from "actually works". The loop must be tailored to the technology stack rather than a single global recipe.
+验证质量直接决定审查和交付质量。即使验证很小，也要写清命令、结果和证据；不能把未执行的测试、跳过的测试或构建通过写成业务验证通过。
 
-## Inputs
+## 输入
 
 - `workflow/team-profile.yaml#repos[*].tech_stack`
-- The implementation scope from `04-代码实现.md`
-- Available CI commands, local scripts, and manual procedures
-- The verification commands recorded in previous successful runs
+- `04-代码实现.md` 中的实现范围
+- 可用 CI 命令、本地脚本和人工流程
+- 历史成功验证命令
 
-## Outputs
+## 输出
 
 ```yaml
 result: PASS | WARN | BLOCK
 verifications:
   - repo: "<repo>"
     method: unit | integration | e2e | manual | build-only
-    command: "<command actually run>"
+    command: "<实际执行命令>"
     status: pass | fail | not-run
-    evidence: "<log path, screenshot path, or recorded observation>"
+    evidence: "<日志、截图或观察记录>"
 gaps:
-  - "<repo>: integration test not available; recorded as not-run."
-recommended_followup:
-  - "..."
+  - "<未执行原因>"
 ```
 
-## Blocking Rules
+## 阻断规则
 
-- Block when the implementation stage closes with no successful verification on any affected repository and no recorded reason.
-- Downgrade to WARN when the tech stack supports only manual verification and the user has explicitly confirmed the result.
-- Always record `not-run` rather than skipping the entry silently.
+- 实现阶段结束时，所有受影响仓库都没有成功验证且无原因记录时阻断。
+- 测试命令跳过测试、无断言输出或只有编译成功时，不能写成业务验证通过。
+- 只能人工验证时，必须记录步骤和观察结果；否则降级为 WARN。
 
-## Adapter Examples
+## Adapter 示例
 
-- **L0**: A required verification section in `04-代码实现.md`.
-- **L1**: A prompt that proposes the verification command based on the detected tech stack and asks the user to run it.
-- **L2**: A slash command that runs the verification and writes the result back into the feature document.
-- **L3**: A hook that prevents marking implementation as done until verification status is recorded.
-- **L4**: A subagent that owns verification, executes the runner, and posts the structured result.
+- **L0**: `04-代码实现.md` 必须有验证章节。
+- **L1**: prompt 根据技术栈建议验证命令。
+- **L2**: slash command 执行本地验证并写入结果。
+- **L3**: hook 阻止缺少验证记录的完成状态。
+- **L4**: subagent 专门执行和整理验证结果。
 
-## Anti-Patterns
+## 反模式
 
-- Marking implementation as complete with no verification evidence.
-- Pasting a passing log without naming which command produced it.
-- Claiming a manual test passed without describing the exact steps.
-- Using a single recipe across stacks that need different verification approaches.
+- 没有证据就标记实现完成。
+- 只贴日志，不写命令。
+- `BUILD SUCCESS` 但测试被跳过，仍写“测试通过”。
+- 用一个技术栈的验证方式套所有项目。

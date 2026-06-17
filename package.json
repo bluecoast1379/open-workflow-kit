@@ -1,8 +1,8 @@
 {
   "name": "agent-workflow-starter-kit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
-  "description": "Tool-agnostic agent workflow starter kit with local initialization and multi-tool adapters.",
+  "description": "面向中文团队的工具无关 agent 研发工作流 starter kit，支持本地初始化和多工具 adapter。",
   "keywords": [
     "agent-workflow",
     "workflow",

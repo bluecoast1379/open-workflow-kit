@@ -1,54 +1,46 @@
-# Shareable Install
+# 可分享安装方式
 
-This document is for teams receiving a workflow address or release archive.
+本文面向拿到 workflow 地址或发布归档的接收团队。
 
-## From A Local Tarball
-
-If you received `agent-workflow-starter-kit-0.1.0.tgz`:
+## 从本地 tarball 安装
 
 ```bash
 cd /path/to/target-workspace
-npm install --no-audit --no-fund /path/to/agent-workflow-starter-kit-0.1.0.tgz
-./node_modules/.bin/agent-workflow-init --target . --tools codex,claude,cursor,codebuddy,trea --yes
+npm install /path/to/agent-workflow-starter-kit-<version>.tgz --save-dev
+npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 ```
 
-`trea` is accepted as an alias for `trae`.
-
-## From A Git Address
-
-If the maintainer gives you a Git URL:
+## 从 Git 地址安装
 
 ```bash
 cd /path/to/target-workspace
-npx --yes --package git+https://github.com/bluecoast1379/open-workflow-kit.git agent-workflow-init --target . --tools codex,claude,cursor
+npm install git+https://github.com/bluecoast1379/open-workflow-kit.git --save-dev
+npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 ```
 
-Replace the URL if you are using a fork or private mirror. The initializer runs locally in your workspace.
+如果使用 fork 或私有 mirror，请替换 URL。初始化器只在本地工作区运行。
 
-## From A Package Registry
-
-If the package is published to a registry:
+## 从 package registry 安装
 
 ```bash
 cd /path/to/target-workspace
-npx --yes --package agent-workflow-starter-kit agent-workflow-init --target . --tools codex,claude,cursor
+npm install agent-workflow-starter-kit --save-dev
+npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 ```
 
-## What Gets Generated
+## 会生成什么
 
 - `workflow/team-profile.yaml`
 - `workflow/core/`
 - `workflow/adapters/`
-- `AGENTS.md` for Codex when selected
-- `CLAUDE.md` and `.claude/commands/` for Claude Code when selected
-- `.cursor/rules/` and `.cursor/commands/` for Cursor when selected
-- `.codebuddy/`, `.kiro/`, `.trae/`, or `.github/` adapter files when selected
-- `workflow/INITIALIZATION_QUESTIONS.md` when local source materials are missing
+- `workflow/INSTALL_REPORT.md`
+- 必要资料缺失时生成 `workflow/INITIALIZATION_QUESTIONS.md`
+- 选中工具的薄入口，例如 `AGENTS.md`、`CLAUDE.md`、`.cursor/commands/`
 
-## Safety Boundary
+## 安全边界
 
-The initializer does not pull remote code, create branches, push code, trigger builds, deploy, write databases, or modify production config. It only reads local files and writes workflow files into the target workspace.
+初始化器不会拉取远程代码、创建分支、push 代码、触发构建、部署、写数据库或修改生产配置。它只读取本地文件，并把工作流文件写入目标工作区。
 
-## Acceptance
+## 验收
 
-After installation, follow the receiver checklist in [Maintainer Handoff](./maintainer-handoff.md). The important validation is that `workflow/team-profile.yaml`, `workflow/core/`, and the selected tool adapters exist, while missing local materials are captured in `workflow/INITIALIZATION_QUESTIONS.md`.
+安装后按 [维护者交接](./maintainer-handoff.md) 的接收方清单检查。关键点是确认 `workflow/team-profile.yaml`、`workflow/core/` 和选中工具 adapter 已生成；缺失本地资料会记录在 `workflow/INITIALIZATION_QUESTIONS.md`。

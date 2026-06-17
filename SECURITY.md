@@ -1,39 +1,39 @@
-# Security Policy
+# 安全策略
 
-## Supported Versions
+## 支持版本
 
-The public project supports the latest released version. Security fixes are expected to land on the default branch first.
+公开项目默认支持最新发布版本。安全修复优先进入默认分支，再由维护者手动发布。
 
-## Reporting A Vulnerability
+## 报告漏洞
 
-Do not open a public issue containing secrets, credentials, private URLs, customer data, private source code, logs, database exports, or production configuration.
+不要在公开 issue 中提交密钥、凭证、私有 URL、客户数据、私有源码、日志、数据库导出或生产配置。
 
-Report security-sensitive findings privately to the repository maintainer through GitHub's private vulnerability reporting feature if it is enabled. If it is not enabled, contact the maintainer through a private channel and share only the minimum information needed to reproduce the issue.
+请通过仓库维护者指定的私有渠道报告安全问题，并只提供定位问题所需的最小上下文。
 
-## Scope
+## 范围
 
-In scope:
+本项目关注：
 
-- initializer behavior that writes unsafe files into a target workspace;
-- accidental inclusion of private data in the package;
-- sanitizer bypasses;
-- command injection or path traversal in local scripts;
-- generated adapters that weaken workflow hard gates.
+- 初始化器写入了不应写入的私有内容；
+- 脱敏检查遗漏明显敏感模式；
+- 生成的 adapter 削弱了 workflow 硬闸门；
+- 文档引导用户执行不安全的自动远程操作。
 
-Out of scope:
+不在范围内：
 
-- vulnerabilities in a target team's private codebase;
-- misuse after a user manually edits generated files;
-- remote publishing, branch creation, deployment, or database operations, because this project keeps those actions manual-only.
+- 用户手动改坏生成文件后的误用；
+- 目标团队自己的业务代码缺陷；
+- 目标团队工具或插件本身的漏洞；
+- 未经授权上传到 issue、PR 或讨论区的私有数据。
 
-## Sanitization Check
+## 脱敏检查
 
-Before publishing or sharing a release:
+发布或分享前必须运行：
 
 ```bash
 npm run check
 npm run build:release
-node bin/check-sanitized.cjs --extra-banned /path/to/private-denylist.txt
+node bin/check-sanitized.cjs --extra-banned <private-denylist-file>
 ```
 
-Keep the private denylist outside the repository.
+`private-denylist-file` 必须放在 starter kit 外部，不要提交到仓库。

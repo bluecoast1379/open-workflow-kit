@@ -1,51 +1,51 @@
-# Contributing
+# 贡献说明
 
-Thanks for improving Agent Workflow Starter Kit. This project keeps the workflow core generic, local-first, and tool-agnostic.
+感谢改进 Agent Workflow Starter Kit。本项目坚持三个原则：workflow core 保持通用、本地优先、工具无关。
 
-## Before You Open A Pull Request
+## 提交 PR 前
 
-Run:
+先运行：
 
 ```bash
 npm run check
 npm run build:release
 ```
 
-Also inspect the generated release manifest:
+再检查本地发布清单：
 
 ```bash
 cat dist/RELEASE_MANIFEST.md
 ```
 
-## Privacy Rules
+## 隐私规则
 
-Do not contribute:
+请不要贡献以下内容：
 
-- private company names or internal project names;
-- real repository names from a private workspace;
-- customer, employee, learner, patient, account, payment, or operational records;
-- production URLs, internal domains, logs, SQL exports, screenshots, credentials, tokens, or private keys;
-- incident details that can be traced back to a real organization.
+- 私有公司名称或内部项目名称；
+- 私有工作区里的真实仓库名；
+- 客户、员工、学员、患者、账号、支付或运营记录；
+- 生产 URL、内部域名、日志、SQL 导出、截图、凭证、token 或私钥；
+- 可以追溯到真实组织的事故细节。
 
-Examples must be synthetic and replaceable. If a rule came from a private incident, generalize the mechanism and remove identifying facts before proposing it.
+示例必须是合成的、可替换的。如果规则来自私有事件，请抽象机制并移除可识别事实后再提交。
 
-## Change Scope
+## 修改范围
 
-- Put tool-neutral behavior in `workflow/core/`.
-- Put team-specific configuration examples under `examples/`.
-- Put tool-specific behavior in adapters or initializer generation logic.
-- Keep adapters thin; they must not weaken core hard gates.
-- Keep remote Git, branch creation, push, package publication, deployment, and database writes manual-only.
+- 工具无关行为放在 `workflow/core/`。
+- 团队特化配置示例放在 `examples/`。
+- 工具特定行为放在 adapter 或初始化器生成逻辑里。
+- adapter 必须保持薄入口，不能削弱 core 硬闸门。
+- 远程 Git、创建分支、push、包发布、部署和数据库写入必须保持人工执行。
 
-## Pull Request Checklist
+## PR 检查清单
 
-- The change is generic and not tied to one private organization.
-- `npm run check` passes.
-- `npm run build:release` passes.
-- New or changed examples are synthetic.
-- Documentation explains migration or compatibility impact when generated file layout changes.
-- No generated `dist/` files are committed unless the maintainer explicitly asks for a release artifact commit.
+- 修改是通用的，不绑定任何私有组织。
+- `npm run check` 通过。
+- `npm run build:release` 通过。
+- 新增或修改的示例都是合成数据。
+- 生成文件布局变化时，文档说明迁移或兼容影响。
+- 除非维护者明确要求提交发布产物，否则不要提交生成的 `dist/` 文件。
 
-## Commit History
+## 提交历史
 
-Before public publication, maintainers should inspect commit messages and changed files for private references. If private data ever enters history, rewrite the unpublished history before pushing, or rotate the affected secret if the data was sensitive.
+公开发布前，维护者应检查 commit message 和变更文件是否包含私有引用。如果私有数据进入尚未发布的历史，应在 push 前改写历史；如果泄露的是敏感凭证，应轮换对应密钥。

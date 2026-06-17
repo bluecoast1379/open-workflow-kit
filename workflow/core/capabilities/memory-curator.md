@@ -2,49 +2,47 @@
 
 - **Tier**: optional
 - **Stage**: `/12`
-- **Purpose**: Extract reusable lessons from the retrospective into a structured memory index, without leaking private business facts.
+- **Purpose**: 从复盘中提取可复用经验，脱敏后沉淀为结构化记忆，避免经验只留在单个项目里。
 
-## Why
+## 为什么需要
 
-Lessons recorded only inside long retrospective documents tend to be invisible to future work. A curated index lets agents and humans see the operative rule without re-reading the original case. Without a curation step, the same lesson is re-learned project after project.
+复盘如果只写事件经过，很难复用。可复用记忆应抽象为：现象、根因、防护规则、触发条件和适用边界，并移除公司、客户、仓库、URL、日志、SQL 等私有信息。
 
-## Inputs
+## 输入
 
-- The retrospective document `12-复盘总结.md`
-- The current memory index, for example `.claude/MEMORY.md` or an equivalent file referenced by the team profile
-- A redaction policy listing terms that must not leave the team context
+- `12-复盘总结.md`
+- 当前团队的记忆索引或知识库
+- 脱敏词表和对外分发边界
 
-## Outputs
+## 输出
 
 ```yaml
 result: PASS | WARN
-added_entries:
-  - phenomenon: "<observable, redacted>"
-    root_cause: "<mechanism, redacted>"
-    prevention: "<rule or check, redacted>"
-    stage_owner: "<stage>"
-    source_feature: "<feature name>"
-skipped_due_to_redaction:
-  - "<reason>"
-recommended_followup:
-  - "Confirm whether rule X should become a hard gate."
+memories:
+  - phenomenon: "<现象>"
+    root_cause: "<根因>"
+    prevention: "<预防规则>"
+    trigger: "<何时适用>"
+    redaction: "<已脱敏内容>"
+questions:
+  - "<需要人工确认是否固化为规则的问题>"
 ```
 
-## Blocking Rules
+## 阻断规则
 
-This capability does not block. It records and proposes. The team decides whether a proposed entry becomes a rule.
+本能力不直接阻断交付。任何记忆写入前都必须完成脱敏检查；是否进入团队规则由人工确认。
 
-## Adapter Examples
+## Adapter 示例
 
-- **L0**: A redaction checklist inside the retrospective template.
-- **L1**: A prompt that walks the retrospective and proposes structured entries.
-- **L2**: A slash command that writes proposed entries into the memory index.
-- **L3**: A hook that prevents committing a retrospective without a curated section.
-- **L4**: A subagent dedicated to memory curation and redaction.
+- **L0**: 复盘模板固定“可复用经验”章节。
+- **L1**: prompt 输出结构化记忆候选。
+- **L2**: slash command 写入待审记忆文件。
+- **L3**: hook 扫描私有词。
+- **L4**: subagent 专门做复盘抽象和脱敏。
 
-## Anti-Patterns
+## 反模式
 
-- Copying the original incident description into the memory index without redaction.
-- Recording lessons as long prose instead of structured `phenomenon / root_cause / prevention`.
-- Treating curation as optional and never returning to it.
-- Burying high-severity lessons inside the same low-priority backlog as cosmetic improvements.
+- 直接复制事故原文。
+- 记录真实客户、仓库、URL、日志或 SQL。
+- 只写长段感想，没有规则候选。
+- 把一次性特例升级成通用硬规则。

@@ -1,21 +1,21 @@
 # Capability: branch-gatekeeper
 
 - **Tier**: essential
-- **Stage**: `/04`, `/04A`, `/04B` (before any business code modification)
-- **Purpose**: Stop business code implementation when the current branch or workflow stage is not authorized.
+- **Stage**: `/04`, `/04A`, `/04B`
+- **Purpose**: 在业务代码写入前确认功能分支闸门和实现阶段闸门，防止代码落到错误基线。
 
-## Why
+## 为什么需要
 
-Untracked branch and stage drift is the most common cause of code being written into the wrong baseline. A documented stage gate combined with a real branch check prevents accidental modifications to `main`, `prod`, `test`, integration, or unrelated history branches.
+分支漂移和阶段漂移是代码管理失控的高频来源。实现必须同时满足：当前请求已进入实现阶段，且每个受影响仓库都在本需求功能分支或登记 worktree 中。
 
-## Inputs
+## 输入
 
-- `workflow/team-profile.yaml#branch_model` (production branch, integration branch, feature branch rule)
-- Current Git branch of each affected repository (`git rev-parse --abbrev-ref HEAD`)
-- Active workflow stage (from the user request and `features/{feature}/00-工作流状态.md`)
-- Feature name and feature documents
+- `workflow/team-profile.yaml#branch_model`
+- 每个受影响仓库的当前分支
+- 用户请求和 `features/{feature}/00-工作流状态.md` 中的当前阶段
+- 功能名称和前序阶段文档
 
-## Outputs
+## 输出
 
 ```yaml
 result: PASS | WARN | BLOCK
@@ -31,27 +31,27 @@ checks:
         verdict: pass | block
         reason: "..."
 blocked_reason: "..."
-recommended_action: "Create or switch to feature branch using the rule in team-profile."
+recommended_action: "请按 team-profile 中的分支规则准备功能分支。"
 ```
 
-## Blocking Rules
+## 阻断规则
 
-- Block when the current request is not an implementation request (`/04`, `/04A`, `/04B`) and the agent is about to modify business source, config, SQL, migration, or deployment files.
-- Block when any affected repository is currently on a non-feature branch (production, integration, unrelated history, unknown).
-- Block when feature branch name does not match `branch_model.feature_branch_rule`.
-- Downgrade to WARN when the repository has no Git metadata; require explicit user confirmation before writing.
+- 当前不是 `/04`、`/04A`、`/04B`，但 agent 将要修改业务源码、配置、SQL、迁移或部署文件时阻断。
+- 任一受影响仓库位于生产、集成、历史、不明或无关分支时阻断。
+- 功能分支不符合 `branch_model.feature_branch_rule` 时阻断。
+- 无 Git 元数据时降级为 WARN，并要求用户明确确认本地快照风险后才能继续。
 
-## Adapter Examples
+## Adapter 示例
 
-- **L0**: Document the gate inside `AGENTS.md` and refuse to write code without confirming both gates.
-- **L1**: A prompt that asks the user to paste current branch output before proposing edits.
-- **L2**: A slash command that runs the per-repo branch check and prints a verdict before yielding to the implementation step.
-- **L3**: A pre-write hook that aborts the write if the branch check fails.
-- **L4**: A subagent dedicated to running and reporting the gate result, separate from the main implementation agent.
+- **L0**: 在 `AGENTS.md` 中写明闸门规则。
+- **L1**: prompt 要求用户粘贴当前分支输出。
+- **L2**: slash command 运行仓级分支检查并输出结论。
+- **L3**: 写入前 hook 发现分支不合规时中断。
+- **L4**: 独立 subagent 负责执行准入检查并返回结构化结果。
 
-## Anti-Patterns
+## 反模式
 
-- Assuming the branch is correct because the directory name "looks right".
-- Skipping the gate when the change "seems small".
-- Editing code in `main` or `prod` to fix a release issue without first creating a feature branch.
-- Mixing two features on the same feature branch.
+- 因为目录名看起来正确就跳过分支检查。
+- 认为“小改动”可以绕过 04 阶段。
+- 在 `main`、`prod`、`test` 或 integration 分支上直接修代码。
+- 两个需求混用同一个功能分支。
