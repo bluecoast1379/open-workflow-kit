@@ -7,6 +7,13 @@ team:
   business_definition: "<TODO>"
   target_users: []
 
+workspace_context:
+  operating_defaults:
+    planning_language: "zh-CN"
+    display_language: "zh-CN-first"
+    language_policy: "Use Simplified Chinese by default for workflow communication, stage deliverables, status summaries, reviews, tests, acceptance, training, and release notices; preserve official names and technical terms in their original form."
+    terminology_policy: "Keep product names, brand names, code identifiers, commands, file paths, branch names, APIs, SDKs, frameworks, protocols, standards, error messages, and official English terms unchanged unless the user asks for localization."
+
 enabled_tools: []
 detected_tools: []
 
@@ -39,16 +46,24 @@ source_materials:
 repos: []
 
 branch_model:
-  type: "<TODO>"
-  production_branch: "<TODO>"
-  integration_branch: "<TODO>"
-  feature_branch_rule: "<TODO>"
+  type: "prod-main-development"
+  production_branch: "prod"
+  integration_branch: "main"
+  development_branch_base: "prod"
+  testing_branch: "main"
+  test_branch_policy: "Do not create a separate test branch for personal projects; main is the testing/integration branch."
+  release_flow: "Create development branches from current prod, develop locally on the development branch, merge completed work into main for testing, then promote main to prod for release."
+  feature_branch_rule: "Use feature/<short-name> or dev/<short-name> development branches created from prod, or isolated worktrees based on prod, for implementation; do not create branches, merge, push, or promote to prod without explicit user approval."
   worktree_dir: "_worktrees"
 
 risk_policy:
   remote_git_operations: "manual-only"
   branch_creation: "manual-only"
   push_and_release: "manual-only"
+  ci_workflow_changes: "manual-review-required"
+  cd_workflow_changes: "manual-review-required"
+  auto_deploy_before_first_prod_release: "blocked"
+  production_deployments: "manual-approval-required-until-guarded-auto-approved"
   database_writes: "manual-only"
   config_writes: "manual-only"
   high_risk_files:

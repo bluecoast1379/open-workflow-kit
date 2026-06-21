@@ -1,3 +1,3 @@
 # Templates
 
-这些模板保持通用。目标团队应通过 `workflow/team-profile.yaml` 和 `features/{feature}/` 文档进行特化，不要把私有公司数据硬编码到 core 文件。
+These templates are intentionally generic. Target teams should specialize them through `workflow/team-profile.yaml` and feature documents, not by hard-coding private company data into core files.

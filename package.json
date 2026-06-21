@@ -1,8 +1,8 @@
 {
-  "name": "agent-workflow-starter-kit",
-  "version": "0.3.0",
+  "name": "open-workflow-kit",
+  "version": "0.4.0",
   "private": false,
-  "description": "面向中文团队的工具无关 agent 研发工作流 starter kit，支持本地初始化和多工具 adapter。",
+  "description": "面向中文团队的工具无关 agent 研发工作流 kit，支持本地初始化、多工具 adapter 和阶段闸门。",
   "keywords": [
     "agent-workflow",
     "workflow",
@@ -40,6 +40,7 @@
   ],
   "bin": {
     "agent-workflow-init": "bin/init-workspace.cjs",
+    "open-workflow-init": "bin/init-workspace.cjs",
     "agent-workflow-check-sanitized": "bin/check-sanitized.cjs"
   },
   "scripts": {

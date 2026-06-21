@@ -1,6 +1,6 @@
-# Agent Workflow Starter Kit
+# Open Workflow Kit
 
-一个可分发给其他团队的通用研发工作流 starter kit。它把工作流拆成三层：
+一个可分发给其他团队的通用研发工作流 kit。它把工作流拆成三层：
 
 - `workflow/core`: 工具无关的流程、阶段、闸门、模板和检查能力。
 - `workflow/team-profile.yaml`: 目标团队的机器可读配置，由初始化器根据本地资料生成。
@@ -29,6 +29,9 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target .
 ```bash
 # 指定工具入口
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,claude,cursor
+
+# GitHub 包安装方式
+npx --yes --package "git+https://github.com/bluecoast1379/open-workflow-kit.git" agent-workflow-init --target . --tools codex,claude,cursor
 
 # 工具名支持 trea 别名，会自动归一为 trae
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,trea,codebuddy
@@ -72,18 +75,21 @@ node open-workflow-kit/bin/check-sanitized.cjs
 1. `/new-feature`
 2. `/01-需求讨论`
 3. `/02-产品文档`
-4. `/03-技术架构`
-5. `/04-代码实现`、`/04A-前端代码实现`、`/04B-后端代码实现`
-6. `/05-代码审查`
-7. `/06-测试用例`
-8. `/07-测试执行`
-9. `/08-验收表格`
-10. `/09-验收`
-11. `/10-培训文档`
-12. `/11-上线邮件通知`
-13. `/12-复盘总结`
+4. `/02B-UI设计`
+5. `/03-技术架构`
+6. `/04-代码实现`、`/04A-前端代码实现`、`/04B-后端代码实现`
+7. `/05-代码审查`
+8. `/06-测试用例`
+9. `/07-测试执行`
+10. `/08-验收表格`
+11. `/09-验收`
+12. `/10-培训文档`
+13. `/11-上线邮件通知`
+14. `/12-复盘总结`
 
-业务代码修改必须先通过功能分支闸门、阶段闸门和并行开发隔离检查。文档分析和初始化不等于授权实现代码。
+业务代码修改必须先通过功能分支闸门、阶段闸门和并行开发隔离检查。涉及 UI 或前端的功能必须先完成 `/02B-UI设计` 并让 `/04A-前端代码实现` 遵循设计基线。文档分析和初始化不等于授权实现代码。
+
+团队版默认禁止 agent 自动执行远程 Git、创建分支、push、tag、merge、构建部署和生产配置写入；这些动作必须由人手动执行，或在 `team-profile.yaml` 中显式登记安全只读 adapter。
 
 ## 维护建议
 

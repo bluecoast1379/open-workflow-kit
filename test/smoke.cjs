@@ -59,6 +59,7 @@ for (const rel of [
   'AGENTS.md',
   'CLAUDE.md',
   '.codex/prompts/init-workspace.md',
+  '.codex/prompts/02B-UI设计.md',
   '.codex/prompts/04-代码实现.md',
   '.codex/prompts/05-代码审查.md',
   '.codex/prompts/12-复盘总结.md',
@@ -71,6 +72,7 @@ for (const rel of [
   'workflow/team-profile.yaml',
   'workflow/INITIALIZATION_QUESTIONS.md',
   'workflow/core/commands/init-workspace.md',
+  'workflow/core/commands/02B-UI设计.md',
   'workflow/core/commands/04-代码实现.md',
   'workflow/core/capabilities/branch-gatekeeper.md',
   'workflow/core/capabilities/release-safety-checker.md',
@@ -95,6 +97,7 @@ assertContains('AGENTS.md', '## 工作流命令');
 assertContains('AGENTS.md', '## 任务描述模板');
 assertContains('AGENTS.md', '## 工具使用方式');
 assertContains('AGENTS.md', '### Cursor');
+assertContains('AGENTS.md', '/02B-UI设计');
 assertContains('AGENTS.md', '/04-代码实现');
 // The command table must list every stage.
 assertContains('AGENTS.md', '/12-复盘总结');
@@ -103,6 +106,7 @@ assertContains('AGENTS.md', '/12-复盘总结');
 assertContains('.cursor/rules/agent-workflow-core.mdc', '.cursor/commands/');
 assertContains('.cursor/rules/agent-workflow-core.mdc', 'workflow/core/commands/04-代码实现.md');
 // Cursor custom slash command adapters must be generated for every stage.
+assertFile('.cursor/commands/02B-UI设计.md');
 assertFile('.cursor/commands/04-代码实现.md');
 assertFile('.cursor/commands/12-复盘总结.md');
 assertContains('.cursor/commands/04-代码实现.md', 'workflow/core/commands/04-代码实现.md');
