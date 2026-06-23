@@ -23,10 +23,18 @@ UI 设计: 在 `/02-产品文档` 之后、`/03-技术架构` 之前，输出可
 - Remote Git refresh, branch creation, push, tag, merge, build/deploy trigger, database write, production config write, and publishing a Figma file are manual-only actions unless explicitly authorized.
 - This stage does not authorize business code changes.
 - If no external visual reference exists, create a written UI baseline first; do not invent polished final visuals without marking them as draft design intent.
+- 默认只产出 `02B-UI设计.md` 设计文档。除非用户在本阶段明确要求生成 UI 设计图/视觉稿/原型图，否则不调用任何设计图生成工具（设计类 MCP、图像生成、Figma 文件生成、可视化/HTML 视觉稿导出等）去生成设计文件。
 - For iOS/macOS/watchOS/visionOS targets, default to Apple platform conventions before custom patterns.
 - For Web targets, record responsive breakpoints, keyboard behavior, accessibility rules, and component/token mapping explicitly.
 - If Figma is used, document the Figma file/page/frame, component names, variants, Auto Layout/constraints, prototype links, annotations, measurements, and readiness status.
 - If no Figma file is used, record wireframe descriptions, layout constraints, component inventory, state matrix, and screenshot/visual QA plan in enough detail for implementation.
+
+## 设计图生成边界
+
+- 默认文档优先：本阶段默认产物只有 `features/{feature}/02B-UI设计.md` 与 `features/{feature}/00-工作流状态.md` 的状态更新，用文字基线、线框描述、组件清单和状态矩阵把设计讲清楚。
+- 不主动出图：未经用户在本阶段明确要求，不得调用任何设计图/视觉稿生成工具生成设计文件，也不得把臆造的高保真视觉当成既定设计。
+- 显式触发才出图并留痕：仅当用户明确要求生成 UI 设计图/视觉稿/原型图时才调用相应工具；生成后在 `02B-UI设计.md` 记录使用的工具、产物清单和文件路径，并标注其为草稿设计意图还是已确认设计。
+- 不削弱 04A Gate：无论是否出图，`/04A-前端代码实现` 仍以 `02B-UI设计.md` 的设计基线为准。
 
 ## Required Outputs
 
