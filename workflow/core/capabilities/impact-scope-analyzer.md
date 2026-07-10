@@ -48,3 +48,7 @@ unknowns:
 - 架构阶段记录一次后，后续 diff 变化不回看。
 - 忽略配置、数据脚本、定时任务和发布资产。
 - 未知项不写入文档。
+
+## 相关检查清单
+
+- `workflow/core/checklists/validation-change-review.md`：放开/收紧校验时的空值复扫五步法与全写入路径覆盖，影响面矩阵必须包含该清单的盘点结果。

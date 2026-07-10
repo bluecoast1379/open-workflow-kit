@@ -55,3 +55,7 @@ recommended_action: "请按 team-profile 中的分支规则准备功能分支。
 - 认为“小改动”可以绕过 04 阶段。
 - 在 `main`、`prod`、`test` 或 integration 分支上直接修代码。
 - 两个需求混用同一个功能分支。
+
+## 相关检查清单
+
+- `workflow/core/checklists/branch-hygiene.md`：分支流向（只出不进）、发布候选溯源、提交卫生的逐项执行清单。

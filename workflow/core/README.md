@@ -7,15 +7,18 @@
 - 同一套 core，多个工具 adapter 分层增强。
 - 不承诺所有工具体验完全一致。
 - 业务代码修改必须通过功能分支闸门和实现阶段闸门。
-- 远程 Git 刷新、创建分支、push、tag、merge、构建 / 部署触发、数据库写入和生产配置写入必须人工执行。
+- 高风险写操作（远程 Git 刷新、创建分支、push/tag/merge、构建 / 部署触发、数据库写入、生产配置写入）按 `execution-policy.md` 分级处理：默认每次询问，agent 出命令 + 风险说明，由用户选择执行者，代执行写审计日志。
 - 同仓多需求进入实现阶段后必须使用独立 worktree。
 - adapter 可以增强或降级体验，但不能削弱 core 闸门。
 
 ## 目录地图
 
 - `commands/`: 每个阶段的契约。
-- `templates/`: 通用文档模板。
+- `templates/`: 通用文档模板（含 api/ui-test-plan 与 prototype-page.html）。
 - `capabilities/`: 可复用检查能力。
+- `checklists/`: 高频事故模式的逐项检查清单。
+- `execution-policy.md`: 高风险写操作的分级执行策略。
+- `testing-automation-guide.md`: 接口/功能测试双轨自动化接入指引。
 
 ## 团队特化
 

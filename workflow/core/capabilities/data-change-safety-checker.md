@@ -50,3 +50,7 @@ data_changes:
 - 没有目标范围就执行数据修复。
 - 只写“可回滚”，没有回滚 SQL 或业务口径。
 - 用构建通过替代数据兼容验证。
+
+## 相关检查清单
+
+- `workflow/core/checklists/data-consistency-review.md`：统计主状态、时间列口径、手工 SQL 实体映射、MAX+1 防自撞、DML 行数钉死、导出三对齐、脱敏值边界。

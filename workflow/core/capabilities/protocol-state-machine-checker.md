@@ -55,3 +55,7 @@ blocking_gaps:
 - 把本地失败原因当成外部权威结果。
 - 没有真实样例就写“联调通过”。
 - 只测正常路径，不测重复通知、超时、逆序和部分成功。
+
+## 相关检查清单
+
+- `workflow/core/checklists/third-party-integration-review.md`：状态机、幂等文案优先、禁静默兜底、重试分类、变更扇出聚合、顺序消费不抛异常的逐项清单。

@@ -7,10 +7,12 @@ Each command file is a stage contract. Tools may expose slash commands, prompts,
 Stages:
 
 - `/init-workspace`
+- `/connect-toolchain`
 - `/new-feature`
 - `/01-需求讨论`
 - `/02-产品文档`
 - `/02B-UI设计`
+- `/02C-HTML原型`（可选，显式触发）
 - `/03-技术架构`
 - `/03-06-研发准备`
 - `/04-代码实现`

@@ -48,3 +48,7 @@ gaps:
 - 只看页面截图，不查提交字段。
 - 忽略错误态、空态、加载态和权限态。
 - 移动端文本溢出但未记录。
+
+## 02C 原型反查（tokens 卡关）
+
+`/02C-HTML原型` 产物必须按本能力执行 tokens 反查：扫描原型中的颜色/字号/间距取值，出现 `workflow/design/tokens.css` 之外的硬编码即 BLOCK 并列出违规行；组件命名不在 `workflow/design/components.md` 清单内且无新增说明即 BLOCK；页面清单与 02B 不一致记 WARN。

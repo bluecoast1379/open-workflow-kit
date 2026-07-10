@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原型 · {feature}</title>
+<!--
+  /02C-HTML原型 骨架模板
+  规则：
+  1. 下方 :root 的 tokens 必须替换为 workflow/design/tokens.css 的真实内容；
+     页面中禁止出现 tokens 之外的硬编码颜色/字号/间距。
+  2. 每个 <section class="screen"> 顶部保留 data-prd 注释锚点（PRD 章节号 + 02B 页面编号）。
+  3. 单文件自包含：不引外部 CDN、不引框架；微型 hash 路由 + 状态切换即可演示。
+-->
+<style>
+:root {
+  /* ===== 以下 tokens 由 workflow/design/tokens.css 替换 ===== */
+  --color-primary: #2563eb;
+  --color-danger: #dc2626;
+  --color-text: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-border: #e5e7eb;
+  --color-bg: #f9fafb;
+  --color-surface: #ffffff;
+  --font-size-title: 18px;
+  --font-size-body: 14px;
+  --font-size-caption: 12px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;  --space-4: 16px;  --space-6: 24px;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+* { box-sizing: border-box; margin: 0; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+       font-size: var(--font-size-body); color: var(--color-text); background: var(--color-bg); }
+
+/* ===== 原型工作台外框（评审辅助，非业务 UI）===== */
+.proto-bar { position: sticky; top: 0; display: flex; gap: var(--space-2); align-items: center;
+  padding: var(--space-2) var(--space-4); background: var(--color-text); color: #fff;
+  font-size: var(--font-size-caption); z-index: 99; }
+.proto-bar a { color: #fff; opacity: .8; text-decoration: none; padding: var(--space-1) var(--space-2); }
+.proto-bar a.active { opacity: 1; border-bottom: 2px solid var(--color-primary); }
+.proto-bar .states { margin-left: auto; display: flex; gap: var(--space-1); }
+.proto-bar .states button { font-size: var(--font-size-caption); padding: 2px var(--space-2);
+  border: 1px solid #fff3; background: transparent; color: #fff; border-radius: var(--radius); cursor: pointer; }
+.proto-bar .states button.on { background: var(--color-primary); border-color: var(--color-primary); }
+
+/* ===== 屏幕容器与四态 ===== */
+.screen { display: none; max-width: 960px; margin: var(--space-6) auto; padding: 0 var(--space-4); }
+.screen.active { display: block; }
+.screen[data-state] .state-panel { display: none; }
+.screen[data-state="normal"]  .state-normal,
+.screen[data-state="empty"]   .state-empty,
+.screen[data-state="error"]   .state-error,
+.screen[data-state="loading"] .state-loading { display: block; }
+.anno { font-size: var(--font-size-caption); color: var(--color-text-secondary);
+  padding: var(--space-2) var(--space-3); background: var(--color-surface);
+  border-left: 3px solid var(--color-primary); margin-bottom: var(--space-4); }
+
+/* ===== 组件样式一律来自 components.md 清单（示例）===== */
+.card { background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: var(--space-4); }
+.btn { display: inline-block; padding: var(--space-2) var(--space-4); border-radius: var(--radius);
+  border: 1px solid var(--color-primary); background: var(--color-primary); color: #fff;
+  font-size: var(--font-size-body); cursor: pointer; }
+.btn.secondary { background: var(--color-surface); color: var(--color-primary); }
+.empty, .error-box, .loading-box { text-align: center; padding: var(--space-6);
+  color: var(--color-text-secondary); }
+.error-box { color: var(--color-danger); }
+</style>
+</head>
+<body>
+
+<nav class="proto-bar">
+  <strong>原型 · {feature}</strong>
+  <a href="#/list" data-route="#/list">列表页</a>
+  <a href="#/detail" data-route="#/detail">详情页</a>
+  <!-- 按 02B 页面清单补齐路由入口 -->
+  <span class="states">
+    状态:
+    <button data-state="normal" class="on">正常</button>
+    <button data-state="empty">空态</button>
+    <button data-state="error">错误</button>
+    <button data-state="loading">加载</button>
+  </span>
+</nav>
+
+<!-- 屏幕：列表页 -->
+<section class="screen" id="screen-list" data-route="#/list" data-state="normal">
+  <div class="anno">PRD §x.x · 02B 页面清单 #x —— 本屏验收要点：<待填></div>
+  <div class="state-panel state-normal">
+    <div class="card">
+      <h2 style="font-size: var(--font-size-title); margin-bottom: var(--space-3);">列表标题</h2>
+      <p style="margin-bottom: var(--space-3);">正常态内容（按 components.md 的表格/列表组件规范搭建）。</p>
+      <button class="btn" onclick="location.hash='#/detail'">进入详情（演示核心流程）</button>
+    </div>
+  </div>
+  <div class="state-panel state-empty"><div class="card empty">暂无数据 —— 空态文案与引导按 02B 定义</div></div>
+  <div class="state-panel state-error"><div class="card error-box">加载失败 —— 错误提示与重试入口按 02B 定义</div></div>
+  <div class="state-panel state-loading"><div class="card loading-box">加载中…</div></div>
+</section>
+
+<!-- 屏幕：详情页 -->
+<section class="screen" id="screen-detail" data-route="#/detail" data-state="normal">
+  <div class="anno">PRD §x.x · 02B 页面清单 #x —— 本屏验收要点：<待填></div>
+  <div class="state-panel state-normal">
+    <div class="card">
+      <h2 style="font-size: var(--font-size-title); margin-bottom: var(--space-3);">详情标题</h2>
+      <button class="btn secondary" onclick="location.hash='#/list'">返回列表</button>
+    </div>
+  </div>
+  <div class="state-panel state-empty"><div class="card empty">暂无数据</div></div>
+  <div class="state-panel state-error"><div class="card error-box">加载失败</div></div>
+  <div class="state-panel state-loading"><div class="card loading-box">加载中…</div></div>
+</section>
+
+<script>
+// 微型 hash 路由 + 四态切换（原型演示用，非业务代码）
+function renderRoute() {
+  var hash = location.hash || '#/list';
+  document.querySelectorAll('.screen').forEach(function (s) {
+    s.classList.toggle('active', s.dataset.route === hash);
+  });
+  document.querySelectorAll('.proto-bar a[data-route]').forEach(function (a) {
+    a.classList.toggle('active', a.dataset.route === hash);
+  });
+}
+window.addEventListener('hashchange', renderRoute);
+renderRoute();
+
+document.querySelectorAll('.proto-bar .states button').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    document.querySelectorAll('.proto-bar .states button').forEach(function (b) { b.classList.remove('on'); });
+    btn.classList.add('on');
+    var active = document.querySelector('.screen.active');
+    if (active) active.dataset.state = btn.dataset.state;
+  });
+});
+</script>
+</body>
+</html>

@@ -51,3 +51,7 @@ blocked_reason: "..."
 - 只复述 PRD，不读取真实改动。
 - 把“代码能跑”当成“需求已覆盖”。
 - 对额外改动不解释来源。
+
+## 相关检查清单
+
+- `workflow/core/checklists/test-blind-spots.md` §B：需求达成审查与死字段检测（新增字段 grep setter 与写入点，零写入 = 未实现缺陷）。

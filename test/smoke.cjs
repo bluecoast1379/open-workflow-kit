@@ -48,6 +48,10 @@ write('apps/web/package.json', JSON.stringify({
   dependencies: { vue: 'latest', vite: 'latest', typescript: 'latest' }
 }, null, 2));
 write('services/api/pom.xml', '<project></project>\n');
+// 工具链探测正向路径：CI + 配置中心 + 数据库 + git 平台信号（曾因 TDZ 崩溃且 smoke 未覆盖，勿删）。
+write('services/api/Jenkinsfile', 'pipeline { agent any }\n');
+write('services/api/application.yml', 'spring:\n  cloud:\n    nacos:\n      server-addr: placeholder\n  datasource:\n    url: jdbc:mysql://localhost:3306/demo\n');
+write('services/api/.git/config', '[remote "origin"]\n\turl = git@github.com:example/demo.git\n');
 
 run([
   '--target', tmp,
@@ -81,7 +85,28 @@ for (const rel of [
   'workflow/core/capabilities/deployment-readiness-checker.md',
   'workflow/core/capabilities/runtime-evidence-triage.md',
   'workflow/core/capabilities/data-change-safety-checker.md',
-  'workflow/core/capabilities/protocol-state-machine-checker.md'
+  'workflow/core/capabilities/protocol-state-machine-checker.md',
+  'workflow/core/capabilities/toolchain-mcp-planner.md',
+  'workflow/core/capabilities/automated-test-runner.md',
+  'workflow/core/checklists/README.md',
+  'workflow/core/checklists/validation-change-review.md',
+  'workflow/core/checklists/data-consistency-review.md',
+  'workflow/core/checklists/branch-hygiene.md',
+  'workflow/core/checklists/test-blind-spots.md',
+  'workflow/core/checklists/third-party-integration-review.md',
+  'workflow/core/checklists/language-pitfalls-java.md',
+  'workflow/core/execution-policy.md',
+  'workflow/core/testing-automation-guide.md',
+  'workflow/core/templates/api-test-plan.md',
+  'workflow/core/templates/ui-test-plan.md',
+  'workflow/core/templates/prototype-page.html',
+  'workflow/core/commands/02C-HTML原型.md',
+  'workflow/core/commands/connect-toolchain.md',
+  'workflow/TOOLCHAIN_MCP_PLAN.md',
+  '.claude/commands/02C-HTML原型.md',
+  '.claude/commands/connect-toolchain.md',
+  '.cursor/commands/02C-HTML原型.md',
+  '.codex/prompts/connect-toolchain.md'
 ]) {
   assertFile(rel);
 }
@@ -90,6 +115,40 @@ assertContains('workflow/team-profile.yaml', '- trae');
 assertContains('workflow/team-profile.yaml', 'apps/web');
 assertContains('workflow/team-profile.yaml', 'services/api');
 assertContains('workflow/INSTALL_REPORT.md', '初始化器没有执行远程 Git 命令');
+
+// v0.5.0: 分级执行策略、工具链槽位、测试双轨必须写入 team-profile。
+assertContains('workflow/team-profile.yaml', 'schema_version: "1.1"');
+assertContains('workflow/team-profile.yaml', 'execution_policy:');
+assertContains('workflow/team-profile.yaml', 'default_mode: "ask"');
+assertContains('workflow/team-profile.yaml', 'audit_log: "workflow/EXECUTION_AUDIT.md"');
+assertContains('workflow/team-profile.yaml', 'toolchain:');
+assertContains('workflow/team-profile.yaml', 'testing:');
+assertContains('workflow/team-profile.yaml', 'environment_allowlist');
+// 工具链探测：正向命中（Jenkinsfile / nacos / jdbc:mysql / .git/config→github）与未命中槽位并存。
+assertContains('workflow/TOOLCHAIN_MCP_PLAN.md', '工具链 MCP 连接计划');
+assertContains('workflow/TOOLCHAIN_MCP_PLAN.md', 'pending-question');
+assertContains('workflow/TOOLCHAIN_MCP_PLAN.md', 'jenkins');
+assertContains('workflow/TOOLCHAIN_MCP_PLAN.md', '`proposed`');
+assertContains('workflow/TOOLCHAIN_MCP_PLAN.md', 'github');
+assertContains('workflow/team-profile.yaml', 'nacos');
+assertContains('workflow/team-profile.yaml', 'mysql');
+
+// 生成的 team-profile.yaml 最小结构校验：无 tab、缩进为偶数空格、行内引号成对。
+{
+  const yamlText = fs.readFileSync(path.join(tmp, 'workflow/team-profile.yaml'), 'utf8');
+  yamlText.split('\n').forEach((line, i) => {
+    if (line.includes('\t')) throw new Error(`team-profile.yaml:${i + 1} 含 tab`);
+    const indent = line.match(/^ */)[0].length;
+    if (line.trim() && indent % 2 !== 0) throw new Error(`team-profile.yaml:${i + 1} 缩进非偶数: ${JSON.stringify(line)}`);
+    const quotes = (line.match(/"/g) || []).length;
+    if (quotes % 2 !== 0) throw new Error(`team-profile.yaml:${i + 1} 引号不成对: ${JSON.stringify(line)}`);
+  });
+}
+// AGENTS.md 必须体现执行策略与新阶段。
+assertContains('AGENTS.md', 'execution-policy');
+assertContains('AGENTS.md', '/02C-HTML原型');
+assertContains('AGENTS.md', '/connect-toolchain');
+assertContains('AGENTS.md', 'EXECUTION_AUDIT');
 
 // AGENTS.md must contain the comprehensive usage guide, not just hard gates.
 assertContains('AGENTS.md', '## 快速开始');

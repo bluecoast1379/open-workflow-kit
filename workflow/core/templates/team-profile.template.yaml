@@ -1,4 +1,4 @@
-schema_version: "1.0"
+schema_version: "1.1"
 generated_at: "<ISO timestamp>"
 generated_by: "agent-workflow-init"
 
@@ -56,16 +56,48 @@ branch_model:
   feature_branch_rule: "Use feature/<short-name> or dev/<short-name> development branches created from prod, or isolated worktrees based on prod, for implementation; do not create branches, merge, push, or promote to prod without explicit user approval."
   worktree_dir: "_worktrees"
 
+# 分级执行策略：详见 workflow/core/execution-policy.md
+# ask=每次询问（agent 出命令+风险说明+回滚提示，用户选择执行者）/ manual=永不代执行 / auto=常设授权（仍需风险声明+审计）
+execution_policy:
+  default_mode: "ask"
+  categories:
+    remote_git: "ask"
+    branch_creation: "ask"
+    push_tag_merge: "ask"
+    db_ddl: "ask"
+    db_dml: "ask"
+    production_config_write: "ask"
+    build_deploy_trigger: "ask"
+    config_write: "ask"
+  risk_statement_required: true
+  audit_log: "workflow/EXECUTION_AUDIT.md"
+
+# 工具链槽位：由初始化探测 + /connect-toolchain 维护（详见 workflow/TOOLCHAIN_MCP_PLAN.md）
+toolchain:
+  runtime_logs: { label: "运行日志", detected: false, tools: [], evidence: [], status: "pending-question" }
+  ci_cd: { label: "CI/CD 流水线", detected: false, tools: [], evidence: [], status: "pending-question" }
+  deploy_runtime: { label: "部署运行态", detected: false, tools: [], evidence: [], status: "pending-question" }
+  config_center: { label: "配置中心", detected: false, tools: [], evidence: [], status: "pending-question" }
+  database: { label: "数据库查询", detected: false, tools: [], evidence: [], status: "pending-question" }
+  git_platform: { label: "代码托管平台", detected: false, tools: [], evidence: [], status: "pending-question" }
+
+# 自动化测试双轨（配合 automated-test-runner 能力与 testing-automation-guide）
+testing:
+  api_track:
+    credentials_file: "workflow/local/test-credentials.env"
+    environment_allowlist: []
+    production_targets: "blocked"
+  ui_track:
+    browser_automation: "<TODO: playwright-mcp | 工具内置 | none>"
+    miniprogram_automation: "disabled"
+    evidence_dir: "features/{feature}/screenshots"
+
 risk_policy:
-  remote_git_operations: "manual-only"
-  branch_creation: "manual-only"
-  push_and_release: "manual-only"
+  # 执行模式已迁移到 execution_policy；本段保留 CI/CD 成熟度规则与高风险文件清单。
   ci_workflow_changes: "manual-review-required"
   cd_workflow_changes: "manual-review-required"
   auto_deploy_before_first_prod_release: "blocked"
   production_deployments: "manual-approval-required-until-guarded-auto-approved"
-  database_writes: "manual-only"
-  config_writes: "manual-only"
   high_risk_files:
     - "ci/**"
     - "cd/**"

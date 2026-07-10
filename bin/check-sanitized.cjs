@@ -20,7 +20,8 @@ const checkedExt = new Set([
   '.yaml',
   '.yml',
   '.txt',
-  '.sh'
+  '.sh',
+  '.html'
 ]);
 
 const hits = [];

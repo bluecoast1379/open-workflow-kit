@@ -51,3 +51,8 @@ missing_traces:
 - 相信“兼容”字样而不查两条路径。
 - 默认数据层过滤与入口层一致。
 - 用单测通过替代端到端契约追踪。
+
+## 相关检查清单
+
+- `workflow/core/checklists/third-party-integration-review.md`：第三方台账事实源、多步协议状态机、幂等文案优先、禁静默兜底。
+- `workflow/core/checklists/branch-hygiene.md` §C：契约变更的下游同步重建与编译闭合、provider 先于 consumer 的发布顺序。
