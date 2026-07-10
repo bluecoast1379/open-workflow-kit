@@ -12,7 +12,7 @@ const TOOL_ALIASES = {
   github_copilot: 'copilot',
   'github-copilot': 'copilot'
 };
-const GENERATED_BY = 'open-workflow-kit 0.6.0';
+const GENERATED_BY = 'open-workflow-kit 0.7.0';
 
 const STAGES = [
   ['init-workspace', '初始化工作区', '扫描本地资料、生成 team-profile、缺资料提问，并生成当前工具 adapter。'],
@@ -124,6 +124,14 @@ const CHECKLIST_FILES = [
   'language-pitfalls-java.md'
 ];
 
+// 历史版本生成过、当前版本已不再生成的适配器路径。
+// --upgrade 时对这些路径做指纹校验后自动清理（详见 cleanupLegacyArtifacts）。
+const LEGACY_ARTIFACTS = [
+  { rel: '.codex/prompts', kind: 'dir', reason: 'Codex 不加载项目级 prompts（v0.6.0 起改为根 AGENTS.md + .agents/skills/）' },
+  { rel: '.kiro/instructions.md', kind: 'file', reason: 'Kiro 官方路径为 .kiro/steering/（v0.6.0 起）' },
+  { rel: '.codebuddy/instructions.md', kind: 'file', reason: 'CodeBuddy 官方路径为 .codebuddy/rules/<name>/RULE.mdc（v0.6.0 起）' }
+];
+
 const TOOLCHAIN_SLOTS = [
   ['runtime_logs', '运行日志'],
   ['ci_cd', 'CI/CD 流水线'],
@@ -196,14 +204,16 @@ async function main() {
   }
 
   const plannedWrites = buildInstallPlan(target, profile, options);
+  const legacyPlan = planLegacyCleanup(target, options);
   if (options.dryRun) {
-    printDryRun(target, profile, plannedWrites);
+    printDryRun(target, profile, plannedWrites, legacyPlan);
     return;
   }
 
   for (const write of plannedWrites) {
     writeManagedFile(write, options);
   }
+  executeLegacyCleanup(legacyPlan);
 
   console.log(`已在 ${target} 初始化 agent 工作流`);
   console.log(`启用工具: ${enabledTools.join(', ')}`);
@@ -453,6 +463,9 @@ function buildInstallPlan(target, profile, options) {
   if (profile.enabledTools.includes('claude')) {
     add('CLAUDE.md', '先读取 AGENTS.md，再遵循 workflow/core 和 workflow/team-profile.yaml。.claude/commands 下的工具命令只是薄 adapter。\n');
     for (const [id] of STAGES) add(`.claude/commands/${id}.md`, makeThinCommand('Claude Code', id));
+    // 官方推荐的 skills 格式入口（可被 Claude 自主调用）；分阶段中文命令仍走 commands
+    // （官方兼容格式），待非 ASCII skill 命名支持明确后再整体切换。
+    add('.claude/skills/agent-workflow/SKILL.md', makeClaudeWorkflowSkill());
   }
   if (profile.enabledTools.includes('cursor')) {
     add('.cursor/rules/agent-workflow-core.mdc', makeCursorRule());
@@ -508,7 +521,7 @@ function writeManagedFile(write, options) {
   console.log(`wrote ${path.relative(process.cwd(), file)}`);
 }
 
-function printDryRun(target, profile, writes) {
+function printDryRun(target, profile, writes, legacyPlan) {
   console.log(`Dry run 目标目录: ${target}`);
   console.log(`已识别工具: ${profile.detectedTools.join(', ') || '(无)'}`);
   console.log(`启用工具: ${profile.enabledTools.join(', ')}`);
@@ -516,6 +529,67 @@ function printDryRun(target, profile, writes) {
   console.log(`缺失资料组: ${profile.missing.map((item) => item.key).join(', ') || '(无)'}`);
   console.log('计划写入:');
   for (const write of writes) console.log(`- ${path.relative(target, write.file)}`);
+  if (legacyPlan && (legacyPlan.remove.length || legacyPlan.keep.length)) {
+    console.log('旧版残留清理计划（--upgrade 时执行）:');
+    for (const item of legacyPlan.remove) console.log(`- 将删除 ${path.relative(target, item.file)}（kit 指纹匹配；${item.reason}）`);
+    for (const item of legacyPlan.keep) console.log(`- 保留 ${path.relative(target, item.file)}（内容不匹配 kit 指纹，疑似用户自定义，请手动确认）`);
+  }
+}
+
+// kit 生成的薄 adapter 都同时引用 AGENTS.md 与 workflow/core 或 team-profile；
+// 满足该指纹才认定为 kit 生成物，允许自动清理，避免误删用户自定义文件。
+function looksKitGenerated(text) {
+  return text.includes('AGENTS.md') && (text.includes('workflow/core') || text.includes('workflow/team-profile'));
+}
+
+function planLegacyCleanup(target, options) {
+  const plan = { remove: [], keep: [], dirs: [] };
+  if (!options.upgrade) return plan;
+  for (const artifact of LEGACY_ARTIFACTS) {
+    const full = path.join(target, artifact.rel);
+    if (!fs.existsSync(full)) continue;
+    if (artifact.kind === 'file') {
+      const text = safeReadFile(full, 256 * 1024);
+      (looksKitGenerated(text) ? plan.remove : plan.keep).push({ file: full, reason: artifact.reason });
+    } else {
+      let entries = [];
+      try {
+        entries = fs.readdirSync(full).filter((n) => n.endsWith('.md'));
+      } catch {
+        continue;
+      }
+      for (const name of entries) {
+        const file = path.join(full, name);
+        const text = safeReadFile(file, 256 * 1024);
+        (looksKitGenerated(text) ? plan.remove : plan.keep).push({ file, reason: artifact.reason });
+      }
+      plan.dirs.push(full);
+    }
+  }
+  return plan;
+}
+
+function executeLegacyCleanup(plan) {
+  for (const item of plan.remove) {
+    fs.unlinkSync(item.file);
+    console.log(`removed-legacy ${item.file}（${item.reason}）`);
+  }
+  for (const item of plan.keep) {
+    console.log(`kept-unrecognized ${item.file}（内容不匹配 kit 指纹，疑似用户自定义，请手动确认后删除）`);
+  }
+  // 清空后的遗留目录连带移除（含空的父目录，如 .codex/）
+  for (const dir of plan.dirs) {
+    try {
+      if (fs.existsSync(dir) && fs.readdirSync(dir).length === 0) {
+        fs.rmdirSync(dir);
+        const parent = path.dirname(dir);
+        if (fs.existsSync(parent) && fs.readdirSync(parent).length === 0) fs.rmdirSync(parent);
+        console.log(`removed-legacy-dir ${dir}`);
+      }
+    } catch {
+      /* 忽略目录清理失败 */
+    }
+  }
 }
 
 function makeTeamProfileYaml(profile) {
@@ -930,6 +1004,7 @@ function makeToolUsage(profile) {
     blocks.push(`### Claude Code
 
 - 阶段命令来自 \`.claude/commands/\`，可直接输入，例如 \`/04-代码实现 <feature>\`。
+- 同时生成官方推荐格式的 \`.claude/skills/agent-workflow/SKILL.md\`，Claude 可按语义自主调用。
 - 多文件或复杂改动先进入 plan mode，再执行。
 - 每个命令文件都是薄 adapter，最终都指向 \`workflow/core/commands/\`。`);
   }
@@ -1081,6 +1156,30 @@ function makeThinCommand(toolName, id) {
 3. \`workflow/core/commands/${id}.md\`
 
 不得加入与 workflow/core 冲突的工具特定行为。
+`;
+}
+
+function makeClaudeWorkflowSkill() {
+  return `---
+name: agent-workflow
+description: 按 open-workflow-kit 的阶段契约推进需求交付。当用户提到需求讨论、产品文档、UI 设计、技术架构、代码实现、代码审查、测试、验收、上线通知或复盘等阶段性工作时使用本 skill。
+---
+
+# agent-workflow
+
+执行任何工作流阶段时，按顺序读取：
+
+1. 根目录 \`AGENTS.md\`（快速开始、命令表、硬闸门）
+2. \`workflow/team-profile.yaml\`（团队契约：仓库、分支模型、执行策略、测试配置）
+3. \`workflow/core/commands/<用户请求的阶段>.md\`（阶段契约）
+
+各阶段也可通过 \`.claude/commands/\` 的斜杠命令直接触发（如 \`/01-需求讨论\`、\`/04-代码实现\`）。
+
+规则：
+
+- 阶段产物写入工作区级 \`features/<feature>/\`，不写入代码仓库。
+- 高风险写操作按 \`workflow/core/execution-policy.md\` 分级处理（默认每次询问 + 审计留痕）。
+- 审查/测试记录引用检查清单条目时使用稳定 ID（如 BH-05、TBS-12）。
 `;
 }
 

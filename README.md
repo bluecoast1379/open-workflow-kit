@@ -8,7 +8,7 @@
 
 核心原则：同一套 workflow core，多工具 adapter 分层增强；不承诺所有工具体验完全一致。
 
-## 核心能力（v0.5 引入，v0.6 安全加固）
+## 核心能力（v0.5 引入，v0.6 安全加固，v0.7 生命周期治理）
 
 | 能力块 | 说明 |
 | --- | --- |
@@ -16,6 +16,7 @@
 | 工具链 MCP 连接计划 | 初始化时自动探测 CI/CD、部署、配置中心、数据库、日志、代码托管六大槽位，生成 `workflow/TOOLCHAIN_MCP_PLAN.md`；`/connect-toolchain` 问答补齐并按"现成 MCP 优先、只读默认"推进连接 |
 | 分级执行策略 | 高风险写操作（远程 Git、建分支、push、DB DDL/DML、生产配置、构建部署）默认"每次询问"：agent 出完整命令 + 风险说明 + 回滚方式，用户选择"agent 执行 / 手动执行"，代执行写入审计日志。见 `workflow/core/execution-policy.md` |
 | 测试双轨自动化 | 接口轨：用户提供密钥/地址/账号后 agent 真实调用断言；功能轨：浏览器自动化 MCP 点击断言截图（Web/H5），小程序走 miniprogram-automator 指引。见 `workflow/core/testing-automation-guide.md` |
+| 生命周期治理（v0.7） | `--upgrade` 自动清理旧版适配器残留（kit 指纹校验，用户自定义内容保留）并永不覆盖 team-profile；内置 `npm run check:history` 全历史凭证扫描（掩码输出）；79 条清单条目稳定 ID（VCR/DCR/BH/TBS/TIR/LPJ）可跨文档引用；Claude skills 官方推荐格式入口 |
 | HTML 可点击原型 | `/02C-HTML原型` 显式阶段：强制先提取 design tokens + 组件清单，产出前端开发级单文件可点击原型（微路由 + 四态），`ui-baseline-reviewer` 用 tokens 反查卡关 |
 
 ## 一键初始化
@@ -41,7 +42,7 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target .
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,claude,cursor
 
 # GitHub 包安装方式
-npx --yes --package "git+https://github.com/bluecoast1379/open-workflow-kit.git#v0.6.0" agent-workflow-init --target . --tools codex,claude,cursor
+npx --yes --package "git+https://github.com/bluecoast1379/open-workflow-kit.git#v0.7.0" agent-workflow-init --target . --tools codex,claude,cursor
 
 # 工具名支持 trea 别名，会自动归一为 trae
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,trea,codebuddy

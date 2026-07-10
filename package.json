@@ -1,6 +1,6 @@
 {
   "name": "open-workflow-kit",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": false,
   "description": "面向中文团队的工具无关 agent 研发工作流 kit，支持本地初始化、多工具 adapter 和阶段闸门。",
   "keywords": [
@@ -44,7 +44,8 @@
     "agent-workflow-check-sanitized": "bin/check-sanitized.cjs"
   },
   "scripts": {
-    "check": "node --check bin/init-workspace.cjs && node --check bin/check-sanitized.cjs && node --check bin/check-prototype-tokens.cjs && node --check test/smoke.cjs && node --check scripts/build-release.cjs && node bin/check-sanitized.cjs && node bin/check-prototype-tokens.cjs workflow/core/templates/prototype-page.html && node test/smoke.cjs",
+    "check": "node --check bin/init-workspace.cjs && node --check bin/check-sanitized.cjs && node --check bin/check-history.cjs && node --check bin/sanitize-patterns.cjs && node --check bin/check-prototype-tokens.cjs && node --check test/smoke.cjs && node --check scripts/build-release.cjs && node bin/check-sanitized.cjs && node bin/check-prototype-tokens.cjs workflow/core/templates/prototype-page.html && node test/smoke.cjs",
+    "check:history": "node bin/check-history.cjs",
     "build:release": "node scripts/build-release.cjs",
     "init:dry-run": "node bin/init-workspace.cjs --target . --dry-run"
   },

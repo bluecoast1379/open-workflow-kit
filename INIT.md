@@ -52,6 +52,8 @@ agent-workflow-init --target . --tools codex,claude,cursor --upgrade
 
 如果已有文件会被覆盖，初始化器默认写出 `.agent-workflow-new` 文件；只有显式传入 `--force` 才会覆盖。例外：`workflow/team-profile.yaml` 是团队手工维护的契约，在 `--upgrade` 模式下永不原地覆盖（即使 `--force`），新版内容始终写入 `.agent-workflow-new` 供人工比对合并。
 
+`--upgrade` 还会自动清理历史版本生成、当前版本已不再使用的适配器残留（`.codex/prompts/`、`.kiro/instructions.md`、`.codebuddy/instructions.md`）：仅当文件内容匹配 kit 生成指纹（同时引用 AGENTS.md 与 workflow/core 或 team-profile）才删除；内容不匹配的视为用户自定义，保留并提示手动确认。`--dry-run` 会列出清理计划但不删除。
+
 ## 安全边界
 
 初始化器不会：

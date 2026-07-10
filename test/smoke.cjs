@@ -115,6 +115,10 @@ if (fs.existsSync(path.join(tmp, '.codex'))) {
   throw new Error('kit 不应生成项目级 .codex/ 目录（Codex 不加载项目级 prompts）');
 }
 assertContains('.agents/skills/agent-workflow/SKILL.md', 'name: agent-workflow');
+// v0.7.0：Claude 官方推荐 skills 格式入口（与 commands 并存）。
+assertFile('.claude/skills/agent-workflow/SKILL.md');
+assertContains('.claude/skills/agent-workflow/SKILL.md', 'name: agent-workflow');
+assertContains('.claude/skills/agent-workflow/SKILL.md', 'execution-policy');
 
 assertContains('workflow/team-profile.yaml', '- trae');
 assertContains('workflow/team-profile.yaml', 'apps/web');
@@ -173,6 +177,31 @@ assertContains('workflow/local/.gitignore', '!.gitignore');
     if (!capabilitiesText.includes(name)) throw new Error(`清单 ${name} 未被任何能力文件引用`);
   }
   assertFile('workflow/core/checklists/rule-catalog.yaml');
+
+  // v0.7.0 条目 ID 校验：每个勾选项必须有唯一合法 ID，且各清单数量与 rule-catalog 一致。
+  const catalog = fs.readFileSync(path.join(tmp, 'workflow/core/checklists/rule-catalog.yaml'), 'utf8');
+  const catalogItems = {};
+  const blockRe = /^  ([a-z-]+):\n(?:    .*\n)*?    items: (\d+)/gm;
+  let bm;
+  while ((bm = blockRe.exec(catalog)) !== null) catalogItems[bm[1]] = parseInt(bm[2], 10);
+  const seenIds = new Set();
+  for (const name of checklistNames) {
+    const text = fs.readFileSync(path.join(tmp, 'workflow/core/checklists', name + '.md'), 'utf8');
+    const boxes = text.split('\n').filter((l) => l.startsWith('- [ ] '));
+    let idCount = 0;
+    for (const line of boxes) {
+      const idMatch = line.match(/^- \[ \] \*\*(VCR|DCR|BH|TBS|TIR|LPJ)-(\d{2})/);
+      if (!idMatch) throw new Error(`清单 ${name} 存在无 ID 勾选项: ${line.slice(0, 60)}`);
+      const id = `${idMatch[1]}-${idMatch[2]}`;
+      if (seenIds.has(id)) throw new Error(`清单条目 ID 重复: ${id}`);
+      seenIds.add(id);
+      idCount++;
+    }
+    if (catalogItems[name] !== undefined && catalogItems[name] !== idCount) {
+      throw new Error(`清单 ${name} 条目数 ${idCount} 与 rule-catalog 登记 ${catalogItems[name]} 不一致`);
+    }
+  }
+  if (seenIds.size !== 79) throw new Error(`清单条目总数应为 79，实际 ${seenIds.size}`);
 }
 
 // 生成的 team-profile.yaml 最小结构校验：无 tab、缩进为偶数空格、行内引号成对。
@@ -243,6 +272,32 @@ const upgradeStrayFiles = fs
   .filter((name) => name !== 'team-profile.yaml.agent-workflow-new');
 if (upgradeStrayFiles.length) {
   throw new Error(`upgrade --force 除 team-profile 外不应产生 .agent-workflow-new，发现: ${upgradeStrayFiles.join(',')}`);
+}
+
+// v0.7.0 旧路径残留清理：kit 指纹文件自动删除；用户自定义内容保留。
+{
+  // 模拟历史版本产物：指纹匹配（引用 AGENTS.md + workflow/core）
+  write('.codex/prompts/01-需求讨论.md', '读取 `AGENTS.md` 和 `workflow/core/commands/01-需求讨论.md`。\n');
+  write('.kiro/instructions.md', '先读取 AGENTS.md，再按 workflow/core/commands 执行。\n');
+  // 用户自定义内容：无 kit 指纹，必须保留
+  write('.codebuddy/instructions.md', '我团队自己的自定义说明，与初始化器无关。\n');
+
+  // dry-run 只报告，不删除
+  run(['--target', tmp, '--tools', 'codex,claude,cursor', '--upgrade', '--dry-run']);
+  assertFile('.codex/prompts/01-需求讨论.md');
+  assertFile('.kiro/instructions.md');
+
+  // 真实 upgrade：指纹文件删除、目录清空后连带移除；自定义文件保留
+  run(['--target', tmp, '--tools', 'codex,claude,cursor', '--upgrade', '--force', '--yes']);
+  if (fs.existsSync(path.join(tmp, '.codex'))) {
+    throw new Error('upgrade 后 .codex/ 残留应被清理');
+  }
+  if (fs.existsSync(path.join(tmp, '.kiro/instructions.md'))) {
+    throw new Error('upgrade 后 .kiro/instructions.md 应被清理');
+  }
+  if (!fs.existsSync(path.join(tmp, '.codebuddy/instructions.md'))) {
+    throw new Error('用户自定义的 .codebuddy/instructions.md 不得被删除');
+  }
 }
 
 // Cursor-only install must still generate AGENTS.md (the tool-neutral usage guide),

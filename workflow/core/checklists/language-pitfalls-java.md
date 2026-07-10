@@ -4,10 +4,10 @@
 
 ## 逐项核对
 
-- [ ] **跨类型相等比较恒 false**：`Objects.equals` / `equals` 的两个操作数类型不一致（包装类型 vs 枚举、Integer vs String）时恒为 false，依赖它的保护/展示逻辑恒失效；逐处核对两侧静态类型一致。
-- [ ] **包装类型拆箱空指针**：可空的 `Integer/Long/Boolean/BigDecimal` 直接参与算术、比较或作为条件时自动拆箱抛空指针；先判空再运算。
-- [ ] **空串包含判断恒 true**：`str.contains("")` 恒为 true；作为过滤条件时等于不过滤，核对被包含串是否可能为空。
-- [ ] **短路求值顺序**：`&&`/`||` 左操作数先求值——`a.compareTo(b) != 0 && guard` 会先解引用 a/b；判空守卫必须写在表达式左侧。
+- [ ] **LPJ-01 跨类型相等比较恒 false**：`Objects.equals` / `equals` 的两个操作数类型不一致（包装类型 vs 枚举、Integer vs String）时恒为 false，依赖它的保护/展示逻辑恒失效；逐处核对两侧静态类型一致。
+- [ ] **LPJ-02 包装类型拆箱空指针**：可空的 `Integer/Long/Boolean/BigDecimal` 直接参与算术、比较或作为条件时自动拆箱抛空指针；先判空再运算。
+- [ ] **LPJ-03 空串包含判断恒 true**：`str.contains("")` 恒为 true；作为过滤条件时等于不过滤，核对被包含串是否可能为空。
+- [ ] **LPJ-04 短路求值顺序**：`&&`/`||` 左操作数先求值——`a.compareTo(b) != 0 && guard` 会先解引用 a/b；判空守卫必须写在表达式左侧。
 
 ## 审查方法
 
