@@ -1,4 +1,4 @@
-schema_version: "1.1"
+schema_version: "1.2"
 generated_at: "<ISO timestamp>"
 generated_by: "agent-workflow-init"
 
@@ -56,21 +56,32 @@ branch_model:
   feature_branch_rule: "Use feature/<short-name> or dev/<short-name> development branches created from prod, or isolated worktrees based on prod, for implementation; do not create branches, merge, push, or promote to prod without explicit user approval."
   worktree_dir: "_worktrees"
 
-# 分级执行策略：详见 workflow/core/execution-policy.md
-# ask=每次询问（agent 出命令+风险说明+回滚提示，用户选择执行者）/ manual=永不代执行 / auto=常设授权（仍需风险声明+审计）
+# 仓库内只记“请求策略”，不是信任根；生效值取 core/外部受信策略/仓库请求/当次授权中最严格值。
 execution_policy:
-  default_mode: "ask"
-  categories:
-    remote_git: "ask"
-    branch_creation: "ask"
-    push_tag_merge: "ask"
-    db_ddl: "ask"
-    db_dml: "ask"
-    production_config_write: "ask"
-    build_deploy_trigger: "ask"
-    config_write: "ask"
+  requested_default_mode: "ask"
+  requested_categories:
+    remote_git: { mode: "ask" }
+    branch_creation: { mode: "ask" }
+    push_tag_merge: { mode: "ask" }
+    protected_branch_write: { mode: "ask" }
+    db_ddl: { mode: "ask" }
+    db_dml: { mode: "ask" }
+    production_config_write: { mode: "ask" }
+    build_deploy_trigger: { mode: "ask" }
+    package_publish: { mode: "ask" }
+    config_write: { mode: "ask" }
+  external_trust_policy:
+    required_for_auto: true
+    source_env: "OPEN_WORKFLOW_TRUST_POLICY"
+  non_repo_auto_categories:
+    - "protected_branch_write"
+    - "db_ddl"
+    - "db_dml"
+    - "production_config_write"
+    - "build_deploy_trigger"
+    - "package_publish"
   risk_statement_required: true
-  audit_log: "workflow/EXECUTION_AUDIT.md"
+  audit_log: "workflow/local/execution-audit.jsonl"
 
 # 工具链槽位：由初始化探测 + /connect-toolchain 维护（详见 workflow/TOOLCHAIN_MCP_PLAN.md）
 toolchain:

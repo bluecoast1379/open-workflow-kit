@@ -1,0 +1,28 @@
+# Copy this template outside the repository, for example to:
+#   ~/.config/open-workflow-kit/execution-policy.yaml
+# Then set OPEN_WORKFLOW_TRUST_POLICY to that absolute path.
+# Never commit the populated trusted policy to an application repository.
+schema_version: "1.0"
+default_mode: "ask"
+
+# This file may allow scoped auto for low-risk categories. The workflow core still
+# caps protected-branch writes, DDL/DML, production config/deploy, and package
+# publishing at ask/manual unless an organization policy explicitly allows them.
+categories:
+  remote_git:
+    mode: "ask"
+    scope:
+      repos: ["<repo-id>"]
+      branches: ["feature/*"]
+    expires: "<ISO-8601 timestamp>"
+  config_write:
+    mode: "manual"
+
+hard_limits:
+  non_repo_auto_categories:
+    - "protected_branch_write"
+    - "db_ddl"
+    - "db_dml"
+    - "production_config_write"
+    - "build_deploy_trigger"
+    - "package_publish"

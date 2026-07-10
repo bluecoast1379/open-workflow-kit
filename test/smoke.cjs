@@ -6,6 +6,10 @@ const { spawnSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
 const init = path.join(root, 'bin', 'init-workspace.cjs');
+const supportCheck = path.join(root, 'bin', 'check-support-matrix.cjs');
+const sanitizedCheck = path.join(root, 'bin', 'check-sanitized.cjs');
+const historyCheck = path.join(root, 'bin', 'check-history.cjs');
+const { classifySourcePaths } = require(init);
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-smoke-'));
 
 function mkdir(rel) {
@@ -70,10 +74,13 @@ for (const rel of [
   '.claude/commands/04-代码实现.md',
   '.cursor/rules/agent-workflow-core.mdc',
   '.github/copilot-instructions.md',
-  '.codebuddy/rules/agent-workflow/RULE.mdc',
+  '.codebuddy/rules/agent-workflow.md',
   '.kiro/steering/agent-workflow.md',
   '.trae/instructions.md',
   'workflow/team-profile.yaml',
+  'workflow/local/.gitignore',
+  'workflow/local/team-profile.local.yaml',
+  'workflow/local/rule-provenance.private.yaml',
   'workflow/INITIALIZATION_QUESTIONS.md',
   'workflow/core/commands/init-workspace.md',
   'workflow/core/commands/02B-UI设计.md',
@@ -98,11 +105,19 @@ for (const rel of [
   'workflow/core/execution-policy.md',
   'workflow/core/testing-automation-guide.md',
   'workflow/core/templates/api-test-plan.md',
+  'workflow/core/templates/api-test-plan.example.json',
   'workflow/core/templates/ui-test-plan.md',
+  'workflow/core/templates/trusted-execution-policy.template.yaml',
   'workflow/core/templates/prototype-page.html',
   'workflow/core/commands/02C-HTML原型.md',
   'workflow/core/commands/connect-toolchain.md',
   'workflow/TOOLCHAIN_MCP_PLAN.md',
+  'workflow/core/rules/rule-catalog.yaml',
+  'workflow/adapters/support-matrix.yaml',
+  'workflow/bin/check-rule-catalog.cjs',
+  'workflow/bin/check-support-matrix.cjs',
+  'workflow/bin/check-markdown-links.cjs',
+  'workflow/bin/run-api-tests.cjs',
   '.claude/commands/02C-HTML原型.md',
   '.claude/commands/connect-toolchain.md',
   '.cursor/commands/02C-HTML原型.md'
@@ -115,7 +130,7 @@ if (fs.existsSync(path.join(tmp, '.codex'))) {
   throw new Error('kit 不应生成项目级 .codex/ 目录（Codex 不加载项目级 prompts）');
 }
 assertContains('.agents/skills/agent-workflow/SKILL.md', 'name: agent-workflow');
-// v0.7.0：Claude 官方推荐 skills 格式入口（与 commands 并存）。
+// Claude 官方推荐 skills 格式入口（与 commands 并存）。
 assertFile('.claude/skills/agent-workflow/SKILL.md');
 assertContains('.claude/skills/agent-workflow/SKILL.md', 'name: agent-workflow');
 assertContains('.claude/skills/agent-workflow/SKILL.md', 'execution-policy');
@@ -125,11 +140,26 @@ assertContains('workflow/team-profile.yaml', 'apps/web');
 assertContains('workflow/team-profile.yaml', 'services/api');
 assertContains('workflow/INSTALL_REPORT.md', '初始化器没有执行远程 Git 命令');
 
-// v0.5.0: 分级执行策略、工具链槽位、测试双轨必须写入 team-profile。
-assertContains('workflow/team-profile.yaml', 'schema_version: "1.1"');
+// v0.8.0: 仓库只能请求执行模式，高危 auto 需外部受信策略。
+assertContains('workflow/team-profile.yaml', 'schema_version: "1.2"');
 assertContains('workflow/team-profile.yaml', 'execution_policy:');
-assertContains('workflow/team-profile.yaml', 'default_mode: "ask"');
-assertContains('workflow/team-profile.yaml', 'audit_log: "workflow/EXECUTION_AUDIT.md"');
+assertContains('workflow/team-profile.yaml', 'requested_default_mode: "ask"');
+assertContains('workflow/team-profile.yaml', 'external_trust_policy:');
+assertContains('workflow/team-profile.yaml', 'non_repo_auto_categories:');
+assertContains('workflow/team-profile.yaml', 'protected_branch_write');
+assertContains('workflow/team-profile.yaml', 'package_publish');
+for (const category of [
+  'protected_branch_write',
+  'db_ddl',
+  'db_dml',
+  'production_config_write',
+  'build_deploy_trigger',
+  'package_publish'
+]) {
+  assertContains('workflow/team-profile.yaml', `    - "${category}"`);
+  assertContains('workflow/core/execution-policy.md', `- \`${category}\``);
+}
+assertContains('workflow/team-profile.yaml', 'audit_log: "workflow/local/execution-audit.jsonl"');
 assertContains('workflow/team-profile.yaml', 'toolchain:');
 assertContains('workflow/team-profile.yaml', 'testing:');
 assertContains('workflow/team-profile.yaml', 'environment_allowlist');
@@ -151,57 +181,110 @@ assertContains('workflow/team-profile.yaml', 'mysql');
       throw new Error(`credential leaked into generated file: ${rel}`);
     }
   }
-  assertContains('workflow/team-profile.yaml', 'gitlab.example-selfhost.com');
+  assertContains('workflow/team-profile.yaml', 'gitlab');
+  for (const rel of ['workflow/team-profile.yaml', 'workflow/TOOLCHAIN_MCP_PLAN.md']) {
+    const content = fs.readFileSync(path.join(tmp, rel), 'utf8');
+    if (content.includes('gitlab.example-selfhost.com')) {
+      throw new Error(`private git host leaked into committed artifact: ${rel}`);
+    }
+  }
 }
 
 // P0 回归：凭证目录必须自动生成 .gitignore（默认忽略全部内容）。
 assertFile('workflow/local/.gitignore');
 assertContains('workflow/local/.gitignore', '*');
 assertContains('workflow/local/.gitignore', '!.gitignore');
-
-// 规则挂接完整性：每个清单必须被 ≥1 个阶段命令引用，且被 ≥1 个能力文件引用。
+assertContains('workflow/local/team-profile.local.yaml', 'local_only: true');
+assertContains('workflow/local/rule-provenance.private.yaml', 'OWK-PRIVATE-RULE-001');
+assertContains('workflow/local/rule-provenance.private.yaml', 'OWK-PRIVATE-RULE-037');
+write('workflow/local/test-credentials.env', 'PLACEHOLDER_ONLY=1\n');
 {
-  const checklistNames = fs
-    .readdirSync(path.join(tmp, 'workflow/core/checklists'))
-    .filter((n) => n.endsWith('.md') && n !== 'README.md')
-    .map((n) => n.replace(/\.md$/, ''));
-  const readAll = (dir) =>
-    fs.readdirSync(path.join(tmp, dir))
-      .filter((n) => n.endsWith('.md'))
-      .map((n) => fs.readFileSync(path.join(tmp, dir, n), 'utf8'))
-      .join('\n');
-  const commandsText = readAll('workflow/core/commands');
-  const capabilitiesText = readAll('workflow/core/capabilities');
-  for (const name of checklistNames) {
-    if (!commandsText.includes(name)) throw new Error(`清单 ${name} 未被任何阶段命令引用`);
-    if (!capabilitiesText.includes(name)) throw new Error(`清单 ${name} 未被任何能力文件引用`);
+  const initGit = spawnSync('git', ['init', '-q'], { cwd: tmp, encoding: 'utf8' });
+  if (initGit.status !== 0) throw new Error(`git init failed: ${initGit.stderr}`);
+  const ignored = spawnSync('git', ['check-ignore', '-q', 'workflow/local/test-credentials.env'], { cwd: tmp });
+  if (ignored.status !== 0) throw new Error('workflow/local/test-credentials.env 未被 Git 忽略');
+  for (const rel of ['workflow/local/team-profile.local.yaml', 'workflow/local/rule-provenance.private.yaml']) {
+    const result = spawnSync('git', ['check-ignore', '-q', rel], { cwd: tmp });
+    if (result.status !== 0) throw new Error(`${rel} 未被 Git 忽略`);
   }
-  assertFile('workflow/core/checklists/rule-catalog.yaml');
+}
 
-  // v0.7.0 条目 ID 校验：每个勾选项必须有唯一合法 ID，且各清单数量与 rule-catalog 一致。
-  const catalog = fs.readFileSync(path.join(tmp, 'workflow/core/checklists/rule-catalog.yaml'), 'utf8');
-  const catalogItems = {};
-  const blockRe = /^  ([a-z-]+):\n(?:    .*\n)*?    items: (\d+)/gm;
-  let bm;
-  while ((bm = blockRe.exec(catalog)) !== null) catalogItems[bm[1]] = parseInt(bm[2], 10);
-  const seenIds = new Set();
-  for (const name of checklistNames) {
-    const text = fs.readFileSync(path.join(tmp, 'workflow/core/checklists', name + '.md'), 'utf8');
-    const boxes = text.split('\n').filter((l) => l.startsWith('- [ ] '));
-    let idCount = 0;
-    for (const line of boxes) {
-      const idMatch = line.match(/^- \[ \] \*\*(VCR|DCR|BH|TBS|TIR|LPJ)-(\d{2})/);
-      if (!idMatch) throw new Error(`清单 ${name} 存在无 ID 勾选项: ${line.slice(0, 60)}`);
-      const id = `${idMatch[1]}-${idMatch[2]}`;
-      if (seenIds.has(id)) throw new Error(`清单条目 ID 重复: ${id}`);
-      seenIds.add(id);
-      idCount++;
-    }
-    if (catalogItems[name] !== undefined && catalogItems[name] !== idCount) {
-      throw new Error(`清单 ${name} 条目数 ${idCount} 与 rule-catalog 登记 ${catalogItems[name]} 不一致`);
-    }
+// 可提交 profile 只允许工作区内相对路径；外部路径、URL 和 home 缩写必须分流到 local profile。
+{
+  const outside = path.join(path.dirname(tmp), 'outside-private-docs');
+  const insideAbsolute = path.join(tmp, 'docs', 'business-overview.md');
+  const classified = classifySourcePaths(tmp, [
+    'docs/frontend-rules.md',
+    insideAbsolute,
+    outside,
+    '../outside-relative',
+    'https://private.example.invalid/spec',
+    '~/private-specs'
+  ]);
+  if (!classified.shared.includes('docs/frontend-rules.md') || !classified.shared.includes('docs/business-overview.md')) {
+    throw new Error('工作区内路径未规范化为相对路径');
   }
-  if (seenIds.size !== 79) throw new Error(`清单条目总数应为 79，实际 ${seenIds.size}`);
+  if (classified.shared.some((value) => path.isAbsolute(value) || value.includes('private.example.invalid'))) {
+    throw new Error('可提交 source path 泄漏了绝对路径或私有 URL');
+  }
+  if (classified.local.length !== 4) throw new Error('本地私有路径分流数量不正确');
+}
+
+// v0.8.0 审计级规则完整性：37 规则 / 79 item / capability / command / evidence 全链路校验。
+{
+  const generatedRuleCheck = path.join(tmp, 'workflow/bin/check-rule-catalog.cjs');
+  const result = spawnSync(process.execPath, [generatedRuleCheck], { cwd: tmp, encoding: 'utf8' });
+  if (result.status !== 0) throw new Error(`生成物规则目录校验失败:\n${result.stdout}\n${result.stderr}`);
+  assertContains('workflow/core/rules/rule-catalog.yaml', 'rule_count: 37');
+  assertContains('workflow/core/rules/rule-catalog.yaml', 'OWK-RULE-037');
+
+  const placeholder = spawnSync(
+    process.execPath,
+    [generatedRuleCheck, '--provenance', path.join(tmp, 'workflow/local/rule-provenance.private.yaml')],
+    { cwd: tmp, encoding: 'utf8' }
+  );
+  if (placeholder.status === 0) throw new Error('未填充的私有 provenance 骨架不得校验通过');
+
+  const validProvenance = ['schema_version: "1.0"', 'local_only: true', 'entries:'];
+  for (let index = 1; index <= 37; index++) {
+    const suffix = String(index).padStart(3, '0');
+    validProvenance.push(`  - ref: "OWK-PRIVATE-RULE-${suffix}"`);
+    validProvenance.push(`    source_fingerprint: "sha256:${suffix.padEnd(64, 'a')}"`);
+  }
+  write('workflow/local/rule-provenance.valid.yaml', validProvenance.join('\n') + '\n');
+  const privateResult = spawnSync(
+    process.execPath,
+    [generatedRuleCheck, '--provenance', path.join(tmp, 'workflow/local/rule-provenance.valid.yaml')],
+    { cwd: tmp, encoding: 'utf8' }
+  );
+  if (privateResult.status !== 0) {
+    throw new Error(`完整私有 provenance 校验失败:\n${privateResult.stdout}\n${privateResult.stderr}`);
+  }
+}
+
+assertContains('workflow/adapters/support-matrix.yaml', 'claim: "4 native adapters + 3 AGENTS.md-compatible entries"');
+assertContains('workflow/adapters/support-matrix.yaml', 'support_level: "native"');
+assertContains('workflow/adapters/support-matrix.yaml', 'support_level: "compatible"');
+{
+  const generatedSupportCheck = path.join(tmp, 'workflow/bin/check-support-matrix.cjs');
+  const result = spawnSync(process.execPath, [generatedSupportCheck], { cwd: tmp, encoding: 'utf8' });
+  if (result.status !== 0) throw new Error(`生成物 adapter 支持矩阵校验失败:\n${result.stdout}\n${result.stderr}`);
+
+  const invalidMatrixRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-matrix-'));
+  const matrixDir = path.join(invalidMatrixRoot, 'workflow/adapters');
+  fs.mkdirSync(matrixDir, { recursive: true });
+  const matrix = fs
+    .readFileSync(path.join(tmp, 'workflow/adapters/support-matrix.yaml'), 'utf8')
+    .replace('verification_status: "native_not_yet_manually_certified"', 'verification_status: "native_verified"');
+  fs.writeFileSync(path.join(matrixDir, 'support-matrix.yaml'), matrix);
+  const invalid = spawnSync(process.execPath, [supportCheck, '--root', invalidMatrixRoot], { encoding: 'utf8' });
+  if (invalid.status === 0) throw new Error('无人工验收证据的 native_verified 必须被阻断');
+}
+
+{
+  const generatedLinkCheck = path.join(tmp, 'workflow/bin/check-markdown-links.cjs');
+  const result = spawnSync(process.execPath, [generatedLinkCheck], { cwd: tmp, encoding: 'utf8' });
+  if (result.status !== 0) throw new Error(`生成物 Markdown 链接校验失败:\n${result.stdout}\n${result.stderr}`);
 }
 
 // 生成的 team-profile.yaml 最小结构校验：无 tab、缩进为偶数空格、行内引号成对。
@@ -219,7 +302,9 @@ assertContains('workflow/local/.gitignore', '!.gitignore');
 assertContains('AGENTS.md', 'execution-policy');
 assertContains('AGENTS.md', '/02C-HTML原型');
 assertContains('AGENTS.md', '/connect-toolchain');
-assertContains('AGENTS.md', 'EXECUTION_AUDIT');
+assertContains('AGENTS.md', 'workflow/local/execution-audit.jsonl');
+assertContains('AGENTS.md', '仓库内 `team-profile.yaml` 不是信任根');
+assertContains('AGENTS.md', '永远不得仅凭仓库配置 auto');
 
 // AGENTS.md must contain the comprehensive usage guide, not just hard gates.
 assertContains('AGENTS.md', '## 快速开始');
@@ -274,11 +359,13 @@ if (upgradeStrayFiles.length) {
   throw new Error(`upgrade --force 除 team-profile 外不应产生 .agent-workflow-new，发现: ${upgradeStrayFiles.join(',')}`);
 }
 
-// v0.7.0 旧路径残留清理：kit 指纹文件自动删除；用户自定义内容保留。
+// v0.8.0 旧路径残留清理：kit 指纹文件自动删除；用户自定义内容保留。
 {
   // 模拟历史版本产物：指纹匹配（引用 AGENTS.md + workflow/core）
   write('.codex/prompts/01-需求讨论.md', '读取 `AGENTS.md` 和 `workflow/core/commands/01-需求讨论.md`。\n');
   write('.kiro/instructions.md', '先读取 AGENTS.md，再按 workflow/core/commands 执行。\n');
+  write('.codebuddy/rules/agent-workflow/RULE.mdc', '先读取 AGENTS.md，再按 workflow/core/commands 执行。\n');
+  write('workflow/core/checklists/rule-catalog.yaml', '# 旧规则目录\ntotal_items: 79\n');
   // 用户自定义内容：无 kit 指纹，必须保留
   write('.codebuddy/instructions.md', '我团队自己的自定义说明，与初始化器无关。\n');
 
@@ -286,6 +373,8 @@ if (upgradeStrayFiles.length) {
   run(['--target', tmp, '--tools', 'codex,claude,cursor', '--upgrade', '--dry-run']);
   assertFile('.codex/prompts/01-需求讨论.md');
   assertFile('.kiro/instructions.md');
+  assertFile('.codebuddy/rules/agent-workflow/RULE.mdc');
+  assertFile('workflow/core/checklists/rule-catalog.yaml');
 
   // 真实 upgrade：指纹文件删除、目录清空后连带移除；自定义文件保留
   run(['--target', tmp, '--tools', 'codex,claude,cursor', '--upgrade', '--force', '--yes']);
@@ -298,6 +387,14 @@ if (upgradeStrayFiles.length) {
   if (!fs.existsSync(path.join(tmp, '.codebuddy/instructions.md'))) {
     throw new Error('用户自定义的 .codebuddy/instructions.md 不得被删除');
   }
+  if (fs.existsSync(path.join(tmp, '.codebuddy/rules/agent-workflow/RULE.mdc'))) {
+    throw new Error('旧 CodeBuddy RULE.mdc 应被清理');
+  }
+  if (fs.existsSync(path.join(tmp, 'workflow/core/checklists/rule-catalog.yaml'))) {
+    throw new Error('旧 checklists/rule-catalog.yaml 应被清理');
+  }
+  assertFile('.codebuddy/rules/agent-workflow.md');
+  assertFile('workflow/core/rules/rule-catalog.yaml');
 }
 
 // Cursor-only install must still generate AGENTS.md (the tool-neutral usage guide),
@@ -319,6 +416,73 @@ for (const rel of [
 const cursorAgents = fs.readFileSync(path.join(cursorTmp, 'AGENTS.md'), 'utf8');
 if (!cursorAgents.includes('### Cursor')) {
   throw new Error('cursor-only AGENTS.md missing the Cursor usage section');
+}
+
+// 脱敏反例：.env.production 中的无引号 PASSWORD 必须命中，且输出不回显值。
+{
+  const sanitizeTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-sanitize-'));
+  const secretValue = 'NOT_A_REAL_' + 'PASSWORD_VALUE_12345';
+  const envLine = 'PASS' + 'WORD=' + secretValue + '\n';
+  fs.writeFileSync(path.join(sanitizeTmp, '.env.production'), envLine);
+  const result = spawnSync(process.execPath, [sanitizedCheck, '--root', sanitizeTmp], { encoding: 'utf8' });
+  if (result.status === 0) throw new Error('.env.production 无引号 PASSWORD 反例未命中');
+  if (`${result.stdout}\n${result.stderr}`.includes(secretValue)) throw new Error('脱敏扫描输出泄漏了命中值');
+}
+
+// 私有 denylist 命中时只能输出类别，不得回显词表原文。
+{
+  const sanitizeTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-private-term-'));
+  const denylistTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-denylist-'));
+  const privateTerm = 'PRIVATE_' + 'ORGANIZATION_TERM_7f19';
+  const denylistFile = path.join(denylistTmp, 'denylist.txt');
+  fs.writeFileSync(path.join(sanitizeTmp, 'README.md'), `reference: ${privateTerm}\n`);
+  fs.mkdirSync(path.join(sanitizeTmp, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(sanitizeTmp, 'docs', `${privateTerm}.md`), '# synthetic fixture\n');
+  fs.writeFileSync(denylistFile, `${privateTerm}\n`);
+  const result = spawnSync(
+    process.execPath,
+    [sanitizedCheck, '--root', sanitizeTmp, '--extra-banned', denylistFile],
+    { encoding: 'utf8' }
+  );
+  if (result.status === 0) throw new Error('私有 denylist 反例未命中');
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (output.includes(privateTerm)) throw new Error('脱敏扫描输出泄漏了私有 denylist 原文');
+  if (!output.includes('private denylist term')) throw new Error('私有 denylist 命中缺少可诊断类别');
+}
+
+// Git 历史扫描同样不得回显私有词原文。
+{
+  const historyTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-history-'));
+  const denylistTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-history-denylist-'));
+  const privateTerm = 'HISTORY_PRIVATE_' + 'TERM_46a8';
+  const denylistFile = path.join(denylistTmp, 'denylist.txt');
+  const privateFile = `${privateTerm}.md`;
+  fs.writeFileSync(path.join(historyTmp, privateFile), `reference: ${privateTerm}\n`);
+  fs.writeFileSync(denylistFile, `${privateTerm}\n`);
+  for (const args of [
+    ['init', '-q'],
+    ['config', 'user.name', 'Smoke Test'],
+    ['config', 'user.email', 'smoke@example.invalid'],
+    ['add', privateFile],
+    ['commit', '-q', '-m', 'test fixture']
+  ]) {
+    const command = spawnSync('git', args, { cwd: historyTmp, encoding: 'utf8' });
+    if (command.status !== 0) throw new Error(`历史扫描夹具初始化失败: git ${args.join(' ')}\n${command.stderr}`);
+  }
+  const reportFile = path.join(denylistTmp, 'history-report.md');
+  const result = spawnSync(
+    process.execPath,
+    [historyCheck, '--repo', historyTmp, '--extra-banned', denylistFile, '--report', reportFile],
+    { encoding: 'utf8' }
+  );
+  if (result.status === 0) throw new Error('Git 历史私有 denylist 反例未命中');
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (output.includes(privateTerm)) throw new Error('Git 历史扫描输出泄漏了私有 denylist 原文');
+  if (!output.includes('私有词')) throw new Error('Git 历史 denylist 命中缺少可诊断类别');
+  const report = fs.readFileSync(reportFile, 'utf8');
+  if (report.includes(historyTmp) || report.includes(privateTerm)) {
+    throw new Error('Git 历史扫描报告泄漏了绝对路径或私有词');
+  }
 }
 
 console.log('Smoke test passed.');

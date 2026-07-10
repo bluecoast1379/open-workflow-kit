@@ -8,6 +8,7 @@ agent 不得自动创建远程仓库、push commits、创建 tags 或发布 pack
 
 ```bash
 npm run check
+npm run check:history
 npm run build:release
 ```
 
@@ -67,6 +68,8 @@ npm publish --access public
 ## 远程发布前必须完成
 
 - 运行 `npm run check`。
+- 运行 `npm run check:history`。
+- 确认 `npm run check:rules` 和 `npm run check:adapters` 通过（它们也由 `npm run check` 调用）。
 - 运行 `npm run build:release`。
 - 使用 `bin/check-sanitized.cjs --extra-banned <private-file>` 执行私有 denylist 扫描。
 - 检查 `dist/RELEASE_MANIFEST.md`。

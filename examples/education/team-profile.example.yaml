@@ -1,4 +1,4 @@
-schema_version: "1.1"
+schema_version: "1.2"
 generated_at: "2026-06-05T00:00:00.000Z"
 generated_by: "agent-workflow-init (education example)"
 
@@ -107,18 +107,22 @@ branch_model:
 
 # 分级执行策略：详见 workflow/core/execution-policy.md
 execution_policy:
-  default_mode: "ask"
-  categories:
-    remote_git: "ask"
-    branch_creation: "ask"
-    push_tag_merge: "ask"
-    db_ddl: "ask"
-    db_dml: "ask"
-    production_config_write: "ask"
-    build_deploy_trigger: "ask"
-    config_write: "ask"
+  requested_default_mode: "ask"
+  requested_categories:
+    remote_git: { mode: "ask" }
+    branch_creation: { mode: "ask" }
+    push_tag_merge: { mode: "ask" }
+    protected_branch_write: { mode: "ask" }
+    db_ddl: { mode: "ask" }
+    db_dml: { mode: "ask" }
+    production_config_write: { mode: "ask" }
+    build_deploy_trigger: { mode: "ask" }
+    package_publish: { mode: "ask" }
+    config_write: { mode: "ask" }
+  external_trust_policy: { required_for_auto: true, source_env: "OPEN_WORKFLOW_TRUST_POLICY" }
+  non_repo_auto_categories: ["protected_branch_write", "db_ddl", "db_dml", "production_config_write", "build_deploy_trigger", "package_publish"]
   risk_statement_required: true
-  audit_log: "workflow/EXECUTION_AUDIT.md"
+  audit_log: "workflow/local/execution-audit.jsonl"
 
 toolchain:
   runtime_logs: { label: "运行日志", detected: false, tools: [], evidence: [], status: "pending-question" }

@@ -1,0 +1,449 @@
+schema_version: "1.0"
+catalog_version: "0.8.0"
+rule_count: 37
+checklist_item_count: 79
+
+rules:
+  - id: "OWK-RULE-001"
+    title: "校验口径变更必须跨层盘点"
+    status: "active"
+    severity: "P1"
+    applicability: "放开或收紧字段校验"
+    checklist_item_ids: ["VCR-01"]
+    capabilities: ["impact-scope-analyzer"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/validation-change-review.md#VCR-01"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-001"
+
+  - id: "OWK-RULE-002"
+    title: "放开校验后必须全链路扫描解引用与前置调用"
+    status: "active"
+    severity: "P1"
+    applicability: "字段可为空或关联对象可缺失"
+    checklist_item_ids: ["VCR-02", "VCR-03", "VCR-04"]
+    capabilities: ["impact-scope-analyzer"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/validation-change-review.md#VCR-02", "workflow/core/checklists/validation-change-review.md#VCR-03", "workflow/core/checklists/validation-change-review.md#VCR-04"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-002"
+
+  - id: "OWK-RULE-003"
+    title: "可空字段必须与数据库约束对齐"
+    status: "active"
+    severity: "P1"
+    applicability: "可空口径影响持久化字段"
+    checklist_item_ids: ["VCR-05"]
+    capabilities: ["impact-scope-analyzer"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/validation-change-review.md#VCR-05"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-003"
+
+  - id: "OWK-RULE-004"
+    title: "收紧口径必须覆盖全部写入路径"
+    status: "active"
+    severity: "P1"
+    applicability: "改变字段口径或新增不变式"
+    checklist_item_ids: ["VCR-06", "VCR-07"]
+    capabilities: ["impact-scope-analyzer"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/validation-change-review.md#VCR-06", "workflow/core/checklists/validation-change-review.md#VCR-07"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-004"
+
+  - id: "OWK-RULE-005"
+    title: "不同入口链路必须分别审查与实测"
+    status: "active"
+    severity: "P1"
+    applicability: "同一口径存在接口、导入或页面等多入口"
+    checklist_item_ids: ["VCR-08", "VCR-09"]
+    capabilities: ["impact-scope-analyzer"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/validation-change-review.md#VCR-08", "workflow/core/checklists/validation-change-review.md#VCR-09"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-005"
+
+  - id: "OWK-RULE-006"
+    title: "统计必须使用业务主状态并对齐全部分支"
+    status: "active"
+    severity: "P1"
+    applicability: "金额、订单数或数量统计"
+    checklist_item_ids: ["DCR-01", "DCR-02"]
+    capabilities: ["data-change-safety-checker"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/data-consistency-review.md#DCR-01", "workflow/core/checklists/data-consistency-review.md#DCR-02"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-006"
+
+  - id: "OWK-RULE-007"
+    title: "时间口径必须对齐业务语义、映射与实际数据"
+    status: "active"
+    severity: "P1"
+    applicability: "时间筛选、计费、开窗或统计"
+    checklist_item_ids: ["DCR-03", "DCR-04", "DCR-05"]
+    capabilities: ["data-change-safety-checker"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/data-consistency-review.md#DCR-03", "workflow/core/checklists/data-consistency-review.md#DCR-04", "workflow/core/checklists/data-consistency-review.md#DCR-05"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-007"
+
+  - id: "OWK-RULE-008"
+    title: "历史枚举和脏数据必须在转换层集中兼容"
+    status: "active"
+    severity: "P1"
+    applicability: "长生命周期表的枚举、字典或批处理"
+    checklist_item_ids: ["DCR-06", "DCR-07"]
+    capabilities: ["data-change-safety-checker"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/data-consistency-review.md#DCR-06", "workflow/core/checklists/data-consistency-review.md#DCR-07"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-008"
+
+  - id: "OWK-RULE-009"
+    title: "手工 SQL 必须同时核对数据库列与实体映射"
+    status: "active"
+    severity: "P0"
+    applicability: "绕过实体层的手工写库"
+    checklist_item_ids: ["DCR-08"]
+    capabilities: ["data-change-safety-checker"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/data-consistency-review.md#DCR-08"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-009"
+
+  - id: "OWK-RULE-010"
+    title: "MAX+1 补数必须防止同批主键自撞"
+    status: "active"
+    severity: "P0"
+    applicability: "使用 MAX+1 动态分配主键的补数"
+    checklist_item_ids: ["DCR-09"]
+    capabilities: ["data-change-safety-checker"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/data-consistency-review.md#DCR-09"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-010"
+
+  - id: "OWK-RULE-011"
+    title: "数据变更必须预演、钉死行数并登记恢复条件"
+    status: "active"
+    severity: "P0"
+    applicability: "批量 DML、数据补录或订正"
+    checklist_item_ids: ["DCR-10", "DCR-11"]
+    capabilities: ["data-change-safety-checker"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/data-consistency-review.md#DCR-10", "workflow/core/checklists/data-consistency-review.md#DCR-11"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-011"
+
+  - id: "OWK-RULE-012"
+    title: "导出必须对齐列表条件、主键和字段契约"
+    status: "active"
+    severity: "P1"
+    applicability: "列表导出、勾选导出或去重"
+    checklist_item_ids: ["DCR-12", "DCR-13", "DCR-14"]
+    capabilities: ["data-change-safety-checker"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/data-consistency-review.md#DCR-12", "workflow/core/checklists/data-consistency-review.md#DCR-13", "workflow/core/checklists/data-consistency-review.md#DCR-14"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-012"
+
+  - id: "OWK-RULE-013"
+    title: "脱敏展示值禁止用于查询或对外发送"
+    status: "active"
+    severity: "P0"
+    applicability: "展示层存在掩码或脱敏字段"
+    checklist_item_ids: ["DCR-15"]
+    capabilities: ["data-change-safety-checker"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/data-consistency-review.md#DCR-15"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-013"
+
+  - id: "OWK-RULE-014"
+    title: "功能分支只出不进且污染后必须锁定"
+    status: "active"
+    severity: "P0"
+    applicability: "功能分支与集成分支之间的合并"
+    checklist_item_ids: ["BH-01", "BH-02", "BH-03", "BH-04"]
+    capabilities: ["branch-gatekeeper"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/branch-hygiene.md#BH-01", "workflow/core/checklists/branch-hygiene.md#BH-02", "workflow/core/checklists/branch-hygiene.md#BH-03", "workflow/core/checklists/branch-hygiene.md#BH-04"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-014"
+
+  - id: "OWK-RULE-015"
+    title: "发布候选必须溯源生产基线并全量核查差异"
+    status: "active"
+    severity: "P0"
+    applicability: "生产发布候选或回滚候选"
+    checklist_item_ids: ["BH-05", "BH-06", "BH-07", "BH-08"]
+    capabilities: ["release-safety-checker"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/branch-hygiene.md#BH-05", "workflow/core/checklists/branch-hygiene.md#BH-06", "workflow/core/checklists/branch-hygiene.md#BH-07", "workflow/core/checklists/branch-hygiene.md#BH-08"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-015"
+
+  - id: "OWK-RULE-016"
+    title: "公共制品新内容必须使用新版本"
+    status: "active"
+    severity: "P0"
+    applicability: "修改共享包、公共制品或其版本号"
+    checklist_item_ids: ["BH-09", "BH-10"]
+    capabilities: ["release-safety-checker"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/branch-hygiene.md#BH-09", "workflow/core/checklists/branch-hygiene.md#BH-10"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-016"
+
+  - id: "OWK-RULE-017"
+    title: "并行需求的隔离制品版本必须在合流时归一"
+    status: "active"
+    severity: "P1"
+    applicability: "多需求并行使用共享制品"
+    checklist_item_ids: ["BH-11"]
+    capabilities: ["contract-tracer"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/branch-hygiene.md#BH-11"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-017"
+
+  - id: "OWK-RULE-018"
+    title: "契约变更必须按依赖顺序构建和发布"
+    status: "active"
+    severity: "P0"
+    applicability: "共享 DTO、VO、SDK 或服务契约变更"
+    checklist_item_ids: ["BH-12", "BH-13"]
+    capabilities: ["contract-tracer"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/branch-hygiene.md#BH-12", "workflow/core/checklists/branch-hygiene.md#BH-13"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-018"
+
+  - id: "OWK-RULE-019"
+    title: "污染分支必须基于生产基线白名单重建并独立复核"
+    status: "active"
+    severity: "P0"
+    applicability: "发布候选含非本期提交或文件"
+    checklist_item_ids: ["BH-14", "BH-15", "BH-16", "BH-17", "BH-18"]
+    capabilities: ["branch-gatekeeper", "release-safety-checker"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/branch-hygiene.md#BH-14", "workflow/core/checklists/branch-hygiene.md#BH-15", "workflow/core/checklists/branch-hygiene.md#BH-16", "workflow/core/checklists/branch-hygiene.md#BH-17", "workflow/core/checklists/branch-hygiene.md#BH-18"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-019"
+
+  - id: "OWK-RULE-020"
+    title: "冲突解决后必须以已保存的磁盘 diff 为准"
+    status: "active"
+    severity: "P1"
+    applicability: "merge 或 rebase 冲突解决"
+    checklist_item_ids: ["BH-19"]
+    capabilities: ["branch-gatekeeper"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/branch-hygiene.md#BH-19"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-020"
+
+  - id: "OWK-RULE-021"
+    title: "diff 干净必须包含空白和换行校验"
+    status: "active"
+    severity: "P2"
+    applicability: "合并、提交或发布前差异检查"
+    checklist_item_ids: ["BH-20"]
+    capabilities: ["branch-gatekeeper"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/branch-hygiene.md#BH-20"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-021"
+
+  - id: "OWK-RULE-022"
+    title: "曾被合并抹掉的修复必须设置特征守护和生产首验"
+    status: "active"
+    severity: "P0"
+    applicability: "历史上出现过静默回归的文件或口径"
+    checklist_item_ids: ["BH-21", "BH-22"]
+    capabilities: ["release-safety-checker"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/branch-hygiene.md#BH-21", "workflow/core/checklists/branch-hygiene.md#BH-22"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-022"
+
+  - id: "OWK-RULE-023"
+    title: "第三方订正与对账必须以权威台账为准"
+    status: "active"
+    severity: "P0"
+    applicability: "第三方调用结果、状态订正或大批量对账"
+    checklist_item_ids: ["TIR-01", "TIR-02"]
+    capabilities: ["protocol-state-machine-checker"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/third-party-integration-review.md#TIR-01", "workflow/core/checklists/third-party-integration-review.md#TIR-02"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-023"
+
+  - id: "OWK-RULE-024"
+    title: "多步第三方协议必须建模状态机并优先识别幂等成功"
+    status: "active"
+    severity: "P1"
+    applicability: "多步协议、异步回调或可重入调用"
+    checklist_item_ids: ["TIR-03", "TIR-04", "TIR-05"]
+    capabilities: ["protocol-state-machine-checker"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/third-party-integration-review.md#TIR-03", "workflow/core/checklists/third-party-integration-review.md#TIR-04", "workflow/core/checklists/third-party-integration-review.md#TIR-05"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-024"
+
+  - id: "OWK-RULE-025"
+    title: "第三方失败必须显性化并在写状态前校验关键标识"
+    status: "active"
+    severity: "P0"
+    applicability: "第三方返回值驱动本地状态写入"
+    checklist_item_ids: ["TIR-06", "TIR-07"]
+    capabilities: ["protocol-state-machine-checker"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/third-party-integration-review.md#TIR-06", "workflow/core/checklists/third-party-integration-review.md#TIR-07"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-025"
+
+  - id: "OWK-RULE-026"
+    title: "重试必须区分短暂与永久失败且异步化必须有闭环"
+    status: "active"
+    severity: "P1"
+    applicability: "第三方重试、同步改异步或人工处理"
+    checklist_item_ids: ["TIR-08", "TIR-09"]
+    capabilities: ["protocol-state-machine-checker"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/third-party-integration-review.md#TIR-08", "workflow/core/checklists/third-party-integration-review.md#TIR-09"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-026"
+
+  - id: "OWK-RULE-027"
+    title: "数据变更通知必须按业务事件聚合且持久化补偿"
+    status: "active"
+    severity: "P1"
+    applicability: "CDC、binlog 或多行写库驱动对外通知"
+    checklist_item_ids: ["TIR-10", "TIR-11"]
+    capabilities: ["protocol-state-machine-checker", "contract-tracer"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/third-party-integration-review.md#TIR-10", "workflow/core/checklists/third-party-integration-review.md#TIR-11"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-027"
+
+  - id: "OWK-RULE-028"
+    title: "严格顺序消费不得向消息中间件逃逸异常"
+    status: "active"
+    severity: "P0"
+    applicability: "严格顺序队列消费"
+    checklist_item_ids: ["TIR-12"]
+    capabilities: ["protocol-state-machine-checker"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/third-party-integration-review.md#TIR-12"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-028"
+
+  - id: "OWK-RULE-029"
+    title: "运行态排查必须区分构建、启动、生效和路由可达"
+    status: "active"
+    severity: "P1"
+    applicability: "发布后 404、启动异常或新版未生效"
+    checklist_item_ids: ["TIR-13", "TIR-14"]
+    capabilities: ["protocol-state-machine-checker"]
+    commands: ["05-代码审查", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/third-party-integration-review.md#TIR-13", "workflow/core/checklists/third-party-integration-review.md#TIR-14"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-029"
+
+  - id: "OWK-RULE-030"
+    title: "Java 相等比较必须保证操作数静态类型一致"
+    status: "active"
+    severity: "P1"
+    applicability: "Java 中使用 equals 或 Objects.equals"
+    checklist_item_ids: ["LPJ-01"]
+    capabilities: ["security-reviewer"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/language-pitfalls-java.md#LPJ-01"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-030"
+
+  - id: "OWK-RULE-031"
+    title: "Java 可空包装类运算前必须判空"
+    status: "active"
+    severity: "P1"
+    applicability: "Java 包装类参与运算、比较或条件"
+    checklist_item_ids: ["LPJ-02"]
+    capabilities: ["security-reviewer"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/language-pitfalls-java.md#LPJ-02"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-031"
+
+  - id: "OWK-RULE-032"
+    title: "contains 的被包含串不得为空"
+    status: "active"
+    severity: "P1"
+    applicability: "Java 字符串 contains 用于过滤或保护条件"
+    checklist_item_ids: ["LPJ-03"]
+    capabilities: ["security-reviewer"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/language-pitfalls-java.md#LPJ-03"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-032"
+
+  - id: "OWK-RULE-033"
+    title: "短路表达式的判空守卫必须位于左侧"
+    status: "active"
+    severity: "P1"
+    applicability: "Java 中可空值参与 && 或 || 表达式"
+    checklist_item_ids: ["LPJ-04"]
+    capabilities: ["security-reviewer"]
+    commands: ["05-代码审查"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/language-pitfalls-java.md#LPJ-04"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-033"
+
+  - id: "OWK-RULE-034"
+    title: "用例必须覆盖负向状态、入口、删除副作用和权限隔离"
+    status: "active"
+    severity: "P1"
+    applicability: "功能测试与回归用例设计"
+    checklist_item_ids: ["TBS-01", "TBS-02", "TBS-03", "TBS-04"]
+    capabilities: ["test-evidence-reviewer"]
+    commands: ["05-代码审查", "06-测试用例", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/test-blind-spots.md#TBS-01", "workflow/core/checklists/test-blind-spots.md#TBS-02", "workflow/core/checklists/test-blind-spots.md#TBS-03", "workflow/core/checklists/test-blind-spots.md#TBS-04"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-034"
+
+  - id: "OWK-RULE-035"
+    title: "用例必须覆盖幂等、混合态、历史脏数据和压力"
+    status: "active"
+    severity: "P1"
+    applicability: "关键业务链路的异常与边界测试"
+    checklist_item_ids: ["TBS-05", "TBS-06", "TBS-07", "TBS-08"]
+    capabilities: ["test-evidence-reviewer"]
+    commands: ["05-代码审查", "06-测试用例", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/test-blind-spots.md#TBS-05", "workflow/core/checklists/test-blind-spots.md#TBS-06", "workflow/core/checklists/test-blind-spots.md#TBS-07", "workflow/core/checklists/test-blind-spots.md#TBS-08"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-035"
+
+  - id: "OWK-RULE-036"
+    title: "死字段和环境差异必须在审查与测试阶段显性化"
+    status: "active"
+    severity: "P1"
+    applicability: "新字段、占位逻辑或测试/生产环境差异"
+    checklist_item_ids: ["TBS-09", "TBS-10"]
+    capabilities: ["prd-code-diff-checker", "test-evidence-reviewer"]
+    commands: ["05-代码审查", "06-测试用例", "07-测试执行"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/test-blind-spots.md#TBS-09", "workflow/core/checklists/test-blind-spots.md#TBS-10"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-036"
+
+  - id: "OWK-RULE-037"
+    title: "关键路径必须进行独立对抗式需求达成审查"
+    status: "active"
+    severity: "P1"
+    applicability: "金额、契约、性能重构、共享组件或口径变更"
+    checklist_item_ids: ["TBS-11", "TBS-12", "TBS-13", "TBS-14", "TBS-15"]
+    capabilities: ["prd-code-diff-checker", "test-evidence-reviewer"]
+    commands: ["05-代码审查", "06-测试用例"]
+    introduced_in: "0.8.0"
+    public_evidence: ["workflow/core/checklists/test-blind-spots.md#TBS-11", "workflow/core/checklists/test-blind-spots.md#TBS-12", "workflow/core/checklists/test-blind-spots.md#TBS-13", "workflow/core/checklists/test-blind-spots.md#TBS-14", "workflow/core/checklists/test-blind-spots.md#TBS-15"]
+    private_provenance_ref: "OWK-PRIVATE-RULE-037"

@@ -34,4 +34,4 @@
 
 - 更新 `workflow/TOOLCHAIN_MCP_PLAN.md`（槽位状态、推荐方案、连接配置指引）。
 - 更新 `workflow/team-profile.yaml#toolchain`（provider 与状态）。
-- 若执行了连接：按执行策略记录到 `workflow/EXECUTION_AUDIT.md`。
+- 若执行了连接：按执行策略脱敏记录到被 Git 忽略的 `workflow/local/execution-audit.jsonl`；不创建、不追加可提交的 `workflow/EXECUTION_AUDIT.md`。

@@ -1,23 +1,26 @@
 # Open Workflow Kit
 
-一个可分发给其他团队的通用研发工作流 kit。它把工作流拆成三层：
+一个可分发给其他团队的通用研发工作流 kit。它把可分发架构拆成四部分：
 
-- `workflow/core`: 工具无关的流程、阶段、闸门、模板、检查能力和检查清单。
-- `workflow/team-profile.yaml`: 目标团队的机器可读配置，由初始化器根据本地资料生成。
-- `workflow/adapters`: 各智能体工具的薄入口，只调用当前工具自己的能力。
+- `workflow/core`: 工具无关的流程、阶段、闸门、模板、检查能力、清单和 37 条规则 catalog。
+- `workflow/team-profile.yaml`: 可提交、可脱敏审查的团队契约；本地私有值进被忽略的 `workflow/local/team-profile.local.yaml`。
+- `workflow/adapters`: 各智能体工具的薄入口与支持矩阵，只调用当前工具自己的能力。
+- `examples`: 全部由合成数据组成的团队初始化示例，不是运行时信任源。
 
 核心原则：同一套 workflow core，多工具 adapter 分层增强；不承诺所有工具体验完全一致。
 
-## 核心能力（v0.5 引入，v0.6 安全加固，v0.7 生命周期治理）
+## 核心能力（v0.8）
 
 | 能力块 | 说明 |
 | --- | --- |
 | 20 个检查能力 + 6 个事故模式清单 | `workflow/core/capabilities/` 定义检查契约；`workflow/core/checklists/` 把真实交付事故的脱敏教训展开为逐项清单（校验变更复扫、数据一致性、分支卫生、测试盲区、第三方集成、Java 陷阱） |
 | 工具链 MCP 连接计划 | 初始化时自动探测 CI/CD、部署、配置中心、数据库、日志、代码托管六大槽位，生成 `workflow/TOOLCHAIN_MCP_PLAN.md`；`/connect-toolchain` 问答补齐并按"现成 MCP 优先、只读默认"推进连接 |
-| 分级执行策略 | 高风险写操作（远程 Git、建分支、push、DB DDL/DML、生产配置、构建部署）默认"每次询问"：agent 出完整命令 + 风险说明 + 回滚方式，用户选择"agent 执行 / 手动执行"，代执行写入审计日志。见 `workflow/core/execution-policy.md` |
-| 测试双轨自动化 | 接口轨：用户提供密钥/地址/账号后 agent 真实调用断言；功能轨：浏览器自动化 MCP 点击断言截图（Web/H5），小程序走 miniprogram-automator 指引。见 `workflow/core/testing-automation-guide.md` |
+| 受信分级执行策略 | 生效权限取 core 硬上限、仓库外受信策略、team-profile 请求和当次授权的最严格值；生产部署/配置、DDL/DML、受保护分支写入和包发布不得仅凭仓库配置 auto |
+| 测试双轨自动化 | 接口轨内置 `workflow/bin/run-api-tests.cjs` 共享 runner，强制环境与 host allowlist；功能轨通过浏览器自动化 MCP 或 miniprogram-automator 执行 |
 | 生命周期治理（v0.7） | `--upgrade` 自动清理旧版适配器残留（kit 指纹校验，用户自定义内容保留）并永不覆盖 team-profile；内置 `npm run check:history` 全历史凭证扫描（掩码输出）；79 条清单条目稳定 ID（VCR/DCR/BH/TBS/TIR/LPJ）可跨文档引用；Claude skills 官方推荐格式入口 |
 | HTML 可点击原型 | `/02C-HTML原型` 显式阶段：强制先提取 design tokens + 组件清单，产出前端开发级单文件可点击原型（微路由 + 四态），`ui-baseline-reviewer` 用 tokens 反查卡关 |
+| 规则审计级可追溯 | `workflow/core/rules/rule-catalog.yaml` 以 `OWK-RULE-001..037` 映射 79 个清单 item、capability、stage、版本和脱敏证据；`npm run check:rules` 阻断重复或孤儿映射 |
+| 工具支持分级 | Codex/Claude/Cursor/Copilot 4 个原生 adapter；CodeBuddy/Kiro/Trae 为 `AGENTS.md` 兼容入口。无真实工具验收证据时不标记 `native_verified` |
 
 ## 一键初始化
 
@@ -42,7 +45,7 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target .
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,claude,cursor
 
 # GitHub 包安装方式
-npx --yes --package "git+https://github.com/bluecoast1379/open-workflow-kit.git#v0.7.0" agent-workflow-init --target . --tools codex,claude,cursor
+npx --yes --package "git+https://github.com/bluecoast1379/open-workflow-kit.git#v0.8.0" agent-workflow-init --target . --tools codex,claude,cursor
 
 # 工具名支持 trea 别名，会自动归一为 trae
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,trea,codebuddy
@@ -58,7 +61,7 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --dry-run
 
 1. 扫描目标工作区本地文件和目录，识别代码仓库、技术栈线索、项目资料、UI 规范、前后端规范和测试规范。
 2. 探测工具链六大槽位（CI/CD、部署运行态、配置中心、数据库、运行日志、代码托管），生成 `workflow/TOOLCHAIN_MCP_PLAN.md` 连接计划；未检出的槽位由 `/connect-toolchain` 问答补齐。
-3. 生成 `workflow/team-profile.yaml`（schema 1.1，含分级执行策略、工具链槽位、测试双轨配置），只记录本地路径、工具选择、技术栈和缺失项，不上传任何资料。
+3. 生成可提交的 `workflow/team-profile.yaml`（schema 1.2）和被忽略的 `workflow/local/team-profile.local.yaml`；前者只记仓库相对路径、技术栈、分支模型、逻辑槽位和请求策略，后者用于本地绝对路径、私有端点和凭证变量映射。同时生成被忽略的 `workflow/local/rule-provenance.private.yaml`，用于在私有环境维护 37 条规则的原始来源和 SHA-256 指纹。
 4. 如果必要资料缺失：
    - 交互式终端：逐项提问。
    - 非交互模式：生成 `workflow/INITIALIZATION_QUESTIONS.md`。
@@ -67,7 +70,7 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --dry-run
    - Claude Code: `CLAUDE.md`、`.claude/commands/`
    - Cursor: `.cursor/rules/` 和 `.cursor/commands/`
    - Copilot: `.github/copilot-instructions.md`
-   - CodeBuddy: `.codebuddy/rules/agent-workflow/RULE.mdc`；Kiro: `.kiro/steering/agent-workflow.md`；Trae: `.trae/instructions.md`
+   - CodeBuddy: `.codebuddy/rules/agent-workflow.md`；Kiro: `.kiro/steering/agent-workflow.md`；Trae: `.trae/instructions.md`（三者均按 compatible 级别披露）
 6. 不执行远程 Git 操作，不创建分支，不推送，不触发构建部署，不写数据库。
 
 ## 隐私与脱敏边界
@@ -102,12 +105,12 @@ node open-workflow-kit/bin/check-sanitized.cjs
 
 业务代码修改必须先通过功能分支闸门、阶段闸门和并行开发隔离检查。涉及 UI 或前端的功能必须先完成 `/02B-UI设计` 并让 `/04A-前端代码实现` 遵循设计基线。文档分析和初始化不等于授权实现代码。
 
-高风险写操作（远程 Git、创建分支、push、tag、merge、数据库 DDL/DML、构建部署、生产配置写入）按 `workflow/core/execution-policy.md` 分级处理：默认每次询问——agent 给出完整命令与风险说明，用户选择"agent 执行 / 手动执行"；用户批准的代执行记入 `workflow/EXECUTION_AUDIT.md` 审计日志。团队可在 `team-profile.yaml` 把任意类别收紧为 manual（永不代执行）或放宽为 auto（常设授权，仍需风险声明与审计）。
+高风险写操作按 `workflow/core/execution-policy.md` 分级处理。仓库内 `team-profile.yaml` 只能请求或收紧权限，不能单独提权；生产部署/配置、DDL/DML、受保护分支写入和包发布永远不能仅凭仓库配置 auto。代执行明细脱敏写入被忽略的 `workflow/local/execution-audit.jsonl`，需共享时只提交最小化脱敏摘要。
 
 ## 维护建议
 
 - 通用规则只改 `workflow/core`。
-- 团队特化配置只改 `workflow/team-profile.yaml`。
+- 团队共享配置改 `workflow/team-profile.yaml`；本地私有配置只改 `workflow/local/team-profile.local.yaml`。
 - 工具入口由初始化器或 adapter 生成，不把业务规则硬编码到单个工具里。
 - 对外发布前先跑脱敏检查，再由人工复核许可证、示例和文档。
 
@@ -123,9 +126,13 @@ node open-workflow-kit/bin/check-sanitized.cjs
 ```bash
 cd /path/to/open-workflow-kit
 npm run check
+npm run check:history
+npm run check:rules
+npm run check:adapters
+npm run check:links
 ```
 
-该命令会执行脚本语法检查、starter kit 脱敏检查和临时目录 smoke test。
+`npm run check` 执行语法、工作树脱敏、prototype tokens、37/79 规则映射、4 native/3 compatible 支持矩阵、API runner 和安装/升级 smoke；历史脱敏扫描单独由 `check:history` 执行。
 
 ## 本地打包
 

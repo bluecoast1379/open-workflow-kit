@@ -7,7 +7,7 @@
 1. 把 starter kit 放在目标产品仓库之外。
 2. 打开目标产品工作区根目录。
 3. 从目标根目录运行初始化器。
-4. 检查生成的 `workflow/team-profile.yaml`。
+4. 检查可提交的 `workflow/team-profile.yaml`，将本地绝对路径、私有端点和凭证变量映射填入被忽略的 `workflow/local/team-profile.local.yaml`。若团队需要审计级规则溯源，同时在被忽略的 `workflow/local/rule-provenance.private.yaml` 中补齐原始来源与 SHA-256 指纹。
 5. 如果存在 `workflow/INITIALIZATION_QUESTIONS.md`，补齐缺失资料。
 6. 如需调整工具列表，重新运行初始化器。
 
@@ -52,7 +52,9 @@ agent-workflow-init --target . --tools codex,claude,cursor --upgrade
 
 如果已有文件会被覆盖，初始化器默认写出 `.agent-workflow-new` 文件；只有显式传入 `--force` 才会覆盖。例外：`workflow/team-profile.yaml` 是团队手工维护的契约，在 `--upgrade` 模式下永不原地覆盖（即使 `--force`），新版内容始终写入 `.agent-workflow-new` 供人工比对合并。
 
-`--upgrade` 还会自动清理历史版本生成、当前版本已不再使用的适配器残留（`.codex/prompts/`、`.kiro/instructions.md`、`.codebuddy/instructions.md`）：仅当文件内容匹配 kit 生成指纹（同时引用 AGENTS.md 与 workflow/core 或 team-profile）才删除；内容不匹配的视为用户自定义，保留并提示手动确认。`--dry-run` 会列出清理计划但不删除。
+`--upgrade` 还会自动清理历史版本生成、当前版本已不再使用的残留：`.codex/prompts/`、`.kiro/instructions.md`、`.codebuddy/instructions.md`、`.codebuddy/rules/agent-workflow/RULE.mdc` 和旧 `workflow/core/checklists/rule-catalog.yaml`。仅当文件内容匹配 kit 生成指纹或明确旧 catalog 标记时才删除；用户自定义内容保留并提示手动确认。`--dry-run` 会列出清理计划但不删除。
+
+schema 1.1 升级到 1.2 时，旧 profile 不会被覆盖；请将 `.agent-workflow-new` 中的 `requested_*`、外部受信策略和本地审计路径人工合并到现有 profile。
 
 ## 安全边界
 
@@ -65,7 +67,9 @@ agent-workflow-init --target . --tools codex,claude,cursor --upgrade
 - 执行数据库写入；
 - 修改生产配置。
 
-这些动作必须由用户手动执行。
+上述约束描述的是**初始化器本身**：它在任何参数下都不得执行这些动作。初始化完成后，agent 的其他运行时写操作由 `workflow/core/execution-policy.md` 的 core 硬上限、仓库外受信策略、仓库请求和当次用户授权共同决定，取最严值。
+
+此外，仓库内 `team-profile.yaml` 不能作为高危 auto 的唯一信任源。详细规则见 `workflow/core/execution-policy.md`；外部受信策略模板见 `workflow/core/templates/trusted-execution-policy.template.yaml`。
 
 ## 工具别名
 
@@ -76,6 +80,7 @@ agent-workflow-init --target . --tools codex,claude,cursor --upgrade
 正式用于需求交付前，请先确认：
 
 - 已检查 `workflow/team-profile.yaml`；
+- `workflow/local/` 已被 Git 忽略，本地 profile、私有规则 provenance、凭证与原始执行日志未被跟踪；
 - 如存在 `workflow/INITIALIZATION_QUESTIONS.md`，已补齐待补资料；
 - 选中的工具 adapter 已生成；
 - 已有文件没有被意外覆盖；

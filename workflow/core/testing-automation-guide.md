@@ -4,13 +4,26 @@
 
 ## 1. 接口测试轨（API）
 
-无需额外工具：agent 直接用 HTTP 客户端（curl / 脚本）按 `api-test-plan` 逐用例调用断言。
+默认使用初始化后的 `workflow/bin/run-api-tests.cjs` 执行机器可读 JSON 计划，避免每个 adapter 重新手写 curl 和断言。JSON 样例见 `workflow/core/templates/api-test-plan.example.json`；Markdown `api-test-plan.md` 保留给人工评审和证据回填。
 
 接入准备（一次性）：
 
 1. 用户准备测试数据：环境地址、鉴权密钥、测试账号、业务前置数据。
 2. 凭证写入 `workflow/local/test-credentials.env`（示例见文末），并确认该路径被 `.gitignore` 覆盖；agent 发现该文件被纳入版本控制时必须先阻断。
 3. 在 `team-profile.yaml#testing.api_track.environment_allowlist` 登记允许的环境与 Base URL；生产地址不登记即默认禁止。
+
+执行示例：
+
+```bash
+node workflow/bin/run-api-tests.cjs \
+  --plan features/<feature>/api-test-plan.json \
+  --env-file workflow/local/test-credentials.env \
+  --environment test \
+  --allow-host test-api.example.test \
+  --output features/<feature>/api-test-result.json
+```
+
+runner 同时校验 CLI 环境名、计划环境名和显式 host allowlist；三者不一致即阻断。生产、线上、`prod-*`、`production-*` 和 `live-*` 类环境名默认不可执行，且 runner 不提供绕过开关、不自动跟随 HTTP 重定向。结果只记目标 host SHA-256 指纹、状态码、断言布尔结果和耗时，不回显私有 host、请求凭证、JSON 实际值或完整响应体。
 
 ## 2. 功能测试轨（Web / H5）
 

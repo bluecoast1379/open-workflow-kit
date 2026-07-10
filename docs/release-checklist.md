@@ -5,6 +5,9 @@
 ## 必须完成
 
 - `npm run check` 通过。
+- `npm run check:history` 通过。
+- `npm run check:rules` 通过，确认 37 条规则 / 79 个清单 item 无孤儿、无重复映射。
+- `npm run check:adapters` 与 `npm run check:links` 通过。
 - `npm run build:release` 通过。
 - `dist/RELEASE_MANIFEST.md` 已人工检查。
 - tarball 文件列表已人工检查。
@@ -12,6 +15,10 @@
 - 示例数据均为合成数据，不能追溯到真实客户、员工、项目、事故或生产系统。
 - 工具 adapter 只指向 workflow core，不削弱硬闸门。
 - 初始化器不会执行远程 Git、创建分支、push、构建 / 部署触发、数据库写入或生产配置写入。
+- 生成的 `workflow/team-profile.yaml` 不包含绝对路径、私有端点、账号、凭证或原始审计记录。
+- `workflow/local/team-profile.local.yaml`、`workflow/local/rule-provenance.private.yaml` 和 `workflow/local/execution-audit.jsonl` 已被 Git 忽略。
+- `workflow/adapters/support-matrix.yaml` 中的 4 个原生 adapter 都有当前版本的真实工具验收记录；缺失时必须保持 `native_not_yet_manually_certified`。
+- 共享 API runner 的环境白名单、显式 host 授权、生产阻断和脱敏输出已有回归测试。
 
 ## Git 历史扫描（建议）
 
@@ -26,6 +33,14 @@ node bin/check-sanitized.cjs --extra-banned /path/to/private-denylist.txt
 ```
 
 私有 denylist 应包含公司名、内部仓库前缀、内部系统、客户名、私有域名、敏感业务术语和已知事故名称。不要把该文件提交到 starter kit。
+
+如需验证 37 条规则与内部原始规范的溯源完整性，在私有环境执行：
+
+```bash
+node bin/check-rule-catalog.cjs --provenance workflow/local/rule-provenance.private.yaml
+```
+
+私有溯源文件只保存本地 source locator 和 SHA-256 指纹，永不提交。
 
 ## 人工复核
 

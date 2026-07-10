@@ -1,0 +1,66 @@
+schema_version: "1.0"
+claim: "4 native adapters + 3 AGENTS.md-compatible entries"
+last_documentation_check: "2026-07-10"
+
+native_verification_requirements:
+  - "official auto-load path"
+  - "stage or skill invocation"
+  - "workflow/core and team-profile loading"
+  - "hard-gate non-regression"
+  - "install and upgrade smoke"
+  - "real-tool manual acceptance with tool version and date"
+
+tools:
+  codex:
+    support_level: "native"
+    generated_entries: ["AGENTS.md", ".agents/skills/agent-workflow/SKILL.md"]
+    official_path_status: "verified"
+    automated_conformance: "covered"
+    manual_acceptance: "required-per-release"
+    manual_acceptance_evidence: []
+    verification_status: "native_not_yet_manually_certified"
+  claude:
+    support_level: "native"
+    generated_entries: ["CLAUDE.md", ".claude/commands/", ".claude/skills/agent-workflow/SKILL.md"]
+    official_path_status: "verified"
+    automated_conformance: "covered"
+    manual_acceptance: "required-per-release"
+    manual_acceptance_evidence: []
+    verification_status: "native_not_yet_manually_certified"
+  cursor:
+    support_level: "native"
+    generated_entries: [".cursor/rules/agent-workflow-core.mdc", ".cursor/commands/"]
+    official_path_status: "verified"
+    automated_conformance: "covered"
+    manual_acceptance: "required-per-release"
+    manual_acceptance_evidence: []
+    verification_status: "native_not_yet_manually_certified"
+  copilot:
+    support_level: "native"
+    generated_entries: [".github/copilot-instructions.md"]
+    official_path_status: "verified"
+    automated_conformance: "covered"
+    manual_acceptance: "required-per-release"
+    manual_acceptance_evidence: []
+    verification_status: "native_not_yet_manually_certified"
+  codebuddy:
+    support_level: "compatible"
+    generated_entries: ["AGENTS.md", ".codebuddy/rules/agent-workflow.md"]
+    official_path_status: "verified"
+    automated_conformance: "covered"
+    manual_acceptance: "not-required-for-compatible"
+    verification_status: "compatible"
+  kiro:
+    support_level: "compatible"
+    generated_entries: ["AGENTS.md", ".kiro/steering/agent-workflow.md"]
+    official_path_status: "verified"
+    automated_conformance: "covered"
+    manual_acceptance: "not-required-for-compatible"
+    verification_status: "compatible"
+  trae:
+    support_level: "compatible"
+    generated_entries: ["AGENTS.md", ".trae/instructions.md"]
+    official_path_status: "community-convention-only"
+    automated_conformance: "covered"
+    manual_acceptance: "not-required-for-compatible"
+    verification_status: "compatible"

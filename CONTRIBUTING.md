@@ -8,6 +8,7 @@
 
 ```bash
 npm run check
+npm run check:history
 npm run build:release
 ```
 
@@ -41,6 +42,7 @@ cat dist/RELEASE_MANIFEST.md
 
 - 修改是通用的，不绑定任何私有组织。
 - `npm run check` 通过。
+- `npm run check:history` 通过。
 - `npm run build:release` 通过。
 - 新增或修改的示例都是合成数据。
 - 生成文件布局变化时，文档说明迁移或兼容影响。

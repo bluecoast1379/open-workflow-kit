@@ -1,0 +1,102 @@
+#!/usr/bin/env node
+const assert = require('assert');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { executePlan, loadEnvFile } = require('../bin/run-api-tests.cjs');
+
+const plan = {
+  schema_version: '1.0',
+  environment: { name: 'test', base_url_env: 'TEST_BASE_URL' },
+  cases: [
+    {
+      id: 'API-001',
+      method: 'GET',
+      path: '/health',
+      headers: { Authorization: 'Bearer ${TEST_API_TOKEN}' },
+      expect: { status: 200, json: { status: 'ok' } }
+    }
+  ]
+};
+
+main().catch((error) => {
+  console.error(error.stack || error.message);
+  process.exit(1);
+});
+
+async function main() {
+  const calls = [];
+  const result = await executePlan(plan, {
+    environment: 'test',
+    allowHosts: ['api.example.test'],
+    env: { TEST_BASE_URL: 'https://api.example.test', TEST_API_TOKEN: 'TEST_VALUE_NOT_A_REAL_SECRET' },
+    fetchImpl: async (url, options) => {
+      calls.push({
+        url: String(url),
+        authorizationPresent: Boolean(options.headers.Authorization),
+        redirect: options.redirect
+      });
+      return { status: 200, text: async () => '{"status":"ok"}' };
+    }
+  });
+  assert.strictEqual(result.summary.passed, 1);
+  assert.strictEqual(result.summary.failed, 0);
+  assert.deepStrictEqual(calls, [{
+    url: 'https://api.example.test/health',
+    authorizationPresent: true,
+    redirect: 'manual'
+  }]);
+  assert.match(result.target_host_fingerprint, /^sha256:[a-f0-9]{64}$/);
+  assert.ok(!JSON.stringify(result).includes('api.example.test'));
+  assert.ok(!Object.hasOwn(result.cases[0].assertions[1], 'actual'));
+
+  await assert.rejects(
+    () => executePlan({ ...plan, environment: { name: 'production', base_url_env: 'TEST_BASE_URL' } }, {
+      environment: 'production', allowHosts: ['api.example.test'], env: { TEST_BASE_URL: 'https://api.example.test' }
+    }),
+    /生产环境默认阻断/
+  );
+
+  await assert.rejects(
+    () => executePlan({ ...plan, environment: { name: 'prod-cn', base_url_env: 'TEST_BASE_URL' } }, {
+      environment: 'prod-cn', allowHosts: ['api.example.test'], env: { TEST_BASE_URL: 'https://api.example.test' }
+    }),
+    /生产环境默认阻断/
+  );
+
+  await assert.rejects(
+    () => executePlan(plan, {
+      environment: 'test', allowHosts: ['other.example.test'], env: { TEST_BASE_URL: 'https://api.example.test' }
+    }),
+    /allowlist/
+  );
+
+  const dryRun = await executePlan(plan, {
+    environment: 'test', allowHosts: ['api.example.test'], env: { TEST_BASE_URL: 'https://api.example.test' }, dryRun: true
+  });
+  assert.strictEqual(dryRun.summary.not_run, 1);
+
+  const leakedValue = 'VERY_PRIVATE_' + 'TOKEN_VALUE_9142';
+  const failed = await executePlan(plan, {
+    environment: 'test',
+    allowHosts: ['api.example.test'],
+    env: { TEST_BASE_URL: 'https://api.example.test', TEST_API_TOKEN: leakedValue },
+    fetchImpl: async () => {
+      throw new Error(`request failed at https://api.example.test/health?token=${leakedValue}`);
+    }
+  });
+  const failedOutput = JSON.stringify(failed);
+  assert.ok(!failedOutput.includes(leakedValue));
+  assert.ok(!failedOutput.includes('api.example.test'));
+  assert.match(failed.cases[0].error, /redacted-url|\*\*\*/);
+
+  const envDir = fs.mkdtempSync(path.join(os.tmpdir(), 'api-runner-env-'));
+  const envFile = path.join(envDir, 'credentials.env');
+  const malformedSecret = 'MALFORMED_' + 'PRIVATE_VALUE_7812';
+  fs.writeFileSync(envFile, malformedSecret + '\n');
+  assert.throws(() => loadEnvFile(envFile), (error) => {
+    assert.ok(!error.message.includes(malformedSecret));
+    return /第 1 行/.test(error.message);
+  });
+  console.log('API runner test passed.');
+}

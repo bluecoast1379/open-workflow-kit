@@ -12,7 +12,7 @@ const TOOL_ALIASES = {
   github_copilot: 'copilot',
   'github-copilot': 'copilot'
 };
-const GENERATED_BY = 'open-workflow-kit 0.7.0';
+const GENERATED_BY = 'open-workflow-kit 0.8.0';
 
 const STAGES = [
   ['init-workspace', '初始化工作区', '扫描本地资料、生成 team-profile、缺资料提问，并生成当前工具 adapter。'],
@@ -115,7 +115,6 @@ const CAPABILITY_FILES = [
 
 const CHECKLIST_FILES = [
   'README.md',
-  'rule-catalog.yaml',
   'validation-change-review.md',
   'data-consistency-review.md',
   'branch-hygiene.md',
@@ -124,12 +123,21 @@ const CHECKLIST_FILES = [
   'language-pitfalls-java.md'
 ];
 
+const RULE_FILES = ['README.md', 'rule-catalog.yaml'];
+
 // 历史版本生成过、当前版本已不再生成的适配器路径。
 // --upgrade 时对这些路径做指纹校验后自动清理（详见 cleanupLegacyArtifacts）。
 const LEGACY_ARTIFACTS = [
   { rel: '.codex/prompts', kind: 'dir', reason: 'Codex 不加载项目级 prompts（v0.6.0 起改为根 AGENTS.md + .agents/skills/）' },
   { rel: '.kiro/instructions.md', kind: 'file', reason: 'Kiro 官方路径为 .kiro/steering/（v0.6.0 起）' },
-  { rel: '.codebuddy/instructions.md', kind: 'file', reason: 'CodeBuddy 官方路径为 .codebuddy/rules/<name>/RULE.mdc（v0.6.0 起）' }
+  { rel: '.codebuddy/instructions.md', kind: 'file', reason: 'CodeBuddy 不使用旧 instructions.md 路径（v0.6.0 起）' },
+  { rel: '.codebuddy/rules/agent-workflow/RULE.mdc', kind: 'file', reason: 'CodeBuddy 项目规则应为 .codebuddy/rules/*.md（v0.8.0 起）' },
+  {
+    rel: 'workflow/core/checklists/rule-catalog.yaml',
+    kind: 'file',
+    marker: 'total_items: 79',
+    reason: '规则目录迁移到 workflow/core/rules/rule-catalog.yaml（v0.8.0 起）'
+  }
 ];
 
 const TOOLCHAIN_SLOTS = [
@@ -151,10 +159,12 @@ const SLOT_RECOMMENDATIONS = {
   git_platform: 'GitHub/GitLab 均有官方或成熟 MCP；自建托管用只读 REST 包装（读 PR/分支/diff），写操作仍走执行策略。'
 };
 
-main().catch((error) => {
-  console.error(error && error.stack ? error.stack : String(error));
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error && error.stack ? error.stack : String(error));
+    process.exit(1);
+  });
+}
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
@@ -186,6 +196,7 @@ async function main() {
     detectedTools,
     repos,
     sources,
+    localSourcePaths: {},
     toolchain,
     missing
   };
@@ -194,9 +205,16 @@ async function main() {
     for (const item of missing) {
       const answer = await promptLine(`${item.question} (optional, comma separated): `);
       if (answer.trim()) {
+        const classified = classifySourcePaths(
+          target,
+          answer.split(',').map((v) => v.trim()).filter(Boolean)
+        );
+        if (classified.local.length) profile.localSourcePaths[item.key] = classified.local;
         sources[item.key] = {
-          status: 'provided_by_user',
-          paths: answer.split(',').map((v) => v.trim()).filter(Boolean)
+          status: classified.shared.length
+            ? (classified.local.length ? 'provided_by_user_with_local_paths' : 'provided_by_user')
+            : 'provided_local_only',
+          paths: classified.shared
         };
       }
     }
@@ -240,6 +258,11 @@ function parseArgs(argv) {
   }
   return options;
 }
+
+module.exports = {
+  classifySourcePaths,
+  extractGitHost
+};
 
 function printHelp() {
   console.log(`用法: node bin/init-workspace.cjs [options]
@@ -423,14 +446,22 @@ function buildInstallPlan(target, profile, options) {
   add('workflow/team-profile.yaml', makeTeamProfileYaml(profile), { preserveOnUpgrade: true });
   // 凭证目录防误提交：默认忽略 workflow/local/ 下全部内容。
   add('workflow/local/.gitignore', '*\n!.gitignore\n');
+  add('workflow/local/team-profile.local.yaml', makeLocalTeamProfileYaml(profile), { preserveOnUpgrade: true });
+  add('workflow/local/rule-provenance.private.yaml', makePrivateRuleProvenanceYaml(), { preserveOnUpgrade: true });
   add('workflow/README.md', makeWorkflowReadme());
+  add('workflow/bin/run-api-tests.cjs', readKitFile('bin/run-api-tests.cjs'));
+  add('workflow/bin/check-rule-catalog.cjs', readKitFile('bin/check-rule-catalog.cjs'));
+  add('workflow/bin/check-support-matrix.cjs', readKitFile('bin/check-support-matrix.cjs'));
+  add('workflow/bin/check-markdown-links.cjs', readKitFile('bin/check-markdown-links.cjs'));
   add('workflow/core/README.md', readKitFile('workflow/core/README.md'));
   add('workflow/core/commands/README.md', readKitFile('workflow/core/commands/README.md'));
   add('workflow/core/templates/README.md', readKitFile('workflow/core/templates/README.md'));
   add('workflow/core/templates/00-workflow-status.md', readKitFile('workflow/core/templates/00-workflow-status.md'));
   add('workflow/core/templates/stage-document.md', readKitFile('workflow/core/templates/stage-document.md'));
   add('workflow/core/templates/team-profile.template.yaml', readKitFile('workflow/core/templates/team-profile.template.yaml'));
+  add('workflow/core/templates/trusted-execution-policy.template.yaml', readKitFile('workflow/core/templates/trusted-execution-policy.template.yaml'));
   add('workflow/core/templates/api-test-plan.md', readKitFile('workflow/core/templates/api-test-plan.md'));
+  add('workflow/core/templates/api-test-plan.example.json', readKitFile('workflow/core/templates/api-test-plan.example.json'));
   add('workflow/core/templates/ui-test-plan.md', readKitFile('workflow/core/templates/ui-test-plan.md'));
   add('workflow/core/templates/prototype-page.html', readKitFile('workflow/core/templates/prototype-page.html'));
   add('workflow/core/execution-policy.md', readKitFile('workflow/core/execution-policy.md'));
@@ -442,7 +473,11 @@ function buildInstallPlan(target, profile, options) {
   for (const name of CHECKLIST_FILES) {
     add(`workflow/core/checklists/${name}`, readKitFile(`workflow/core/checklists/${name}`));
   }
+  for (const name of RULE_FILES) {
+    add(`workflow/core/rules/${name}`, readKitFile(`workflow/core/rules/${name}`));
+  }
   add('workflow/adapters/README.md', readKitFile('workflow/adapters/README.md'));
+  add('workflow/adapters/support-matrix.yaml', readKitFile('workflow/adapters/support-matrix.yaml'));
   add('workflow/TOOLCHAIN_MCP_PLAN.md', makeToolchainPlan(profile));
   add('workflow/INSTALL_REPORT.md', makeInstallReport(profile, options));
   if (profile.missing.length) add('workflow/INITIALIZATION_QUESTIONS.md', makeQuestions(profile));
@@ -476,8 +511,8 @@ function buildInstallPlan(target, profile, options) {
     add('.github/copilot-instructions.md', makeGenericInstructions('GitHub Copilot'));
   }
   if (profile.enabledTools.includes('codebuddy')) {
-    // 官方约定：项目规则位于 .codebuddy/rules/<rule-name>/RULE.mdc
-    add('.codebuddy/rules/agent-workflow/RULE.mdc', makeGenericInstructions('CodeBuddy'));
+    // 官方约定：项目规则位于 .codebuddy/rules/*.md。
+    add('.codebuddy/rules/agent-workflow.md', makeGenericInstructions('CodeBuddy'));
   }
   if (profile.enabledTools.includes('kiro')) {
     // 官方约定：项目级 steering 文件位于 .kiro/steering/*.md；Kiro 也会自动读取根 AGENTS.md
@@ -542,6 +577,11 @@ function looksKitGenerated(text) {
   return text.includes('AGENTS.md') && (text.includes('workflow/core') || text.includes('workflow/team-profile'));
 }
 
+function looksLegacyGenerated(text, artifact) {
+  if (artifact.marker) return text.includes(artifact.marker);
+  return looksKitGenerated(text);
+}
+
 function planLegacyCleanup(target, options) {
   const plan = { remove: [], keep: [], dirs: [] };
   if (!options.upgrade) return plan;
@@ -550,7 +590,12 @@ function planLegacyCleanup(target, options) {
     if (!fs.existsSync(full)) continue;
     if (artifact.kind === 'file') {
       const text = safeReadFile(full, 256 * 1024);
-      (looksKitGenerated(text) ? plan.remove : plan.keep).push({ file: full, reason: artifact.reason });
+      if (looksLegacyGenerated(text, artifact)) {
+        plan.remove.push({ file: full, reason: artifact.reason });
+        plan.dirs.push(path.dirname(full));
+      } else {
+        plan.keep.push({ file: full, reason: artifact.reason });
+      }
     } else {
       let entries = [];
       try {
@@ -592,9 +637,72 @@ function executeLegacyCleanup(plan) {
   }
 }
 
+function classifySourcePaths(target, values) {
+  const shared = [];
+  const local = [];
+  for (const value of values) {
+    // URL、home 缩写与工作区外路径都属本地私有信息。
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(value) || value === '~' || value.startsWith('~/')) {
+      local.push(value);
+      continue;
+    }
+    const resolved = path.resolve(target, value);
+    const rel = path.relative(target, resolved);
+    const outside = rel === '..' || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel);
+    if (outside) {
+      local.push(value);
+      continue;
+    }
+    shared.push((rel || '.').split(path.sep).join('/'));
+  }
+  return { shared: [...new Set(shared)], local: [...new Set(local)] };
+}
+
+function makeLocalTeamProfileYaml(profile) {
+  const lines = [
+    'schema_version: "1.0"',
+    'local_only: true',
+    '# This file is ignored by workflow/local/.gitignore. Never commit it.',
+    'absolute_paths:'
+  ];
+  const sourceEntries = Object.entries((profile && profile.localSourcePaths) || {});
+  if (!sourceEntries.length) {
+    lines.push('  {}');
+  } else {
+    lines.push('  source_materials:');
+    for (const [key, values] of sourceEntries) {
+      lines.push(`    ${key}:`);
+      for (const value of values) lines.push(`      - ${yamlString(value)}`);
+    }
+  }
+  lines.push('private_endpoints: {}');
+  lines.push('local_accounts: {}');
+  lines.push('credential_env_names: []');
+  lines.push('trusted_policy_path: "${OPEN_WORKFLOW_TRUST_POLICY}"');
+  lines.push('');
+  return lines.join('\n');
+}
+
+function makePrivateRuleProvenanceYaml() {
+  const lines = [
+    'schema_version: "1.0"',
+    'local_only: true',
+    '# Ignored by workflow/local/.gitignore. Replace every placeholder before private validation.',
+    'entries:'
+  ];
+  for (let i = 1; i <= 37; i++) {
+    const suffix = String(i).padStart(3, '0');
+    lines.push(`  - ref: "OWK-PRIVATE-RULE-${suffix}"`);
+    lines.push('    source_locator: "<TODO: local-only source and section>"');
+    lines.push('    source_fingerprint: "<TODO: sha256:64-hex>"');
+  }
+  lines.push('');
+  return lines.join('\n');
+}
+
 function makeTeamProfileYaml(profile) {
   const lines = [];
-  lines.push('schema_version: "1.1"');
+  lines.push('schema_version: "1.2"');
   lines.push(`generated_at: "${new Date().toISOString()}"`);
   lines.push(`generated_by: "${GENERATED_BY}"`);
   lines.push('');
@@ -649,21 +757,32 @@ function makeTeamProfileYaml(profile) {
   lines.push('  feature_branch_rule: "<TODO>"');
   lines.push('  worktree_dir: "_worktrees"');
   lines.push('');
-  lines.push('# 分级执行策略：高风险写操作默认不自动执行；agent 给出命令+风险说明+回滚提示，');
-  lines.push('# 用户每次选择 agent 执行或手动执行。详见 workflow/core/execution-policy.md。');
+  lines.push('# 仓库内只记请求策略，不是信任根。生效值取 core/外部受信策略/仓库请求/当次授权中最严格值。');
   lines.push('execution_policy:');
-  lines.push('  default_mode: "ask"   # ask=每次询问 / manual=只出命令永不代执行 / auto=常设授权(仍需风险声明+审计)');
-  lines.push('  categories:');
-  lines.push('    remote_git: "ask"');
-  lines.push('    branch_creation: "ask"');
-  lines.push('    push_tag_merge: "ask"');
-  lines.push('    db_ddl: "ask"');
-  lines.push('    db_dml: "ask"');
-  lines.push('    production_config_write: "ask"');
-  lines.push('    build_deploy_trigger: "ask"');
-  lines.push('    config_write: "ask"');
+  lines.push('  requested_default_mode: "ask"');
+  lines.push('  requested_categories:');
+  lines.push('    remote_git: { mode: "ask" }');
+  lines.push('    branch_creation: { mode: "ask" }');
+  lines.push('    push_tag_merge: { mode: "ask" }');
+  lines.push('    protected_branch_write: { mode: "ask" }');
+  lines.push('    db_ddl: { mode: "ask" }');
+  lines.push('    db_dml: { mode: "ask" }');
+  lines.push('    production_config_write: { mode: "ask" }');
+  lines.push('    build_deploy_trigger: { mode: "ask" }');
+  lines.push('    package_publish: { mode: "ask" }');
+  lines.push('    config_write: { mode: "ask" }');
+  lines.push('  external_trust_policy:');
+  lines.push('    required_for_auto: true');
+  lines.push('    source_env: "OPEN_WORKFLOW_TRUST_POLICY"');
+  lines.push('  non_repo_auto_categories:');
+  lines.push('    - "protected_branch_write"');
+  lines.push('    - "db_ddl"');
+  lines.push('    - "db_dml"');
+  lines.push('    - "production_config_write"');
+  lines.push('    - "build_deploy_trigger"');
+  lines.push('    - "package_publish"');
   lines.push('  risk_statement_required: true');
-  lines.push('  audit_log: "workflow/EXECUTION_AUDIT.md"');
+  lines.push('  audit_log: "workflow/local/execution-audit.jsonl"');
   lines.push('');
   lines.push('risk_policy:');
   lines.push('  # 执行模式已迁移到 execution_policy；本段保留 CI/CD 成熟度规则与高风险文件清单。');
@@ -801,7 +920,13 @@ function detectToolchain(root, repos) {
           else if (host.includes('bitbucket')) tool = 'bitbucket';
           else if (host.includes('gitee')) tool = 'gitee';
           else if (host.includes('gitea')) tool = 'gitea';
-          addHit('git_platform', tool, `${base === '.' ? '.git/config' : base + '/.git/config'} -> ${host}`);
+          // 可提交的 team-profile 只记 provider 类型和仓库相对证据，
+          // 不记自建 host；真实端点属于 workflow/local/team-profile.local.yaml。
+          addHit(
+            'git_platform',
+            tool,
+            `${base === '.' ? '.git/config' : base + '/.git/config'} -> ${tool} (host redacted)`
+          );
         }
       }
     }
@@ -905,10 +1030,14 @@ function makeWorkflowReadme() {
 
 本目录由 ${GENERATED_BY} 生成。
 
-- \`team-profile.yaml\`: 当前团队的本地配置（含分级执行策略、工具链槽位与测试配置）。
+- \`team-profile.yaml\`: 当前团队可提交、可脱敏审查的共享契约（含请求策略、工具链槽位与测试配置）。
+- \`local/team-profile.local.yaml\`: 绝对路径、私有端点与本地账号的私有配置（Git 忽略）。
+- \`local/rule-provenance.private.yaml\`: 37 条规则的私有原始来源与 SHA-256 指纹骨架（Git 忽略）。
 - \`core/\`: 工具无关的工作流规则、命令、模板、能力和检查清单。
 - \`core/execution-policy.md\`: 高风险写操作的分级执行策略。
 - \`core/checklists/\`: 高频事故模式的逐项检查清单。
+- \`core/rules/rule-catalog.yaml\`: 37 条规则到 79 个清单 item 的公开审计级映射。
+- \`bin/\`: 目标工作区可直接运行的规则、adapter、Markdown 链接检查器与 API runner。
 - \`adapters/\`: 支持工具的 adapter 说明。
 - \`TOOLCHAIN_MCP_PLAN.md\`: 工具链 MCP 连接计划（\`/connect-toolchain\` 维护）。
 - \`INITIALIZATION_QUESTIONS.md\`: 缺少必要本地资料时生成的问题清单。
@@ -919,7 +1048,7 @@ function makeWorkflowReadme() {
 
 \`/02B-UI设计\` 是前端实现的设计闸门；\`/04A-前端代码实现\` 必须读取并遵循 \`features/<feature>/02B-UI设计.md\`，缺失时先补齐或记录用户明确授权的范围有限豁免。
 
-不要把凭证、真实客户秘密或私有 URL 写入通用 core 文件。团队业务知识应保留在 \`team-profile.yaml\` 或本地资料中。
+不要把凭证、绝对路径、真实客户秘密或私有 URL 写入通用 core 或可提交的 \`team-profile.yaml\`。这些信息只能保留在 \`workflow/local/\` 或仓库外本地资料中。
 `;
 }
 
@@ -1038,21 +1167,21 @@ function makeToolUsage(profile) {
   if (tools.includes('codebuddy')) {
     blocks.push(`### CodeBuddy
 
-- 项目规则 \`.codebuddy/rules/agent-workflow/RULE.mdc\` 会自动生效（官方项目级规则路径）。
+- 生成兼容级项目规则 \`.codebuddy/rules/agent-workflow.md\`；\`AGENTS.md\` 是核心兜底入口。
 - 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
   }
 
   if (tools.includes('kiro')) {
     blocks.push(`### Kiro
 
-- steering 文件 \`.kiro/steering/agent-workflow.md\` 会自动生效；Kiro 也会自动读取本 \`AGENTS.md\`。
+- 生成兼容级 steering 文件 \`.kiro/steering/agent-workflow.md\`；Kiro 也可读取本 \`AGENTS.md\`。
 - 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
   }
 
   if (tools.includes('trae')) {
     blocks.push(`### Trae
 
-- \`.trae/instructions.md\` 会自动生效。
+- \`.trae/instructions.md\` 是兼容增强入口，不作为官方原生路径承诺；核心兜底为 \`AGENTS.md\`。
 - 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
   }
 
@@ -1095,7 +1224,9 @@ ${makeCommandTable()}
 
 - 工作流规则：\`workflow/core/\`
 - 团队配置：\`workflow/team-profile.yaml\`
+- 本地私有配置：\`workflow/local/team-profile.local.yaml\`（被 Git 忽略）
 - 可复用检查能力：\`workflow/core/capabilities/\`
+- 规则审计目录：\`workflow/core/rules/rule-catalog.yaml\`
 - 需求产物：工作区级 \`features/<feature>/\`
 - 工具 adapter：仅作为生成的薄入口
 
@@ -1105,7 +1236,9 @@ ${makeCommandTable()}
 - 功能分支闸门和实现阶段闸门通过前，禁止修改业务代码。
 - \`/02B-UI设计\` 是前端实现的设计闸门；\`/04A-前端代码实现\` 必须读取并遵循工作区级 \`features/<feature>/02B-UI设计.md\`，缺失时先补齐 02B，除非用户明确给出范围有限的设计豁免。可点击原型只能通过 \`/02C-HTML原型\` 显式产出，且必须受 \`workflow/design/tokens.css\` 与组件清单约束。
 - \`/03-06-研发准备\` 以及 01/02/02B/03 阶段只授权分析和工作流文档。
-- 高风险写操作（远程 Git、创建分支、push/tag/merge、数据库 DDL/DML、生产配置写入、构建部署触发）**默认不自动执行**，按 \`workflow/core/execution-policy.md\` 分级处理：agent 必须给出完整命令 + 风险说明 + 回滚方式，由用户每次选择"agent 执行 / 我手动执行"；用户批准的代执行必须写入 \`workflow/EXECUTION_AUDIT.md\`。
+- 仓库内 \`team-profile.yaml\` 不是信任根。生效执行模式取 core 硬上限、仓库外受信策略、team-profile 请求和当次授权中最严格值。
+- 生产部署/配置、DDL/DML、受保护分支写入和包发布永远不得仅凭仓库配置 auto；无外部受信策略时最高为 ask。
+- 代执行明细必须脱敏写入被忽略的 \`workflow/local/execution-audit.jsonl\`；不创建、不追加可提交的 \`workflow/EXECUTION_AUDIT.md\`。
 - 自动化测试（\`automated-test-runner\`）目标环境必须在 \`team-profile#testing\` 白名单内，生产环境默认阻断；测试凭证只放本地未跟踪文件，不进文档与仓库。
 - 同仓多需求进入实现阶段后，必须使用独立 worktree。
 
@@ -1119,7 +1252,7 @@ workflow core 是共享的。工具 adapter 可按当前工具能力增强或降
 - L3：hooks 或前置检查
 - L4：subagents 或多 agent 路由
 
-不要承诺所有工具体验完全一致。只能使用当前工具自己的 adapter。
+对外口径为 Codex/Claude/Cursor/Copilot 4 个原生 adapter，CodeBuddy/Kiro/Trae 3 个 \`AGENTS.md\` 兼容入口；详细证据见 \`workflow/adapters/support-matrix.yaml\`。不要承诺所有工具体验完全一致。
 
 ## 工具使用方式
 
@@ -1135,6 +1268,8 @@ ${profile.enabledTools.map((tool) => `- ${tool}`).join('\n')}
 - \`workflow/core/commands/\`：各阶段契约。
 - \`workflow/core/capabilities/README.md\`：可复用检查能力及工具适配方式。
 - \`workflow/core/checklists/README.md\`：高频事故模式的逐项检查清单。
+- \`workflow/core/rules/rule-catalog.yaml\`：37 条规则到 79 个清单 item、能力和阶段的审计级映射。
+- \`workflow/adapters/support-matrix.yaml\`：原生/兼容支持级别与验证证据。
 - \`workflow/core/execution-policy.md\`：高风险写操作的分级执行策略与审计要求。
 - \`workflow/TOOLCHAIN_MCP_PLAN.md\`：工具链 MCP 连接计划（由 \`/connect-toolchain\` 维护）。
 - \`workflow/core/testing-automation-guide.md\`：接口/功能测试双轨自动化接入指引。

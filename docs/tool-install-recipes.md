@@ -11,8 +11,10 @@ agent-workflow-init --target . --tools codex --yes
 生成文件：
 
 - `AGENTS.md`
-- `.codex/prompts/`
+- `.agents/skills/agent-workflow/SKILL.md`
 - `workflow/`
+
+Codex 的项目级入口是根 `AGENTS.md` 和 `.agents/skills/`；本 kit 不生成项目级 `.codex/prompts/`。
 
 ## Claude Code
 
@@ -61,8 +63,10 @@ agent-workflow-init --target . --tools codebuddy --yes
 生成文件：
 
 - `AGENTS.md`
-- `.codebuddy/rules/agent-workflow/RULE.mdc`（官方项目规则路径）
+- `.codebuddy/rules/agent-workflow.md`
 - `workflow/`
+
+CodeBuddy 在本 kit 中属于 `AGENTS.md` compatible 入口，不宣称与原生 adapter 等价。
 
 ## Kiro
 
@@ -75,6 +79,8 @@ agent-workflow-init --target . --tools kiro --yes
 - `AGENTS.md`
 - `.kiro/steering/agent-workflow.md`（官方 steering 路径）
 - `workflow/`
+
+Kiro 在本 kit 中属于 `AGENTS.md` compatible 入口。
 
 ## Trae
 
@@ -94,10 +100,12 @@ agent-workflow-init --target . --tools trea --yes
 - `.trae/instructions.md`
 - `workflow/`
 
+Trae 在本 kit 中属于 `AGENTS.md` compatible 入口；该路径是兼容增强，不作为原生能力承诺。
+
 ## 多工具安装
 
 ```bash
 agent-workflow-init --target . --tools codex,claude,cursor,copilot,codebuddy,kiro,trae --yes
 ```
 
-不要期待每个工具提供完全相同的运行体验。core 是同一套，adapter 能力取决于当前工具。
+支持口径是 Codex、Claude Code、Cursor、GitHub Copilot 4 个原生 adapter，CodeBuddy、Kiro、Trae 3 个 `AGENTS.md` compatible 入口。生成了工具文件不等于已完成原生验收；发布前按 [`support-matrix.yaml`](../workflow/adapters/support-matrix.yaml) 记录真实工具验收证据。不承诺所有工具体验完全一致。

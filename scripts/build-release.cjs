@@ -44,13 +44,25 @@ run(installedBin, ['--target', installTarget, '--tools', 'codex,trea,codebuddy',
 for (const rel of [
   'AGENTS.md',
   '.trae/instructions.md',
-  '.codebuddy/instructions.md',
+  '.codebuddy/rules/agent-workflow.md',
   'workflow/team-profile.yaml',
+  'workflow/local/.gitignore',
+  'workflow/local/team-profile.local.yaml',
+  'workflow/local/rule-provenance.private.yaml',
+  'workflow/core/rules/rule-catalog.yaml',
+  'workflow/adapters/support-matrix.yaml',
+  'workflow/bin/check-rule-catalog.cjs',
+  'workflow/bin/check-support-matrix.cjs',
+  'workflow/bin/check-markdown-links.cjs',
+  'workflow/bin/run-api-tests.cjs',
   'workflow/INITIALIZATION_QUESTIONS.md'
 ]) {
   const file = path.join(installTarget, rel);
   if (!fs.existsSync(file)) throw new Error(`发布包安装 smoke 缺少 ${rel}`);
 }
+run(process.execPath, [path.join(installTarget, 'workflow/bin/check-rule-catalog.cjs')]);
+run(process.execPath, [path.join(installTarget, 'workflow/bin/check-support-matrix.cjs')]);
+run(process.execPath, [path.join(installTarget, 'workflow/bin/check-markdown-links.cjs')]);
 
 const bytes = fs.readFileSync(tarball);
 const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');

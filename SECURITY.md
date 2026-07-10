@@ -8,7 +8,7 @@
 
 不要在公开 issue 中提交密钥、凭证、私有 URL、客户数据、私有源码、日志、数据库导出或生产配置。
 
-请通过仓库维护者指定的私有渠道报告安全问题，并只提供定位问题所需的最小上下文。
+请通过 [GitHub Private Vulnerability Reporting](https://github.com/bluecoast1379/open-workflow-kit/security/advisories/new) 私密报告安全问题，并只提供定位问题所需的最小上下文。若该入口暂不可用，不要转到公开 issue；请先通过不含敏感细节的普通消息联系维护者，索取一次性私有提交方式。
 
 ## 范围
 
@@ -32,6 +32,10 @@
 
 ```bash
 npm run check
+npm run check:history
+npm run check:rules
+npm run check:adapters
+npm run check:links
 npm run build:release
 node bin/check-sanitized.cjs --extra-banned <private-denylist-file>
 ```

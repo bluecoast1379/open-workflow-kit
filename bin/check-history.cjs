@@ -6,7 +6,13 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { genericPatterns, checkedExt, loadBannedTerms, maskMatch } = require('./sanitize-patterns.cjs');
+const {
+  genericPatterns,
+  isCheckedFile,
+  loadBannedTerms,
+  maskMatch,
+  redactBannedTerms
+} = require('./sanitize-patterns.cjs');
 
 const args = parseArgs(process.argv.slice(2));
 const repoRoot = path.resolve(args.repo || path.resolve(__dirname, '..'));
@@ -18,7 +24,7 @@ if (gitCheck.status !== 0) {
 }
 
 const banned = loadBannedTerms(args.extraBanned);
-const logArgs = ['-C', repoRoot, 'log', '--all', '--no-color', '--pretty=format:@@COMMIT@@%h', '-p', '--unified=0'];
+const logArgs = ['-C', repoRoot, '-c', 'core.quotePath=false', 'log', '--all', '--no-color', '--pretty=format:@@COMMIT@@%h', '-p', '--unified=0'];
 if (args.maxCommits) logArgs.splice(logArgs.indexOf('-p'), 0, `-n${args.maxCommits}`);
 const log = spawnSync('git', logArgs, { encoding: 'utf8', maxBuffer: 512 * 1024 * 1024 });
 if (log.status !== 0) {
@@ -28,6 +34,7 @@ if (log.status !== 0) {
 
 let commit = '';
 let file = '';
+let safeFile = '';
 let scannedAdds = 0;
 let commitCount = 0;
 const hits = [];
@@ -40,23 +47,28 @@ for (const raw of log.stdout.split('\n')) {
   }
   if (raw.startsWith('+++ ')) {
     file = raw.replace(/^\+\+\+ (b\/)?/, '');
+    safeFile = redactBannedTerms(file, banned);
+    if (file !== '/dev/null') {
+      for (const term of banned) {
+        if (file.includes(term)) hits.push({ commit, file: safeFile, kind: '私有词路径', preview: 'path=***' });
+      }
+    }
     continue;
   }
   if (!raw.startsWith('+') || raw.startsWith('+++')) continue;
   if (file === '/dev/null') continue;
-  const ext = path.extname(file);
-  if (ext && !checkedExt.has(ext)) continue;
+  if (!isCheckedFile(file)) continue;
   const line = raw.slice(1);
   scannedAdds++;
   for (const term of banned) {
     if (line.includes(term)) {
-      hits.push({ commit, file, kind: `私有词`, preview: maskMatch(line, term) });
+      hits.push({ commit, file: safeFile, kind: `私有词`, preview: maskMatch(line, term) });
     }
   }
   for (const pattern of genericPatterns) {
     const match = line.match(pattern.regex);
     if (match) {
-      hits.push({ commit, file, kind: pattern.name, preview: maskMatch(line, match[0]) });
+      hits.push({ commit, file: safeFile, kind: pattern.name, preview: maskMatch(line, match[0]) });
     }
   }
 }
@@ -66,7 +78,7 @@ if (args.report) {
     '# HISTORY_SANITIZATION_REPORT',
     '',
     `- 生成时间: ${new Date().toISOString()}`,
-    `- 仓库: ${repoRoot}`,
+    '- 仓库: local repository (absolute path omitted)',
     `- 扫描提交数: ${commitCount}`,
     `- 扫描新增行数: ${scannedAdds}`,
     `- 通用模式: ${genericPatterns.map((p) => p.name).join(' | ')}`,
