@@ -25,36 +25,41 @@
 
 小程序没有浏览器入口，自动化走微信官方 `miniprogram-automator`（挂接微信开发者工具）。约束：需要本机安装并打开微信开发者工具，CI 环境难以运行，因此定位为**本地半自动化**。
 
-接入步骤：
+接入步骤（**隔离安装，不触碰业务仓 package.json / lockfile**，且不受实现阶段闸门约束——runner 属工作流本地资产，整个 `workflow/local/` 已被自动生成的 `.gitignore` 忽略）：
 
 1. 微信开发者工具 → 设置 → 安全设置 → 开启"服务端口"（自动化依赖该端口）。
-2. 项目内安装依赖：`npm i -D miniprogram-automator`。
-3. 脚本骨架（agent 按 ui-test-plan 生成到 `workflow/local/miniprogram-tests/`，本地运行）：
+2. 在独立目录安装依赖：`mkdir -p workflow/local/miniprogram-runner && cd workflow/local/miniprogram-runner && npm init -y && npm i -D miniprogram-automator`。
+3. 脚本骨架（agent 按 ui-test-plan 生成到 `workflow/local/miniprogram-runner/`，本地运行）：
 
 ```js
 const automator = require('miniprogram-automator');
 
 (async () => {
-  const miniProgram = await automator.launch({
-    projectPath: '<小程序项目根目录>',   // 或用 automator.connect({ wsEndpoint }) 连接已打开的工具
-  });
-  const page = await miniProgram.reLaunch('/pages/index/index');
-  await page.waitFor(500);
+  let miniProgram;
+  try {
+    miniProgram = await automator.launch({
+      projectPath: '<小程序项目根目录>',   // 或用 automator.connect({ wsEndpoint }) 连接已打开的工具
+    });
+    const page = await miniProgram.reLaunch('/pages/index/index');
+    await page.waitFor('.submit-btn');                 // 条件等待优先于固定 sleep
 
-  const btn = await page.$('.submit-btn');          // 选择器定位
-  await btn.tap();                                   // 模拟点击
-  await page.waitFor(500);
+    const btn = await page.$('.submit-btn');           // 选择器定位
+    await btn.tap();                                    // 模拟点击
+    await page.waitFor('.result-text');
 
-  const toast = await page.$('.result-text');
-  const text = await toast.text();
-  if (!text.includes('<期望文案>')) throw new Error(`断言失败: ${text}`);
+    const toast = await page.$('.result-text');
+    const text = await toast.text();
+    if (!text.includes('<期望文案>')) throw new Error(`断言失败: ${text}`);
 
-  await miniProgram.screenshot({ path: 'features/<feature>/screenshots/mp-001.png' });
-  await miniProgram.close();
+    // 截图前确认页面不含需脱敏的敏感数据（手机号、金额、真实姓名等先打码或用测试数据）
+    await miniProgram.screenshot({ path: '../../../features/<feature>/screenshots/mp-001.png' });
+  } finally {
+    if (miniProgram) await miniProgram.close();        // 失败也要释放开发者工具连接
+  }
 })();
 ```
 
-4. 运行：`node workflow/local/miniprogram-tests/<case>.js`；结果与截图回填 `ui-test-plan` 执行记录。
+4. 运行：`node workflow/local/miniprogram-runner/<case>.js`；结果与截图回填 `ui-test-plan` 执行记录。
 5. 局限声明：需真机验证的能力（支付、部分授权弹窗）自动化覆盖不到，保留人工用例并在计划中显式标注。
 
 ## 4. 原生 App（槽位）

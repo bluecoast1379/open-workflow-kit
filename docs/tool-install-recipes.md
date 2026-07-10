@@ -61,7 +61,7 @@ agent-workflow-init --target . --tools codebuddy --yes
 生成文件：
 
 - `AGENTS.md`
-- `.codebuddy/instructions.md`
+- `.codebuddy/rules/agent-workflow/RULE.mdc`（官方项目规则路径）
 - `workflow/`
 
 ## Kiro
@@ -73,7 +73,7 @@ agent-workflow-init --target . --tools kiro --yes
 生成文件：
 
 - `AGENTS.md`
-- `.kiro/instructions.md`
+- `.kiro/steering/agent-workflow.md`（官方 steering 路径）
 - `workflow/`
 
 ## Trae

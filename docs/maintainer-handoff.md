@@ -13,7 +13,7 @@ npm run build:release
 
 构建会生成：
 
-- `dist/agent-workflow-starter-kit-<version>.tgz`
+- `dist/open-workflow-kit-<version>.tgz`
 - `dist/RELEASE_MANIFEST.md`
 
 manifest 会记录包名、版本、license、归档大小、SHA-256、安装 smoke 状态和人工发布边界。

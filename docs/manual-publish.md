@@ -14,7 +14,7 @@ npm run build:release
 可分享的本地归档位于：
 
 ```text
-dist/agent-workflow-starter-kit-<version>.tgz
+dist/open-workflow-kit-<version>.tgz
 ```
 
 校验信息见：

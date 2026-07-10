@@ -37,24 +37,40 @@ agent 请求执行任何覆盖类别的操作时，必须一次性给出：
 
 然后由用户选择：**agent 执行 / 我手动执行 / 暂不执行**。用户选手动时，agent 等待用户回贴执行结果再继续。
 
-## 审计日志
+## 审计日志（工程追踪，非防篡改审计）
 
-用户批准的每次代执行都追加到 `workflow/EXECUTION_AUDIT.md`：
+用户批准的每次代执行都追加到 `workflow/EXECUTION_AUDIT.md`。**记录前必须脱敏**：token、密码、连接串、账号、Cookie、签名一律替换为 `***`；需要精确追溯时可另记脱敏后命令的哈希。
 
 ```markdown
 ## <ISO 时间> | <类别> | <ask|auto>
-- 命令: `<执行的命令>`
+- 命令（脱敏）: `<执行的命令，敏感值替换为 ***>`
+- 命令哈希: <可选，对脱敏前命令做 sha256，便于比对>
 - 目的: <一句话>
-- 授权: 用户本次批准 / team-profile 常设授权
-- 结果: 成功 / 失败（含关键输出摘要）
+- 目标资源: <环境 / 仓库 / 分支 / 库表>
+- 授权: 用户本次批准 / team-profile 常设授权（含 scope）
+- 结果: 退出码 + 关键输出摘要（脱敏）
 - 回滚方式: <记录>
 ```
 
-## auto 模式的额外约束
+定位声明：本日志是**工程追踪记录**，用于团队自查与复盘；它存放在工作区内、可被编辑，**不是**防篡改审计系统。有合规级审计需求的团队应外接不可变日志设施。
+
+## auto 模式的额外约束（受信上限）
 
 - 只能通过编辑 `team-profile.yaml` 显式开启，agent 不得建议性地代填。
-- `production_config_write` 与 `build_deploy_trigger` 即使配置为 auto，首次执行仍必须 ask 一次并确认团队理解风险。
-- 审计日志缺失时，auto 权限视为失效，回退 ask。
+- **不可自升级类别（硬上限）**：`production_config_write`、`build_deploy_trigger`、`db_ddl`、`db_dml`，以及任何指向生产分支的 push/merge——这些类别**不接受**仓库内配置声明的 auto；team-profile 中出现此类 auto 配置一律视为无效并回退 ask。原因：team-profile 本身位于工作区/仓库内，可被分支代码或误操作修改，不能作为高危权限的唯一授权来源。
+- **auto 授权必须带作用域**：任何有效的 auto 配置必须同时声明 `scope`（至少含 environment、repos 或 branches 之一）与 `expires`（有效期）；缺任一字段视为无效回退 ask。示例：
+
+```yaml
+execution_policy:
+  categories:
+    remote_git:
+      mode: "auto"
+      scope: { environments: ["test"], branches: ["feature/*"] }
+      expires: "<ISO 日期>"
+```
+
+- 首次以 auto 执行某类别时仍必须 ask 一次并确认团队理解风险。
+- 审计日志缺失、过期或 scope 不匹配时，auto 权限视为失效，回退 ask。
 
 ## 与既有表述的关系
 

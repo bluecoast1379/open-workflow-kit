@@ -6,7 +6,7 @@
 
 ```bash
 cd /path/to/target-workspace
-npm install /path/to/agent-workflow-starter-kit-<version>.tgz --save-dev
+npm install /path/to/open-workflow-kit-<version>.tgz --save-dev
 npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 ```
 
@@ -24,7 +24,7 @@ npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 
 ```bash
 cd /path/to/target-workspace
-npm install agent-workflow-starter-kit --save-dev
+npm install open-workflow-kit --save-dev
 npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 ```
 

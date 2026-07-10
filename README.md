@@ -8,7 +8,7 @@
 
 核心原则：同一套 workflow core，多工具 adapter 分层增强；不承诺所有工具体验完全一致。
 
-## v0.5.0 核心能力
+## 核心能力（v0.5 引入，v0.6 安全加固）
 
 | 能力块 | 说明 |
 | --- | --- |
@@ -41,7 +41,7 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target .
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,claude,cursor
 
 # GitHub 包安装方式
-npx --yes --package "git+https://github.com/bluecoast1379/open-workflow-kit.git" agent-workflow-init --target . --tools codex,claude,cursor
+npx --yes --package "git+https://github.com/bluecoast1379/open-workflow-kit.git#v0.6.0" agent-workflow-init --target . --tools codex,claude,cursor
 
 # 工具名支持 trea 别名，会自动归一为 trae
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,trea,codebuddy
@@ -62,11 +62,11 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --dry-run
    - 交互式终端：逐项提问。
    - 非交互模式：生成 `workflow/INITIALIZATION_QUESTIONS.md`。
 5. 生成跨工具入口：
-   - Codex: `AGENTS.md`、`.codex/prompts/`
+   - Codex: 根 `AGENTS.md`（自动读取）+ `.agents/skills/agent-workflow/`（项目级 `.codex/prompts/` 官方不加载，不生成）
    - Claude Code: `CLAUDE.md`、`.claude/commands/`
    - Cursor: `.cursor/rules/` 和 `.cursor/commands/`
    - Copilot: `.github/copilot-instructions.md`
-   - CodeBuddy / Kiro / Trae: 各自 `instructions.md`
+   - CodeBuddy: `.codebuddy/rules/agent-workflow/RULE.mdc`；Kiro: `.kiro/steering/agent-workflow.md`；Trae: `.trae/instructions.md`
 6. 不执行远程 Git 操作，不创建分支，不推送，不触发构建部署，不写数据库。
 
 ## 隐私与脱敏边界

@@ -46,3 +46,7 @@ findings:
 - 将本地 `.env`、token 或私有 URL 写进示例。
 - 以“测试环境能跑”为理由跳过审计字段。
 - 忽略依赖升级和构建配置带来的生产影响。
+
+## 相关检查清单
+
+- `workflow/core/checklists/language-pitfalls-java.md`：Java 技术栈的语言级恒真/恒假与拆箱空指针专项（team-profile 技术栈含 Java 时启用）。

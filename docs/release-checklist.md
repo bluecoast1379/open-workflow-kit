@@ -13,6 +13,10 @@
 - 工具 adapter 只指向 workflow core，不削弱硬闸门。
 - 初始化器不会执行远程 Git、创建分支、push、构建 / 部署触发、数据库写入或生产配置写入。
 
+## Git 历史扫描（建议）
+
+`check-sanitized.cjs` 只扫描当前工作树，不扫描 Git 历史。对外发布前建议用 gitleaks 或 trufflehog 扫描完整提交历史，确认历史提交无凭证或私有信息残留；并运行 `node bin/check-sanitized.cjs --report SANITIZATION_REPORT.md` 生成可复查的扫描报告（报告不含私有词表内容）。
+
 ## 私有 denylist 扫描
 
 在 starter kit 外部创建私有 denylist 文件，然后运行：

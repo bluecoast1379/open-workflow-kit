@@ -51,7 +51,11 @@ write('services/api/pom.xml', '<project></project>\n');
 // 工具链探测正向路径：CI + 配置中心 + 数据库 + git 平台信号（曾因 TDZ 崩溃且 smoke 未覆盖，勿删）。
 write('services/api/Jenkinsfile', 'pipeline { agent any }\n');
 write('services/api/application.yml', 'spring:\n  cloud:\n    nacos:\n      server-addr: placeholder\n  datasource:\n    url: jdbc:mysql://localhost:3306/demo\n');
-write('services/api/.git/config', '[remote "origin"]\n\turl = git@github.com:example/demo.git\n');
+// 安全回归：remote URL 含 userinfo 凭证时，凭证绝不能进入任何生成文件（曾为 P0 泄漏，勿删）。
+// 夹具 URL 用拼接构造，避免 kit 自身的 check-sanitized（URL userinfo 模式）误报本测试文件。
+const fakeTokenUrl = 'https://SMOKE_FAKE_' + 'TOKEN_9f3@' + 'github.com/example/demo.git';
+write('services/api/.git/config', `[remote "origin"]\n\turl = ${fakeTokenUrl}\n`);
+write('apps/web/.git/config', '[remote "origin"]\n\turl = git@gitlab.example-selfhost.com:team/web.git\n');
 
 run([
   '--target', tmp,
@@ -62,16 +66,12 @@ run([
 for (const rel of [
   'AGENTS.md',
   'CLAUDE.md',
-  '.codex/prompts/init-workspace.md',
-  '.codex/prompts/02B-UI设计.md',
-  '.codex/prompts/04-代码实现.md',
-  '.codex/prompts/05-代码审查.md',
-  '.codex/prompts/12-复盘总结.md',
+  '.agents/skills/agent-workflow/SKILL.md',
   '.claude/commands/04-代码实现.md',
   '.cursor/rules/agent-workflow-core.mdc',
   '.github/copilot-instructions.md',
-  '.codebuddy/instructions.md',
-  '.kiro/instructions.md',
+  '.codebuddy/rules/agent-workflow/RULE.mdc',
+  '.kiro/steering/agent-workflow.md',
   '.trae/instructions.md',
   'workflow/team-profile.yaml',
   'workflow/INITIALIZATION_QUESTIONS.md',
@@ -105,11 +105,16 @@ for (const rel of [
   'workflow/TOOLCHAIN_MCP_PLAN.md',
   '.claude/commands/02C-HTML原型.md',
   '.claude/commands/connect-toolchain.md',
-  '.cursor/commands/02C-HTML原型.md',
-  '.codex/prompts/connect-toolchain.md'
+  '.cursor/commands/02C-HTML原型.md'
 ]) {
   assertFile(rel);
 }
+
+// Codex 官方约定回归：项目级 .codex/prompts/ 不被加载，kit 不得生成该目录。
+if (fs.existsSync(path.join(tmp, '.codex'))) {
+  throw new Error('kit 不应生成项目级 .codex/ 目录（Codex 不加载项目级 prompts）');
+}
+assertContains('.agents/skills/agent-workflow/SKILL.md', 'name: agent-workflow');
 
 assertContains('workflow/team-profile.yaml', '- trae');
 assertContains('workflow/team-profile.yaml', 'apps/web');
@@ -132,6 +137,43 @@ assertContains('workflow/TOOLCHAIN_MCP_PLAN.md', '`proposed`');
 assertContains('workflow/TOOLCHAIN_MCP_PLAN.md', 'github');
 assertContains('workflow/team-profile.yaml', 'nacos');
 assertContains('workflow/team-profile.yaml', 'mysql');
+
+// P0 回归：凭证 userinfo 绝不出现在任何生成文件；scp 形式自建域名 host 正常提取。
+{
+  const generated = ['workflow/team-profile.yaml', 'workflow/TOOLCHAIN_MCP_PLAN.md', 'AGENTS.md', 'workflow/INSTALL_REPORT.md'];
+  for (const rel of generated) {
+    const content = fs.readFileSync(path.join(tmp, rel), 'utf8');
+    if (content.includes('SMOKE_FAKE_TOKEN')) {
+      throw new Error(`credential leaked into generated file: ${rel}`);
+    }
+  }
+  assertContains('workflow/team-profile.yaml', 'gitlab.example-selfhost.com');
+}
+
+// P0 回归：凭证目录必须自动生成 .gitignore（默认忽略全部内容）。
+assertFile('workflow/local/.gitignore');
+assertContains('workflow/local/.gitignore', '*');
+assertContains('workflow/local/.gitignore', '!.gitignore');
+
+// 规则挂接完整性：每个清单必须被 ≥1 个阶段命令引用，且被 ≥1 个能力文件引用。
+{
+  const checklistNames = fs
+    .readdirSync(path.join(tmp, 'workflow/core/checklists'))
+    .filter((n) => n.endsWith('.md') && n !== 'README.md')
+    .map((n) => n.replace(/\.md$/, ''));
+  const readAll = (dir) =>
+    fs.readdirSync(path.join(tmp, dir))
+      .filter((n) => n.endsWith('.md'))
+      .map((n) => fs.readFileSync(path.join(tmp, dir, n), 'utf8'))
+      .join('\n');
+  const commandsText = readAll('workflow/core/commands');
+  const capabilitiesText = readAll('workflow/core/capabilities');
+  for (const name of checklistNames) {
+    if (!commandsText.includes(name)) throw new Error(`清单 ${name} 未被任何阶段命令引用`);
+    if (!capabilitiesText.includes(name)) throw new Error(`清单 ${name} 未被任何能力文件引用`);
+  }
+  assertFile('workflow/core/checklists/rule-catalog.yaml');
+}
 
 // 生成的 team-profile.yaml 最小结构校验：无 tab、缩进为偶数空格、行内引号成对。
 {
@@ -180,9 +222,8 @@ if (beforeDryRun !== afterDryRun) {
   throw new Error('dry-run changed top-level files');
 }
 
-// Upgrade path: --upgrade --force should overwrite in place without writing new
-// .agent-workflow-new files. Clean up stale .agent-workflow-new files left by
-// previous non-force runs before measuring.
+// Upgrade path: --upgrade --force 覆盖其余生成文件，但 team-profile 是团队手工契约，
+// 永不原地覆盖：保留原文件，新版写 .agent-workflow-new 供人工比对。
 for (const stale of fs.readdirSync(path.join(tmp, 'workflow'))) {
   if (stale.endsWith('.agent-workflow-new')) {
     fs.unlinkSync(path.join(tmp, 'workflow', stale));
@@ -192,14 +233,16 @@ const profileBefore = fs.readFileSync(path.join(tmp, 'workflow/team-profile.yaml
 fs.writeFileSync(path.join(tmp, 'workflow/team-profile.yaml'), profileBefore + '\n# user note\n');
 run(['--target', tmp, '--tools', 'codex,claude,cursor', '--upgrade', '--force', '--yes']);
 const profileAfter = fs.readFileSync(path.join(tmp, 'workflow/team-profile.yaml'), 'utf8');
-if (profileAfter.includes('# user note')) {
-  throw new Error('upgrade --force did not overwrite team-profile.yaml');
+if (!profileAfter.includes('# user note')) {
+  throw new Error('upgrade must preserve user-maintained team-profile.yaml');
 }
+assertFile('workflow/team-profile.yaml.agent-workflow-new');
 const upgradeStrayFiles = fs
   .readdirSync(path.join(tmp, 'workflow'))
-  .filter((name) => name.endsWith('.agent-workflow-new'));
+  .filter((name) => name.endsWith('.agent-workflow-new'))
+  .filter((name) => name !== 'team-profile.yaml.agent-workflow-new');
 if (upgradeStrayFiles.length) {
-  throw new Error(`upgrade --force should not produce new .agent-workflow-new files, found: ${upgradeStrayFiles.join(',')}`);
+  throw new Error(`upgrade --force 除 team-profile 外不应产生 .agent-workflow-new，发现: ${upgradeStrayFiles.join(',')}`);
 }
 
 // Cursor-only install must still generate AGENTS.md (the tool-neutral usage guide),

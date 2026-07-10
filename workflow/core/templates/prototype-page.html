@@ -25,9 +25,13 @@
   --font-size-title: 18px;
   --font-size-body: 14px;
   --font-size-caption: 12px;
-  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;  --space-4: 16px;  --space-6: 24px;
+  --space-05: 2px; --space-1: 4px;  --space-2: 8px;  --space-3: 12px;  --space-4: 16px;  --space-6: 24px;
   --radius: 8px;
   --shadow: 0 1px 3px rgba(0,0,0,.08);
+  --border-w: 1px; --border-w-emph: 2px; --border-w-accent: 3px;
+  --layout-max: 960px;
+  --color-on-dark: #ffffff;
+  --color-on-dark-faint: rgba(255,255,255,.2);
 }
 * { box-sizing: border-box; margin: 0; }
 body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -35,17 +39,17 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 
 /* ===== 原型工作台外框（评审辅助，非业务 UI）===== */
 .proto-bar { position: sticky; top: 0; display: flex; gap: var(--space-2); align-items: center;
-  padding: var(--space-2) var(--space-4); background: var(--color-text); color: #fff;
+  padding: var(--space-2) var(--space-4); background: var(--color-text); color: var(--color-on-dark);
   font-size: var(--font-size-caption); z-index: 99; }
-.proto-bar a { color: #fff; opacity: .8; text-decoration: none; padding: var(--space-1) var(--space-2); }
-.proto-bar a.active { opacity: 1; border-bottom: 2px solid var(--color-primary); }
+.proto-bar a { color: var(--color-on-dark); opacity: .8; text-decoration: none; padding: var(--space-1) var(--space-2); }
+.proto-bar a.active { opacity: 1; border-bottom: var(--border-w-emph) solid var(--color-primary); }
 .proto-bar .states { margin-left: auto; display: flex; gap: var(--space-1); }
-.proto-bar .states button { font-size: var(--font-size-caption); padding: 2px var(--space-2);
-  border: 1px solid #fff3; background: transparent; color: #fff; border-radius: var(--radius); cursor: pointer; }
+.proto-bar .states button { font-size: var(--font-size-caption); padding: var(--space-05) var(--space-2);
+  border: var(--border-w) solid var(--color-on-dark-faint); background: transparent; color: var(--color-on-dark); border-radius: var(--radius); cursor: pointer; }
 .proto-bar .states button.on { background: var(--color-primary); border-color: var(--color-primary); }
 
 /* ===== 屏幕容器与四态 ===== */
-.screen { display: none; max-width: 960px; margin: var(--space-6) auto; padding: 0 var(--space-4); }
+.screen { display: none; max-width: var(--layout-max); margin: var(--space-6) auto; padding: 0 var(--space-4); }
 .screen.active { display: block; }
 .screen[data-state] .state-panel { display: none; }
 .screen[data-state="normal"]  .state-normal,
@@ -54,13 +58,13 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 .screen[data-state="loading"] .state-loading { display: block; }
 .anno { font-size: var(--font-size-caption); color: var(--color-text-secondary);
   padding: var(--space-2) var(--space-3); background: var(--color-surface);
-  border-left: 3px solid var(--color-primary); margin-bottom: var(--space-4); }
+  border-left: var(--border-w-accent) solid var(--color-primary); margin-bottom: var(--space-4); }
 
 /* ===== 组件样式一律来自 components.md 清单（示例）===== */
-.card { background: var(--color-surface); border: 1px solid var(--color-border);
+.card { background: var(--color-surface); border: var(--border-w) solid var(--color-border);
   border-radius: var(--radius); box-shadow: var(--shadow); padding: var(--space-4); }
 .btn { display: inline-block; padding: var(--space-2) var(--space-4); border-radius: var(--radius);
-  border: 1px solid var(--color-primary); background: var(--color-primary); color: #fff;
+  border: var(--border-w) solid var(--color-primary); background: var(--color-primary); color: var(--color-on-dark);
   font-size: var(--font-size-body); cursor: pointer; }
 .btn.secondary { background: var(--color-surface); color: var(--color-primary); }
 .empty, .error-box, .loading-box { text-align: center; padding: var(--space-6);

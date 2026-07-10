@@ -12,7 +12,7 @@ const TOOL_ALIASES = {
   github_copilot: 'copilot',
   'github-copilot': 'copilot'
 };
-const GENERATED_BY = 'open-workflow-kit 0.5.0';
+const GENERATED_BY = 'open-workflow-kit 0.6.0';
 
 const STAGES = [
   ['init-workspace', '初始化工作区', '扫描本地资料、生成 team-profile、缺资料提问，并生成当前工具 adapter。'],
@@ -115,6 +115,7 @@ const CAPABILITY_FILES = [
 
 const CHECKLIST_FILES = [
   'README.md',
+  'rule-catalog.yaml',
   'validation-change-review.md',
   'data-consistency-review.md',
   'branch-hygiene.md',
@@ -201,7 +202,7 @@ async function main() {
   }
 
   for (const write of plannedWrites) {
-    writeManagedFile(write.file, write.content, options);
+    writeManagedFile(write, options);
   }
 
   console.log(`已在 ${target} 初始化 agent 工作流`);
@@ -238,7 +239,8 @@ function printHelp() {
   --tools <list>       逗号分隔的工具列表: ${SUPPORTED_TOOLS.join(', ')}。
   --yes, -y            非交互模式，缺失资料会写入问题清单。
   --force              覆盖已生成的入口文件。
-  --upgrade            刷新生成文件；存在 team-profile.yaml 时按当前策略处理。
+  --upgrade            刷新生成文件；team-profile.yaml 永不原地覆盖（即使 --force），
+                       新版内容写入 .agent-workflow-new 供人工比对合并。
   --dry-run            只展示计划写入的文件，不修改磁盘。
   --help, -h           显示帮助。
 
@@ -403,9 +405,14 @@ function walkFiles(root, maxDepth, visitor) {
 
 function buildInstallPlan(target, profile, options) {
   const writes = [];
-  const add = (rel, content) => writes.push({ file: path.join(target, rel), content });
+  const add = (rel, content, opts) =>
+    writes.push({ file: path.join(target, rel), content, preserveOnUpgrade: !!(opts && opts.preserveOnUpgrade) });
 
-  add('workflow/team-profile.yaml', makeTeamProfileYaml(profile));
+  // team-profile 是团队手工维护的契约：--upgrade 模式下永不原地覆盖（即使 --force），
+  // 新版内容写 .agent-workflow-new 供人工比对合并。
+  add('workflow/team-profile.yaml', makeTeamProfileYaml(profile), { preserveOnUpgrade: true });
+  // 凭证目录防误提交：默认忽略 workflow/local/ 下全部内容。
+  add('workflow/local/.gitignore', '*\n!.gitignore\n');
   add('workflow/README.md', makeWorkflowReadme());
   add('workflow/core/README.md', readKitFile('workflow/core/README.md'));
   add('workflow/core/commands/README.md', readKitFile('workflow/core/commands/README.md'));
@@ -439,7 +446,9 @@ function buildInstallPlan(target, profile, options) {
   // Generate it regardless of selected tools so every adapter can point to it.
   add('AGENTS.md', makeAgentsEntry(profile));
   if (profile.enabledTools.includes('codex')) {
-    for (const [id] of STAGES) add(`.codex/prompts/${id}.md`, makePrompt(id));
+    // 官方约定：Codex 项目级机制是根 AGENTS.md（自动读取）与 .agents/skills/；
+    // 项目级 .codex/prompts/ 不会被加载（custom prompts 仅支持全局 ~/.codex/prompts/）。
+    add('.agents/skills/agent-workflow/SKILL.md', makeAgentWorkflowSkill());
   }
   if (profile.enabledTools.includes('claude')) {
     add('CLAUDE.md', '先读取 AGENTS.md，再遵循 workflow/core 和 workflow/team-profile.yaml。.claude/commands 下的工具命令只是薄 adapter。\n');
@@ -454,10 +463,12 @@ function buildInstallPlan(target, profile, options) {
     add('.github/copilot-instructions.md', makeGenericInstructions('GitHub Copilot'));
   }
   if (profile.enabledTools.includes('codebuddy')) {
-    add('.codebuddy/instructions.md', makeGenericInstructions('CodeBuddy'));
+    // 官方约定：项目规则位于 .codebuddy/rules/<rule-name>/RULE.mdc
+    add('.codebuddy/rules/agent-workflow/RULE.mdc', makeGenericInstructions('CodeBuddy'));
   }
   if (profile.enabledTools.includes('kiro')) {
-    add('.kiro/instructions.md', makeGenericInstructions('Kiro'));
+    // 官方约定：项目级 steering 文件位于 .kiro/steering/*.md；Kiro 也会自动读取根 AGENTS.md
+    add('.kiro/steering/agent-workflow.md', makeGenericInstructions('Kiro'));
   }
   if (profile.enabledTools.includes('trae')) {
     add('.trae/instructions.md', makeGenericInstructions('Trae'));
@@ -475,9 +486,13 @@ function readKitFileIfExists(rel, fallback) {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : fallback;
 }
 
-function writeManagedFile(file, content, options) {
+function writeManagedFile(write, options) {
+  const { file, content, preserveOnUpgrade } = write;
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  if (fs.existsSync(file) && !options.force) {
+  const exists = fs.existsSync(file);
+  // 升级保护：team-profile 等团队手工维护文件在 --upgrade 下永不原地覆盖（即使 --force）。
+  const protectedNow = exists && preserveOnUpgrade && options.upgrade;
+  if (exists && (!options.force || protectedNow)) {
     const current = fs.readFileSync(file, 'utf8');
     if (current === content) {
       console.log(`unchanged ${path.relative(process.cwd(), file)}`);
@@ -485,7 +500,8 @@ function writeManagedFile(file, content, options) {
     }
     const next = file + '.agent-workflow-new';
     fs.writeFileSync(next, content);
-    console.log(`exists ${path.relative(process.cwd(), file)} -> wrote ${path.relative(process.cwd(), next)}`);
+    const reason = protectedNow ? 'preserved (upgrade)' : 'exists';
+    console.log(`${reason} ${path.relative(process.cwd(), file)} -> wrote ${path.relative(process.cwd(), next)}`);
     return;
   }
   fs.writeFileSync(file, content);
@@ -632,6 +648,27 @@ function makeTeamProfileYaml(profile) {
   return lines.join('\n');
 }
 
+function extractGitHost(rawUrl) {
+  // 支持 scheme URL（https/ssh/git+ssh）与 scp 形式（git@host:org/repo）。
+  // 无论哪种形式，先剥离 userinfo（含凭证），只返回纯 host；解析失败返回空串。
+  let host = '';
+  const schemeMatch = rawUrl.match(/^[a-z][a-z0-9+.-]*:\/\/([^\/\s]+)/i);
+  if (schemeMatch) {
+    host = schemeMatch[1];
+  } else {
+    const scpMatch = rawUrl.match(/^([^\/\s]+?):[^\s]/);
+    host = scpMatch ? scpMatch[1] : '';
+  }
+  if (!host) return '';
+  // 剥离 userinfo（user 或 user:token）与端口
+  host = host.split('@').pop();
+  host = host.split(':')[0];
+  host = host.toLowerCase().trim();
+  // host 合法性兜底：只允许字母数字、点、连字符
+  if (!/^[a-z0-9.-]+$/.test(host)) return '';
+  return host;
+}
+
 function safeReadFile(file, maxBytes) {
   try {
     const stat = fs.statSync(file);
@@ -674,20 +711,24 @@ function detectToolchain(root, repos) {
     if (existsRel(p('vercel.json'))) addHit('deploy_runtime', 'vercel', p('vercel.json'));
     if (existsRel(p('netlify.toml'))) addHit('deploy_runtime', 'netlify', p('netlify.toml'));
 
-    // git 平台：读 .git/config 的 remote host（本地只读）
+    // git 平台：读 .git/config 的 remote host（本地只读）。
+    // 安全：remote URL 的 userinfo 段（@ 之前）可能携带凭证，
+    // 必须先剥离 userinfo 再取 host，任何情况下不得把原始 URL 写入生成文件。
     const gitConfig = path.join(root, base === '.' ? '.git/config' : path.join(base, '.git/config'));
     const configText = safeReadFile(gitConfig, 64 * 1024);
     if (configText) {
-      const match = configText.match(/url\s*=\s*(?:https?:\/\/|ssh:\/\/)?(?:git@)?([^\/:\s]+)/);
+      const match = configText.match(/url\s*=\s*(\S+)/);
       if (match) {
-        const host = match[1].toLowerCase();
-        let tool = 'self-hosted-git';
-        if (host.includes('github.com')) tool = 'github';
-        else if (host.includes('gitlab')) tool = 'gitlab';
-        else if (host.includes('bitbucket')) tool = 'bitbucket';
-        else if (host.includes('gitee')) tool = 'gitee';
-        else if (host.includes('gitea')) tool = 'gitea';
-        addHit('git_platform', tool, `${base === '.' ? '.git/config' : base + '/.git/config'} -> ${host}`);
+        const host = extractGitHost(match[1]);
+        if (host) {
+          let tool = 'self-hosted-git';
+          if (host.includes('github.com')) tool = 'github';
+          else if (host.includes('gitlab')) tool = 'gitlab';
+          else if (host.includes('bitbucket')) tool = 'bitbucket';
+          else if (host.includes('gitee')) tool = 'gitee';
+          else if (host.includes('gitea')) tool = 'gitea';
+          addHit('git_platform', tool, `${base === '.' ? '.git/config' : base + '/.git/config'} -> ${host}`);
+        }
       }
     }
   }
@@ -896,8 +937,10 @@ function makeToolUsage(profile) {
   if (tools.includes('codex')) {
     blocks.push(`### Codex
 
-- Codex 会自动读取本 \`AGENTS.md\`。
-- 阶段 prompt 位于 \`.codex/prompts/\`。可以调用阶段 prompt，或要求 Codex 按 \`workflow/core/commands/<stage>.md\` 执行。`);
+- Codex 会自动读取本 \`AGENTS.md\`（官方项目级指令机制）。
+- 本 kit 同时生成 \`.agents/skills/agent-workflow/SKILL.md\`，可按 skill 调用。
+- 执行阶段时直接说明阶段名，或要求 Codex 按 \`workflow/core/commands/<stage>.md\` 执行。
+- 注意：项目级 \`.codex/prompts/\` 不会被 Codex 加载（custom prompts 仅支持全局 \`~/.codex/prompts/\`），本 kit 不生成该目录。`);
   }
 
   if (tools.includes('cursor')) {
@@ -917,13 +960,25 @@ function makeToolUsage(profile) {
 - 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
   }
 
-  for (const [tool, label] of [['codebuddy', 'CodeBuddy'], ['kiro', 'Kiro'], ['trae', 'Trae']]) {
-    if (tools.includes(tool)) {
-      blocks.push(`### ${label}
+  if (tools.includes('codebuddy')) {
+    blocks.push(`### CodeBuddy
 
-- \`.${tool}/instructions.md\` 会自动生效。
+- 项目规则 \`.codebuddy/rules/agent-workflow/RULE.mdc\` 会自动生效（官方项目级规则路径）。
 - 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
-    }
+  }
+
+  if (tools.includes('kiro')) {
+    blocks.push(`### Kiro
+
+- steering 文件 \`.kiro/steering/agent-workflow.md\` 会自动生效；Kiro 也会自动读取本 \`AGENTS.md\`。
+- 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
+  }
+
+  if (tools.includes('trae')) {
+    blocks.push(`### Trae
+
+- \`.trae/instructions.md\` 会自动生效。
+- 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
   }
 
   if (!blocks.length) {
@@ -1029,12 +1084,25 @@ function makeThinCommand(toolName, id) {
 `;
 }
 
-function makePrompt(id) {
-  return `# ${id}
+function makeAgentWorkflowSkill() {
+  return `---
+name: agent-workflow
+description: 按 open-workflow-kit 的阶段契约推进需求交付。适用于需求讨论、产品文档、UI 设计、技术架构、代码实现、审查、测试、验收、上线与复盘等阶段请求。
+---
 
-读取 \`AGENTS.md\`、\`workflow/team-profile.yaml\` 和 \`workflow/core/commands/${id}.md\`。
+# agent-workflow
 
-优先使用本地证据。必要资料缺失时，更新 \`workflow/INITIALIZATION_QUESTIONS.md\` 或向用户索要缺失路径。
+执行任何工作流阶段时，按顺序读取：
+
+1. 根目录 \`AGENTS.md\`（快速开始、命令表、硬闸门）
+2. \`workflow/team-profile.yaml\`（团队契约：仓库、分支模型、执行策略、测试配置）
+3. \`workflow/core/commands/<用户请求的阶段>.md\`（阶段契约）
+
+规则：
+
+- 阶段产物写入工作区级 \`features/<feature>/\`，不写入代码仓库。
+- 高风险写操作按 \`workflow/core/execution-policy.md\` 分级处理。
+- 优先使用本地证据；必要资料缺失时更新 \`workflow/INITIALIZATION_QUESTIONS.md\` 或向用户索要路径。
 `;
 }
 

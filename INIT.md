@@ -50,7 +50,7 @@ agent-workflow-init --target . --tools codex,claude,cursor --yes
 agent-workflow-init --target . --tools codex,claude,cursor --upgrade
 ```
 
-如果已有文件会被覆盖，初始化器默认写出 `.agent-workflow-new` 文件；只有显式传入 `--force` 才会覆盖。
+如果已有文件会被覆盖，初始化器默认写出 `.agent-workflow-new` 文件；只有显式传入 `--force` 才会覆盖。例外：`workflow/team-profile.yaml` 是团队手工维护的契约，在 `--upgrade` 模式下永不原地覆盖（即使 `--force`），新版内容始终写入 `.agent-workflow-new` 供人工比对合并。
 
 ## 安全边界
 
