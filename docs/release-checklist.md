@@ -6,6 +6,7 @@
 
 - `npm run check` 通过。
 - `npm run check:history` 通过。
+- `npm run check:commands` 通过，确认 manifest、21 个 core command 和实现闸门映射一致。
 - `npm run check:rules` 通过，确认 37 条规则 / 79 个清单 item 无孤儿、无重复映射。
 - `npm run check:adapters` 与 `npm run check:links` 通过。
 - `npm run build:release` 通过。
@@ -17,7 +18,7 @@
 - 初始化器不会执行远程 Git、创建分支、push、构建 / 部署触发、数据库写入或生产配置写入。
 - 生成的 `workflow/team-profile.yaml` 不包含绝对路径、私有端点、账号、凭证或原始审计记录。
 - `workflow/local/team-profile.local.yaml`、`workflow/local/rule-provenance.private.yaml` 和 `workflow/local/execution-audit.jsonl` 已被 Git 忽略。
-- `workflow/adapters/support-matrix.yaml` 中的 4 个原生 adapter 都有当前版本的真实工具验收记录；缺失时必须保持 `native_not_yet_manually_certified`。
+- `workflow/adapters/support-matrix.yaml` 中的 5 个原生 adapter 都有当前版本的真实工具验收记录；缺失时必须保持 `native_not_yet_manually_certified`。
 - 共享 API runner 的环境白名单、显式 host 授权、生产阻断和脱敏输出已有回归测试。
 
 ## Git 历史扫描（建议）

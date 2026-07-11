@@ -9,7 +9,7 @@
 
 核心原则：同一套 workflow core，多工具 adapter 分层增强；不承诺所有工具体验完全一致。
 
-## 核心能力（v0.8）
+## 核心能力（v0.9）
 
 | 能力块 | 说明 |
 | --- | --- |
@@ -20,7 +20,8 @@
 | 生命周期治理（v0.7） | `--upgrade` 自动清理旧版适配器残留（kit 指纹校验，用户自定义内容保留）并永不覆盖 team-profile；内置 `npm run check:history` 全历史凭证扫描（掩码输出）；79 条清单条目稳定 ID（VCR/DCR/BH/TBS/TIR/LPJ）可跨文档引用；Claude skills 官方推荐格式入口 |
 | HTML 可点击原型 | `/02C-HTML原型` 显式阶段：强制先提取 design tokens + 组件清单，产出前端开发级单文件可点击原型（微路由 + 四态），`ui-baseline-reviewer` 用 tokens 反查卡关 |
 | 规则审计级可追溯 | `workflow/core/rules/rule-catalog.yaml` 以 `OWK-RULE-001..037` 映射 79 个清单 item、capability、stage、版本和脱敏证据；`npm run check:rules` 阻断重复或孤儿映射 |
-| 工具支持分级 | Codex/Claude/Cursor/Copilot 4 个原生 adapter；CodeBuddy/Kiro/Trae 为 `AGENTS.md` 兼容入口。无真实工具验收证据时不标记 `native_verified` |
+| 跨工具命令发现（v0.9） | `workflow/core/command-manifest.yaml` 统一维护 21 个命令；Claude/Cursor/CodeBuddy 使用 `/` 模糊选择，Codex 使用分阶段 Skill，Trae 使用兼容级 Agent Skills；不承诺所有工具体验完全一致 |
+| 工具支持分级 | Codex/Claude/Cursor/Copilot/CodeBuddy 5 个原生 adapter；Kiro/Trae 为兼容入口。无真实工具验收证据时不标记 `native_verified` |
 
 ## 一键初始化
 
@@ -45,7 +46,7 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target .
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,claude,cursor
 
 # GitHub 包安装方式
-npx --yes --package "git+https://github.com/bluecoast1379/open-workflow-kit.git#v0.8.0" agent-workflow-init --target . --tools codex,claude,cursor
+npx --yes --package "git+https://github.com/bluecoast1379/open-workflow-kit.git#v0.9.0" agent-workflow-init --target . --tools codex,claude,cursor
 
 # 工具名支持 trea 别名，会自动归一为 trae
 node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,trea,codebuddy
@@ -66,11 +67,12 @@ node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --dry-run
    - 交互式终端：逐项提问。
    - 非交互模式：生成 `workflow/INITIALIZATION_QUESTIONS.md`。
 5. 生成跨工具入口：
-   - Codex: 根 `AGENTS.md`（自动读取）+ `.agents/skills/agent-workflow/`（项目级 `.codex/prompts/` 官方不加载，不生成）
+   - Codex: 根 `AGENTS.md`（自动读取）+ 总入口 Skill + 21 个 `.agents/skills/workflow-*/` 分阶段 Skill（项目级 `.codex/prompts/` 不生成）
    - Claude Code: `CLAUDE.md`、`.claude/commands/`
    - Cursor: `.cursor/rules/` 和 `.cursor/commands/`
    - Copilot: `.github/copilot-instructions.md`
-   - CodeBuddy: `.codebuddy/rules/agent-workflow.md`；Kiro: `.kiro/steering/agent-workflow.md`；Trae: `.trae/instructions.md`（三者均按 compatible 级别披露）
+   - CodeBuddy: `.codebuddy/rules/agent-workflow.md` 和 `.codebuddy/commands/`
+   - Kiro: `.kiro/steering/agent-workflow.md`；Trae: `.trae/instructions.md` 和兼容级 `.agents/skills/workflow-*/`
 6. 不执行远程 Git 操作，不创建分支，不推送，不触发构建部署，不写数据库。
 
 ## 隐私与脱敏边界
@@ -127,12 +129,13 @@ node open-workflow-kit/bin/check-sanitized.cjs
 cd /path/to/open-workflow-kit
 npm run check
 npm run check:history
+npm run check:commands
 npm run check:rules
 npm run check:adapters
 npm run check:links
 ```
 
-`npm run check` 执行语法、工作树脱敏、prototype tokens、37/79 规则映射、4 native/3 compatible 支持矩阵、API runner 和安装/升级 smoke；历史脱敏扫描单独由 `check:history` 执行。
+`npm run check` 执行语法、工作树脱敏、prototype tokens、21 命令清单、37/79 规则映射、5 native/2 compatible 支持矩阵、API runner 和安装/升级 smoke；历史脱敏扫描单独由 `check:history` 执行。
 
 ## 本地打包
 
@@ -146,3 +149,4 @@ npm run build:release
 远程发布步骤见 [手动发布指南](./docs/manual-publish.md)。发布、push、tag、npm publish 必须由维护者手动执行。
 
 维护者发布、接收方验收和支持边界见 [维护者交接](./docs/maintainer-handoff.md)。
+不同工具的真实命令发现和 04 闸门验证见 [多工具命令发现人工验收](./docs/adapter-manual-acceptance.md)。

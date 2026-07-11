@@ -33,6 +33,7 @@ cat dist/RELEASE_MANIFEST.md
 ## 修改范围
 
 - 工具无关行为放在 `workflow/core/`。
+- 新增或修改阶段时，先更新 `workflow/core/command-manifest.yaml` 和对应 core command，并运行 `npm run check:commands`。
 - 团队特化配置示例放在 `examples/`。
 - 工具特定行为放在 adapter 或初始化器生成逻辑里。
 - adapter 必须保持薄入口，不能削弱 core 硬闸门。
@@ -42,6 +43,7 @@ cat dist/RELEASE_MANIFEST.md
 
 - 修改是通用的，不绑定任何私有组织。
 - `npm run check` 通过。
+- `npm run check:commands` 通过，生成入口与 core command 没有漂移。
 - `npm run check:history` 通过。
 - `npm run build:release` 通过。
 - 新增或修改的示例都是合成数据。

@@ -69,7 +69,7 @@ npm publish --access public
 
 - 运行 `npm run check`。
 - 运行 `npm run check:history`。
-- 确认 `npm run check:rules` 和 `npm run check:adapters` 通过（它们也由 `npm run check` 调用）。
+- 确认 `npm run check:commands`、`npm run check:rules` 和 `npm run check:adapters` 通过（它们也由 `npm run check` 调用）。
 - 运行 `npm run build:release`。
 - 使用 `bin/check-sanitized.cjs --extra-banned <private-file>` 执行私有 denylist 扫描。
 - 检查 `dist/RELEASE_MANIFEST.md`。

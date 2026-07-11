@@ -6,10 +6,13 @@ const { spawnSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
 const init = path.join(root, 'bin', 'init-workspace.cjs');
+const commandCheck = path.join(root, 'bin', 'check-command-manifest.cjs');
 const supportCheck = path.join(root, 'bin', 'check-support-matrix.cjs');
 const sanitizedCheck = path.join(root, 'bin', 'check-sanitized.cjs');
 const historyCheck = path.join(root, 'bin', 'check-history.cjs');
 const { classifySourcePaths } = require(init);
+const { loadCommandManifest } = require(path.join(root, 'bin', 'command-manifest.cjs'));
+const commands = loadCommandManifest(path.join(root, 'workflow/core/command-manifest.yaml')).commands;
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-smoke-'));
 
 function mkdir(rel) {
@@ -71,10 +74,13 @@ for (const rel of [
   'AGENTS.md',
   'CLAUDE.md',
   '.agents/skills/agent-workflow/SKILL.md',
+  '.agents/skills/workflow-04-code-implementation/SKILL.md',
+  '.agents/skills/workflow-04-code-implementation/agents/openai.yaml',
   '.claude/commands/04-代码实现.md',
   '.cursor/rules/agent-workflow-core.mdc',
   '.github/copilot-instructions.md',
   '.codebuddy/rules/agent-workflow.md',
+  '.codebuddy/commands/04-代码实现.md',
   '.kiro/steering/agent-workflow.md',
   '.trae/instructions.md',
   'workflow/team-profile.yaml',
@@ -83,6 +89,7 @@ for (const rel of [
   'workflow/local/rule-provenance.private.yaml',
   'workflow/INITIALIZATION_QUESTIONS.md',
   'workflow/core/commands/init-workspace.md',
+  'workflow/core/command-manifest.yaml',
   'workflow/core/commands/02B-UI设计.md',
   'workflow/core/commands/04-代码实现.md',
   'workflow/core/capabilities/branch-gatekeeper.md',
@@ -115,6 +122,8 @@ for (const rel of [
   'workflow/core/rules/rule-catalog.yaml',
   'workflow/adapters/support-matrix.yaml',
   'workflow/bin/check-rule-catalog.cjs',
+  'workflow/bin/command-manifest.cjs',
+  'workflow/bin/check-command-manifest.cjs',
   'workflow/bin/check-support-matrix.cjs',
   'workflow/bin/check-markdown-links.cjs',
   'workflow/bin/run-api-tests.cjs',
@@ -130,15 +139,46 @@ if (fs.existsSync(path.join(tmp, '.codex'))) {
   throw new Error('kit 不应生成项目级 .codex/ 目录（Codex 不加载项目级 prompts）');
 }
 assertContains('.agents/skills/agent-workflow/SKILL.md', 'name: agent-workflow');
+assertContains('.agents/skills/agent-workflow/SKILL.md', '不等于用户显式选择了阶段');
+assertContains('.agents/skills/workflow-04-code-implementation/SKILL.md', 'name: workflow-04-code-implementation');
+assertContains('.agents/skills/workflow-04-code-implementation/SKILL.md', 'workflow/core/commands/04-代码实现.md');
+assertContains('.agents/skills/workflow-04-code-implementation/agents/openai.yaml', 'display_name: "04-代码实现 代码实现总览"');
+assertContains('.agents/skills/workflow-04-code-implementation/agents/openai.yaml', 'allow_implicit_invocation: false');
 // Claude 官方推荐 skills 格式入口（与 commands 并存）。
 assertFile('.claude/skills/agent-workflow/SKILL.md');
 assertContains('.claude/skills/agent-workflow/SKILL.md', 'name: agent-workflow');
 assertContains('.claude/skills/agent-workflow/SKILL.md', 'execution-policy');
+assertContains('.claude/skills/agent-workflow/SKILL.md', '不等于授权 `/04` 修改代码');
 
 assertContains('workflow/team-profile.yaml', '- trae');
 assertContains('workflow/team-profile.yaml', 'apps/web');
 assertContains('workflow/team-profile.yaml', 'services/api');
 assertContains('workflow/INSTALL_REPORT.md', '初始化器没有执行远程 Git 命令');
+assertContains('workflow/core/command-manifest.yaml', 'command_count: 21');
+
+// 同一 manifest 必须生成 21 个 Claude/Cursor/CodeBuddy 命令和 21 个分阶段 Agent Skills。
+if (commands.length !== 21) throw new Error(`源命令清单数量应为 21，当前 ${commands.length}`);
+for (const rel of ['.claude/commands', '.cursor/commands', '.codebuddy/commands']) {
+  const count = fs.readdirSync(path.join(tmp, rel)).filter((name) => name.endsWith('.md')).length;
+  if (count !== 21) throw new Error(`${rel} 命令数量应为 21，当前 ${count}`);
+}
+const stageSkillCount = fs
+  .readdirSync(path.join(tmp, '.agents/skills'), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory() && entry.name.startsWith('workflow-')).length;
+if (stageSkillCount !== 21) throw new Error(`分阶段 Agent Skills 数量应为 21，当前 ${stageSkillCount}`);
+for (const command of commands) {
+  const coreReference = `workflow/core/commands/${command.id}.md`;
+  for (const dir of ['.claude/commands', '.cursor/commands', '.codebuddy/commands']) {
+    assertContains(`${dir}/${command.id}.md`, coreReference);
+  }
+  assertContains(`.agents/skills/${command.skill_slug}/SKILL.md`, coreReference);
+  assertContains(`.agents/skills/${command.skill_slug}/agents/openai.yaml`, 'allow_implicit_invocation: false');
+}
+assertContains('.codebuddy/commands/04-代码实现.md', 'argument-hint: "<功能名称>"');
+assertContains('.codebuddy/commands/04-代码实现.md', '$ARGUMENTS');
+if (fs.readFileSync(path.join(tmp, '.codebuddy/commands/04-代码实现.md'), 'utf8').includes('allowed-tools:')) {
+  throw new Error('CodeBuddy 阶段命令不得声明 allowed-tools');
+}
 
 // v0.8.0: 仓库只能请求执行模式，高危 auto 需外部受信策略。
 assertContains('workflow/team-profile.yaml', 'schema_version: "1.2"');
@@ -262,10 +302,18 @@ write('workflow/local/test-credentials.env', 'PLACEHOLDER_ONLY=1\n');
   }
 }
 
-assertContains('workflow/adapters/support-matrix.yaml', 'claim: "4 native adapters + 3 AGENTS.md-compatible entries"');
+assertContains('workflow/adapters/support-matrix.yaml', 'claim: "5 native adapters + 2 compatible entries; discovery varies by tool"');
 assertContains('workflow/adapters/support-matrix.yaml', 'support_level: "native"');
 assertContains('workflow/adapters/support-matrix.yaml', 'support_level: "compatible"');
+assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "slash_fuzzy"');
+assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "skill_fuzzy"');
 {
+  const generatedCommandCheck = path.join(tmp, 'workflow/bin/check-command-manifest.cjs');
+  const commandResult = spawnSync(process.execPath, [generatedCommandCheck], { cwd: tmp, encoding: 'utf8' });
+  if (commandResult.status !== 0) {
+    throw new Error(`生成物命令清单校验失败:\n${commandResult.stdout}\n${commandResult.stderr}`);
+  }
+
   const generatedSupportCheck = path.join(tmp, 'workflow/bin/check-support-matrix.cjs');
   const result = spawnSync(process.execPath, [generatedSupportCheck], { cwd: tmp, encoding: 'utf8' });
   if (result.status !== 0) throw new Error(`生成物 adapter 支持矩阵校验失败:\n${result.stdout}\n${result.stderr}`);
@@ -279,6 +327,24 @@ assertContains('workflow/adapters/support-matrix.yaml', 'support_level: "compati
   fs.writeFileSync(path.join(matrixDir, 'support-matrix.yaml'), matrix);
   const invalid = spawnSync(process.execPath, [supportCheck, '--root', invalidMatrixRoot], { encoding: 'utf8' });
   if (invalid.status === 0) throw new Error('无人工验收证据的 native_verified 必须被阻断');
+}
+
+// manifest 自身是命令单一事实源，声明数量与实际条目不一致必须阻断。
+{
+  const invalidCommandRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-command-manifest-'));
+  fs.cpSync(path.join(tmp, 'workflow'), path.join(invalidCommandRoot, 'workflow'), { recursive: true });
+  const manifestFile = path.join(invalidCommandRoot, 'workflow/core/command-manifest.yaml');
+  const invalidManifest = fs.readFileSync(manifestFile, 'utf8').replace('command_count: 21', 'command_count: 20');
+  fs.writeFileSync(manifestFile, invalidManifest);
+  const invalid = spawnSync(process.execPath, [commandCheck, '--root', invalidCommandRoot], { encoding: 'utf8' });
+  if (invalid.status === 0) throw new Error('command_count 与实际命令数不一致时必须阻断');
+
+  const invalidGateManifest = fs
+    .readFileSync(path.join(tmp, 'workflow/core/command-manifest.yaml'), 'utf8')
+    .replace('implementation_gate: false', 'implementation_gate: true');
+  fs.writeFileSync(manifestFile, invalidGateManifest);
+  const invalidGate = spawnSync(process.execPath, [commandCheck, '--root', invalidCommandRoot], { encoding: 'utf8' });
+  if (invalidGate.status === 0) throw new Error('非 04 命令被标记 implementation_gate 时必须阻断');
 }
 
 {
@@ -416,6 +482,32 @@ for (const rel of [
 const cursorAgents = fs.readFileSync(path.join(cursorTmp, 'AGENTS.md'), 'utf8');
 if (!cursorAgents.includes('### Cursor')) {
   throw new Error('cursor-only AGENTS.md missing the Cursor usage section');
+}
+
+// 单工具安装回归：条件分支必须各自生成可发现入口，不能依赖其它工具顺带创建。
+for (const [tool, required] of [
+  ['codex', [
+    '.agents/skills/workflow-04-code-implementation/SKILL.md',
+    '.agents/skills/workflow-04-code-implementation/agents/openai.yaml'
+  ]],
+  ['codebuddy', [
+    '.codebuddy/rules/agent-workflow.md',
+    '.codebuddy/commands/04-代码实现.md'
+  ]],
+  ['trae', [
+    '.trae/instructions.md',
+    '.agents/skills/workflow-04-code-implementation/SKILL.md'
+  ]]
+]) {
+  const adapterTmp = fs.mkdtempSync(path.join(os.tmpdir(), `agent-workflow-${tool}-`));
+  const result = spawnSync(process.execPath, [init, '--target', adapterTmp, '--tools', tool, '--yes'], {
+    cwd: adapterTmp,
+    encoding: 'utf8'
+  });
+  if (result.status !== 0) throw new Error(`${tool}-only install failed:\n${result.stdout}\n${result.stderr}`);
+  for (const rel of ['AGENTS.md', 'workflow/core/command-manifest.yaml', ...required]) {
+    if (!fs.existsSync(path.join(adapterTmp, rel))) throw new Error(`${tool}-only install missing file: ${rel}`);
+  }
 }
 
 // 脱敏反例：.env.production 中的无引号 PASSWORD 必须命中，且输出不回显值。

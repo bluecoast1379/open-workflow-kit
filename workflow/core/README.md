@@ -15,6 +15,7 @@
 
 ## 目录地图
 
+- `command-manifest.yaml`: 21 个阶段命令的 ID、展示信息、参数提示、Skill slug 和实现闸门标记。
 - `commands/`: 每个阶段的契约。
 - `templates/`: 通用文档模板（含 api/ui-test-plan 与 prototype-page.html）。
 - `capabilities/`: 可复用检查能力。

@@ -1,6 +1,6 @@
-schema_version: "1.0"
-claim: "4 native adapters + 3 AGENTS.md-compatible entries"
-last_documentation_check: "2026-07-10"
+schema_version: "1.1"
+claim: "5 native adapters + 2 compatible entries; discovery varies by tool"
+last_documentation_check: "2026-07-11"
 
 native_verification_requirements:
   - "official auto-load path"
@@ -13,7 +13,9 @@ native_verification_requirements:
 tools:
   codex:
     support_level: "native"
-    generated_entries: ["AGENTS.md", ".agents/skills/agent-workflow/SKILL.md"]
+    invocation_style: "skill_fuzzy"
+    generated_entries: ["AGENTS.md", ".agents/skills/agent-workflow/SKILL.md", ".agents/skills/workflow-*/SKILL.md", ".agents/skills/workflow-*/agents/openai.yaml"]
+    documentation_url: "https://developers.openai.com/codex/skills"
     official_path_status: "verified"
     automated_conformance: "covered"
     manual_acceptance: "required-per-release"
@@ -21,7 +23,9 @@ tools:
     verification_status: "native_not_yet_manually_certified"
   claude:
     support_level: "native"
+    invocation_style: "slash_fuzzy"
     generated_entries: ["CLAUDE.md", ".claude/commands/", ".claude/skills/agent-workflow/SKILL.md"]
+    documentation_url: "https://code.claude.com/docs/en/slash-commands"
     official_path_status: "verified"
     automated_conformance: "covered"
     manual_acceptance: "required-per-release"
@@ -29,7 +33,9 @@ tools:
     verification_status: "native_not_yet_manually_certified"
   cursor:
     support_level: "native"
+    invocation_style: "slash_fuzzy"
     generated_entries: [".cursor/rules/agent-workflow-core.mdc", ".cursor/commands/"]
+    documentation_url: "https://docs.cursor.com/en/agent/chat/commands"
     official_path_status: "verified"
     automated_conformance: "covered"
     manual_acceptance: "required-per-release"
@@ -37,30 +43,39 @@ tools:
     verification_status: "native_not_yet_manually_certified"
   copilot:
     support_level: "native"
+    invocation_style: "instruction_reference"
     generated_entries: [".github/copilot-instructions.md"]
+    documentation_url: "https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot"
     official_path_status: "verified"
     automated_conformance: "covered"
     manual_acceptance: "required-per-release"
     manual_acceptance_evidence: []
     verification_status: "native_not_yet_manually_certified"
   codebuddy:
-    support_level: "compatible"
-    generated_entries: ["AGENTS.md", ".codebuddy/rules/agent-workflow.md"]
+    support_level: "native"
+    invocation_style: "slash_fuzzy"
+    generated_entries: ["AGENTS.md", ".codebuddy/rules/agent-workflow.md", ".codebuddy/commands/"]
+    documentation_url: "https://www.codebuddy.ai/docs/cli/slash-commands"
     official_path_status: "verified"
     automated_conformance: "covered"
-    manual_acceptance: "not-required-for-compatible"
-    verification_status: "compatible"
+    manual_acceptance: "required-per-release"
+    manual_acceptance_evidence: []
+    verification_status: "native_not_yet_manually_certified"
   kiro:
     support_level: "compatible"
+    invocation_style: "instruction_reference"
     generated_entries: ["AGENTS.md", ".kiro/steering/agent-workflow.md"]
+    documentation_url: "https://kiro.dev/docs/steering/"
     official_path_status: "verified"
     automated_conformance: "covered"
     manual_acceptance: "not-required-for-compatible"
     verification_status: "compatible"
   trae:
     support_level: "compatible"
-    generated_entries: ["AGENTS.md", ".trae/instructions.md"]
-    official_path_status: "community-convention-only"
+    invocation_style: "skill_fuzzy"
+    generated_entries: ["AGENTS.md", ".trae/instructions.md", ".agents/skills/workflow-*/SKILL.md"]
+    documentation_url: "https://www.trae.ai/changelog"
+    official_path_status: "verified-for-agent-skills; slash-panel-project-import-unverified"
     automated_conformance: "covered"
     manual_acceptance: "not-required-for-compatible"
     verification_status: "compatible"

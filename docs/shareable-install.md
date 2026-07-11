@@ -14,7 +14,7 @@ npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 
 ```bash
 cd /path/to/target-workspace
-npm install git+https://github.com/bluecoast1379/open-workflow-kit.git#v0.8.0 --save-dev
+npm install git+https://github.com/bluecoast1379/open-workflow-kit.git#v0.9.0 --save-dev
 npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 ```
 

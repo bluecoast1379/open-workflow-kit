@@ -25,6 +25,15 @@ try {
 } catch (error) {
   throw new Error(`无法解析 npm pack 输出: ${pack.stdout}`);
 }
+const packedPaths = new Set(packed.files.map((file) => file.path));
+for (const rel of [
+  'docs/adapter-manual-acceptance.md',
+  'workflow/core/command-manifest.yaml',
+  'bin/command-manifest.cjs',
+  'bin/check-command-manifest.cjs'
+]) {
+  if (!packedPaths.has(rel)) throw new Error(`发布包文件清单缺少 ${rel}`);
+}
 
 const tarball = path.join(dist, packed.filename);
 const installSmokeRoot = path.join(dist, 'install-smoke');
@@ -44,14 +53,20 @@ run(installedBin, ['--target', installTarget, '--tools', 'codex,trea,codebuddy',
 for (const rel of [
   'AGENTS.md',
   '.trae/instructions.md',
+  '.agents/skills/workflow-04-code-implementation/SKILL.md',
+  '.agents/skills/workflow-04-code-implementation/agents/openai.yaml',
   '.codebuddy/rules/agent-workflow.md',
+  '.codebuddy/commands/04-代码实现.md',
   'workflow/team-profile.yaml',
   'workflow/local/.gitignore',
   'workflow/local/team-profile.local.yaml',
   'workflow/local/rule-provenance.private.yaml',
   'workflow/core/rules/rule-catalog.yaml',
+  'workflow/core/command-manifest.yaml',
   'workflow/adapters/support-matrix.yaml',
   'workflow/bin/check-rule-catalog.cjs',
+  'workflow/bin/command-manifest.cjs',
+  'workflow/bin/check-command-manifest.cjs',
   'workflow/bin/check-support-matrix.cjs',
   'workflow/bin/check-markdown-links.cjs',
   'workflow/bin/run-api-tests.cjs',
@@ -61,6 +76,7 @@ for (const rel of [
   if (!fs.existsSync(file)) throw new Error(`发布包安装 smoke 缺少 ${rel}`);
 }
 run(process.execPath, [path.join(installTarget, 'workflow/bin/check-rule-catalog.cjs')]);
+run(process.execPath, [path.join(installTarget, 'workflow/bin/check-command-manifest.cjs')]);
 run(process.execPath, [path.join(installTarget, 'workflow/bin/check-support-matrix.cjs')]);
 run(process.execPath, [path.join(installTarget, 'workflow/bin/check-markdown-links.cjs')]);
 

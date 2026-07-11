@@ -73,7 +73,7 @@ schema 1.1 升级到 1.2 时，旧 profile 不会被覆盖；请将 `.agent-work
 
 ## 工具别名
 
-初始化器接受 `trea` 作为 `trae` 的别名，并写入 `.trae/instructions.md`。
+初始化器接受 `trea` 作为 `trae` 的别名，并写入 `.trae/instructions.md` 与 `.agents/skills/workflow-*/`。Trae 的 slash panel 项目导入约定尚未完成真机认证，因此不会生成猜测性的 `.trae/commands/`。
 
 ## 接收方验收
 

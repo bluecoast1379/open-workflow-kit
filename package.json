@@ -1,6 +1,6 @@
 {
   "name": "open-workflow-kit",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": false,
   "description": "面向中文团队的工具无关 agent 研发工作流 kit，支持本地初始化、多工具 adapter 和阶段闸门。",
   "keywords": [
@@ -42,13 +42,15 @@
     "agent-workflow-init": "bin/init-workspace.cjs",
     "open-workflow-init": "bin/init-workspace.cjs",
     "agent-workflow-check-sanitized": "bin/check-sanitized.cjs",
+    "agent-workflow-check-commands": "bin/check-command-manifest.cjs",
     "agent-workflow-check-rules": "bin/check-rule-catalog.cjs",
     "agent-workflow-check-adapters": "bin/check-support-matrix.cjs",
     "agent-workflow-check-links": "bin/check-markdown-links.cjs",
     "agent-workflow-run-api-tests": "bin/run-api-tests.cjs"
   },
   "scripts": {
-    "check": "node --check bin/init-workspace.cjs && node --check bin/check-sanitized.cjs && node --check bin/check-history.cjs && node --check bin/check-rule-catalog.cjs && node --check bin/check-support-matrix.cjs && node --check bin/check-markdown-links.cjs && node --check bin/run-api-tests.cjs && node --check bin/sanitize-patterns.cjs && node --check bin/check-prototype-tokens.cjs && node --check test/api-runner.cjs && node --check test/smoke.cjs && node --check scripts/build-release.cjs && node bin/check-sanitized.cjs && node bin/check-prototype-tokens.cjs workflow/core/templates/prototype-page.html && node bin/check-rule-catalog.cjs && node bin/check-support-matrix.cjs && node bin/check-markdown-links.cjs && node test/api-runner.cjs && node test/smoke.cjs",
+    "check": "node --check bin/init-workspace.cjs && node --check bin/command-manifest.cjs && node --check bin/check-command-manifest.cjs && node --check bin/check-sanitized.cjs && node --check bin/check-history.cjs && node --check bin/check-rule-catalog.cjs && node --check bin/check-support-matrix.cjs && node --check bin/check-markdown-links.cjs && node --check bin/run-api-tests.cjs && node --check bin/sanitize-patterns.cjs && node --check bin/check-prototype-tokens.cjs && node --check test/api-runner.cjs && node --check test/smoke.cjs && node --check scripts/build-release.cjs && node bin/check-sanitized.cjs && node bin/check-prototype-tokens.cjs workflow/core/templates/prototype-page.html && node bin/check-command-manifest.cjs && node bin/check-rule-catalog.cjs && node bin/check-support-matrix.cjs && node bin/check-markdown-links.cjs && node test/api-runner.cjs && node test/smoke.cjs",
+    "check:commands": "node bin/check-command-manifest.cjs",
     "check:history": "node bin/check-history.cjs",
     "check:rules": "node bin/check-rule-catalog.cjs",
     "check:adapters": "node bin/check-support-matrix.cjs",

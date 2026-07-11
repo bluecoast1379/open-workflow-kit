@@ -16,13 +16,13 @@ try {
 
 const tools = parseTools(text);
 const expected = {
-  codex: 'native',
-  claude: 'native',
-  cursor: 'native',
-  copilot: 'native',
-  codebuddy: 'compatible',
-  kiro: 'compatible',
-  trae: 'compatible'
+  codex: { level: 'native', invocation: 'skill_fuzzy' },
+  claude: { level: 'native', invocation: 'slash_fuzzy' },
+  cursor: { level: 'native', invocation: 'slash_fuzzy' },
+  copilot: { level: 'native', invocation: 'instruction_reference' },
+  codebuddy: { level: 'native', invocation: 'slash_fuzzy' },
+  kiro: { level: 'compatible', invocation: 'instruction_reference' },
+  trae: { level: 'compatible', invocation: 'skill_fuzzy' }
 };
 
 for (const name of Object.keys(expected)) {
@@ -32,12 +32,19 @@ for (const name of Object.keys(tools)) {
   if (!expected[name]) errors.push(`未声明的工具: ${name}`);
 }
 
-for (const [name, level] of Object.entries(expected)) {
+for (const [name, expectedTool] of Object.entries(expected)) {
   const tool = tools[name];
   if (!tool) continue;
+  const level = expectedTool.level;
   if (tool.support_level !== level) errors.push(`${name} support_level 应为 ${level}`);
+  if (tool.invocation_style !== expectedTool.invocation) {
+    errors.push(`${name} invocation_style 应为 ${expectedTool.invocation}`);
+  }
   if (!Array.isArray(tool.generated_entries) || !tool.generated_entries.length) {
     errors.push(`${name} generated_entries 必须为非空数组`);
+  }
+  if (typeof tool.documentation_url !== 'string' || !tool.documentation_url.startsWith('https://')) {
+    errors.push(`${name} 缺少官方 documentation_url`);
   }
   if (tool.automated_conformance !== 'covered') errors.push(`${name} 缺少自动一致性覆盖`);
   if ((tool.generated_entries || []).some((entry) => entry.includes('RULE.mdc') || entry.includes('.codex/prompts'))) {
@@ -61,8 +68,8 @@ for (const [name, level] of Object.entries(expected)) {
 
 const nativeCount = Object.values(tools).filter((tool) => tool.support_level === 'native').length;
 const compatibleCount = Object.values(tools).filter((tool) => tool.support_level === 'compatible').length;
-if (nativeCount !== 4) errors.push(`native 数量应为 4，当前 ${nativeCount}`);
-if (compatibleCount !== 3) errors.push(`compatible 数量应为 3，当前 ${compatibleCount}`);
+if (nativeCount !== 5) errors.push(`native 数量应为 5，当前 ${nativeCount}`);
+if (compatibleCount !== 2) errors.push(`compatible 数量应为 2，当前 ${compatibleCount}`);
 
 if (errors.length) {
   console.error(`Adapter 支持矩阵校验失败（${errors.length} 项）:`);
@@ -70,7 +77,7 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Adapter 支持矩阵校验通过：4 native / 3 compatible；未验收 native 未被冒充为 native_verified。');
+console.log('Adapter 支持矩阵校验通过：5 native / 2 compatible；命令发现方式与验收状态一致。');
 
 function parseTools(source) {
   const marker = source.match(/^tools:\s*$/m);

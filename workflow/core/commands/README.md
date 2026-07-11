@@ -2,6 +2,8 @@
 
 Each command file is a stage contract. Tools may expose slash commands, prompts, rules, or checklists, but every adapter should point back to these core files.
 
+`../command-manifest.yaml` 是命令 ID、标题、描述、参数提示、Skill slug 和实现闸门标记的机器可读单一事实源。修改或新增阶段时必须同步 core command，并运行 `node workflow/bin/check-command-manifest.cjs`。
+
 默认使用简体中文展示阶段沟通和产物；专有名词、产品名、品牌名、代码标识符、命令、文件路径、分支名、API、SDK、框架、协议、标准、错误信息和官方英文术语保留原文。
 
 Stages:

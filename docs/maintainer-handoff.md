@@ -94,7 +94,8 @@ agent-workflow-init --target . --tools codex,claude,cursor,codebuddy,trea --yes
 - `bin/init-workspace.cjs`: 本地初始化逻辑。
 - `bin/check-sanitized.cjs`: 发布安全检查。
 - `bin/check-rule-catalog.cjs`: 37 条规则 / 79 个清单 item 映射与可选私有 provenance 检查。
-- `bin/check-support-matrix.cjs`: 4 native / 3 compatible 口径与原生验收证据检查。
+- `bin/check-command-manifest.cjs`: 21 个命令、core command 和实现闸门映射检查。
+- `bin/check-support-matrix.cjs`: 5 native / 2 compatible、命令发现方式与原生验收证据检查。
 
 团队反馈问题时，优先索要：
 
@@ -105,6 +106,8 @@ agent-workflow-init --target . --tools codex,claude,cursor,codebuddy,trea --yes
 - 如存在，提供 `workflow/INITIALIZATION_QUESTIONS.md`；
 - 是否生成了 `.agent-workflow-new` 文件；
 - 精确错误输出。
+
+命令发现能力按 [`adapter-manual-acceptance.md`](./adapter-manual-acceptance.md) 验收；不得只凭“生成了目录”或“菜单能打开”更新 `native_verified`。
 
 除非已经建立单独的安全支持渠道，不要要求团队发送私有源码、客户数据、凭证、日志、SQL 或生产配置。
 
