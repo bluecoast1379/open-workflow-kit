@@ -1,8 +1,8 @@
 {
   "name": "open-workflow-kit",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "private": false,
-  "description": "面向中文团队的工具无关 agent 研发工作流 kit，支持本地初始化、多工具 adapter 和阶段闸门。",
+  "description": "将完成定义编译为 Completion Contract、可复现证据与多 Agent 交付闸门的零依赖工作流 kit。",
   "keywords": [
     "agent-workflow",
     "workflow",
@@ -11,6 +11,10 @@
     "cursor",
     "codebuddy",
     "trae",
+    "kiro",
+    "github-copilot",
+    "completion-contract",
+    "definition-to-done",
     "software-delivery"
   ],
   "homepage": "https://github.com/bluecoast1379/open-workflow-kit#readme",
@@ -24,6 +28,7 @@
   "files": [
     "README.md",
     "INIT.md",
+    "CHANGELOG.md",
     "LICENSE",
     "NOTICE",
     "CONTRIBUTING.md",
@@ -46,15 +51,29 @@
     "agent-workflow-check-rules": "bin/check-rule-catalog.cjs",
     "agent-workflow-check-adapters": "bin/check-support-matrix.cjs",
     "agent-workflow-check-links": "bin/check-markdown-links.cjs",
-    "agent-workflow-run-api-tests": "bin/run-api-tests.cjs"
+    "agent-workflow-check-definition": "bin/check-definition-system.cjs",
+    "agent-workflow-run-api-tests": "bin/run-api-tests.cjs",
+    "agent-workflow-check-completion": "bin/check-completion-contract.cjs",
+    "agent-workflow-check-completion-schemas": "bin/check-completion-schemas.cjs",
+    "agent-workflow-evidence": "bin/evidence-ledger.cjs",
+    "agent-workflow-evaluate-dod": "bin/evaluate-dod.cjs",
+    "agent-workflow-run-until-done": "bin/run-until-done.cjs",
+    "agent-workflow-sign-execution-permit": "bin/sign-execution-permit.cjs",
+    "agent-workflow-sign-ledger-anchor": "bin/sign-ledger-anchor.cjs",
+    "agent-workflow-done-cockpit": "bin/generate-done-cockpit.cjs"
   },
   "scripts": {
-    "check": "node --check bin/init-workspace.cjs && node --check bin/command-manifest.cjs && node --check bin/check-command-manifest.cjs && node --check bin/check-sanitized.cjs && node --check bin/check-history.cjs && node --check bin/check-rule-catalog.cjs && node --check bin/check-support-matrix.cjs && node --check bin/check-markdown-links.cjs && node --check bin/run-api-tests.cjs && node --check bin/sanitize-patterns.cjs && node --check bin/check-prototype-tokens.cjs && node --check test/api-runner.cjs && node --check test/smoke.cjs && node --check scripts/build-release.cjs && node bin/check-sanitized.cjs && node bin/check-prototype-tokens.cjs workflow/core/templates/prototype-page.html && node bin/check-command-manifest.cjs && node bin/check-rule-catalog.cjs && node bin/check-support-matrix.cjs && node bin/check-markdown-links.cjs && node test/api-runner.cjs && node test/smoke.cjs",
+    "check": "npm run check:syntax && node bin/check-sanitized.cjs && node bin/check-prototype-tokens.cjs workflow/core/templates/prototype-page.html && npm run check:commands && npm run check:rules && npm run check:definition && npm run check:schemas && npm run check:adapters && npm run check:links && npm run check:api && npm run check:completion && node test/smoke.cjs",
+    "check:syntax": "node scripts/check-syntax.cjs",
     "check:commands": "node bin/check-command-manifest.cjs",
     "check:history": "node bin/check-history.cjs",
     "check:rules": "node bin/check-rule-catalog.cjs",
-    "check:adapters": "node bin/check-support-matrix.cjs",
+    "check:definition": "node bin/check-definition-system.cjs && node test/definition-system.cjs",
+    "check:schemas": "node bin/check-completion-schemas.cjs",
+    "check:adapters": "node bin/check-support-matrix.cjs && node test/adapter-conformance.cjs",
     "check:links": "node bin/check-markdown-links.cjs",
+    "check:api": "node test/api-runner.cjs",
+    "check:completion": "node test/completion-core.cjs && node test/definition-to-done-e2e.cjs && node test/definition-to-done-cli-e2e.cjs",
     "build:release": "node scripts/build-release.cjs",
     "init:dry-run": "node bin/init-workspace.cjs --target . --dry-run"
   },

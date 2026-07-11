@@ -1,0 +1,224 @@
+schema_version: "1.0"
+catalog_version: "1.0.0"
+rule_count: 24
+id_namespace: "OWK-DEF"
+enforcement_count: 24
+enforcement:
+  - {rule_id: "OWK-DEF-001", proof_mode: "hybrid", mechanisms: ["definition-lint:outcome", "human-gate:business-outcome"]}
+  - {rule_id: "OWK-DEF-002", proof_mode: "automated", mechanisms: ["definition-lint:scope", "runner:scope-boundary"]}
+  - {rule_id: "OWK-DEF-003", proof_mode: "automated", mechanisms: ["definition-lint:ambiguity"]}
+  - {rule_id: "OWK-DEF-004", proof_mode: "automated", mechanisms: ["definition-lint:traceability"]}
+  - {rule_id: "OWK-DEF-005", proof_mode: "automated", mechanisms: ["definition-lint:oracle", "evaluator:evidence"]}
+  - {rule_id: "OWK-DEF-006", proof_mode: "hybrid", mechanisms: ["policy-pack:high-risk-change", "human-gate:domain-semantics"]}
+  - {rule_id: "OWK-DEF-007", proof_mode: "hybrid", mechanisms: ["policy-pack:high-risk-change", "evaluator:fault-evidence"]}
+  - {rule_id: "OWK-DEF-008", proof_mode: "hybrid", mechanisms: ["definition-lint:quality-budget", "evaluator:performance-evidence"]}
+  - {rule_id: "OWK-DEF-009", proof_mode: "hybrid", mechanisms: ["definition-lint:cost-budget", "evaluator:cost-evidence"]}
+  - {rule_id: "OWK-DEF-010", proof_mode: "human", mechanisms: ["policy-pack:user-facing-experience", "human-gate:ux-rubric"]}
+  - {rule_id: "OWK-DEF-011", proof_mode: "hybrid", mechanisms: ["definition-lint:organization", "human-gate:consensus"]}
+  - {rule_id: "OWK-DEF-012", proof_mode: "automated", mechanisms: ["definition-lint:assumption-lifecycle"]}
+  - {rule_id: "OWK-DEF-013", proof_mode: "hybrid", mechanisms: ["policy-pack:regulated-sensitive-data", "human-gate:security-privacy"]}
+  - {rule_id: "OWK-DEF-014", proof_mode: "hybrid", mechanisms: ["definition-lint:observability-budget", "evaluator:operations-evidence"]}
+  - {rule_id: "OWK-DEF-015", proof_mode: "hybrid", mechanisms: ["definition-lint:release-reversibility", "human-gate:rollback"]}
+  - {rule_id: "OWK-DEF-016", proof_mode: "automated", mechanisms: ["evaluator:fingerprints", "evaluator:attestation"]}
+  - {rule_id: "OWK-DEF-017", proof_mode: "automated", mechanisms: ["evaluator:freshness"]}
+  - {rule_id: "OWK-DEF-018", proof_mode: "automated", mechanisms: ["evaluator:waiver-policy"]}
+  - {rule_id: "OWK-DEF-019", proof_mode: "automated", mechanisms: ["runner:permit", "runner:integrity", "runner:scope-boundary"]}
+  - {rule_id: "OWK-DEF-020", proof_mode: "automated", mechanisms: ["runner:budgets", "runner:signed-checkpoint"]}
+  - {rule_id: "OWK-DEF-021", proof_mode: "hybrid", mechanisms: ["definition-lint:oracle", "human-gate:negative-control"]}
+  - {rule_id: "OWK-DEF-022", proof_mode: "hybrid", mechanisms: ["policy-pack:ai-feature", "evaluator:ai-evidence"]}
+  - {rule_id: "OWK-DEF-023", proof_mode: "hybrid", mechanisms: ["definition-lint:dependency-owner", "human-gate:supply-chain"]}
+  - {rule_id: "OWK-DEF-024", proof_mode: "automated", mechanisms: ["evaluator:state-separation", "runner:no-accepted-state"]}
+
+# 本 catalog 管理“完成定义”的质量规则，不替代 rules/rule-catalog.yaml 的工程事故规则。
+rules:
+  - id: "OWK-DEF-001"
+    title: "目标必须关联可观测业务结果"
+    severity: "P1"
+    applies_when: "all-features"
+    capabilities: ["business-value-validator"]
+    commands: ["01-需求讨论", "02-产品文档", "12-复盘总结"]
+    check: "North Star or owned decision rubric includes baseline, target, window, and guardrails."
+
+  - id: "OWK-DEF-002"
+    title: "范围必须同时定义 non-goals 与不变量"
+    severity: "P1"
+    applies_when: "all-features"
+    capabilities: ["definition-quality-linter", "autonomy-anti-cheating-guard"]
+    commands: ["define-done", "01-需求讨论", "03-技术架构"]
+    check: "In-scope, non-goals, forbidden paths, and preserved invariants are explicit and non-conflicting."
+
+  - id: "OWK-DEF-003"
+    title: "语义歧义必须用技术定义消融"
+    severity: "P1"
+    applies_when: "all-features"
+    capabilities: ["definition-quality-linter"]
+    commands: ["01-需求讨论", "02-产品文档", "define-done"]
+    check: "Ambiguous adjectives are replaced by units, thresholds, decision tables, examples, or an owned rubric."
+
+  - id: "OWK-DEF-004"
+    title: "验收条件必须使用稳定 AC ID"
+    severity: "P0"
+    applies_when: "all-features"
+    capabilities: ["definition-quality-linter"]
+    commands: ["define-done", "02-产品文档", "06-测试用例"]
+    check: "Each acceptance condition has a unique non-reused AC ID and valid REQ/RISK references."
+
+  - id: "OWK-DEF-005"
+    title: "Blocking AC 必须有确定 Oracle"
+    severity: "P0"
+    applies_when: "all-blocking-acceptance"
+    capabilities: ["definition-quality-linter", "test-evidence-reviewer"]
+    commands: ["define-done", "03-技术架构", "06-测试用例"]
+    check: "Every blocking AC declares oracle, threshold, environment, fixture, evidence, and freshness."
+
+  - id: "OWK-DEF-006"
+    title: "业务规则必须定义状态、数据与失败语义"
+    severity: "P1"
+    applies_when: "stateful-or-data-flow"
+    capabilities: ["contract-tracer", "protocol-state-machine-checker"]
+    commands: ["02-产品文档", "03-技术架构"]
+    check: "Authority, state transitions, invariants, atomicity, idempotency, ordering, and partial failure are explicit."
+
+  - id: "OWK-DEF-007"
+    title: "异常与物理边界必须闭环"
+    severity: "P1"
+    applies_when: "network-async-third-party-or-resource-bound"
+    capabilities: ["resilience-recovery-checker"]
+    commands: ["03-技术架构", "06-测试用例", "07-测试执行"]
+    check: "Timeout, retry, backpressure, exhaustion, dependency failure, containment, and recovery are defined and tested."
+
+  - id: "OWK-DEF-008"
+    title: "性能约束必须包含负载与百分位"
+    severity: "P1"
+    applies_when: "performance-sensitive"
+    capabilities: ["performance-cost-budget-checker"]
+    commands: ["02-产品文档", "03-技术架构", "07-测试执行"]
+    check: "Latency percentiles, throughput/capacity, load, environment, sample, and regression threshold are explicit."
+
+  - id: "OWK-DEF-009"
+    title: "成本必须有单位预算与观察窗口"
+    severity: "P1"
+    applies_when: "paid-dependency-cloud-or-ai"
+    capabilities: ["performance-cost-budget-checker"]
+    commands: ["02-产品文档", "03-技术架构", "12-复盘总结"]
+    check: "Per-operation and period cost, currency, load assumption, owner, and hard/soft threshold are explicit."
+
+  - id: "OWK-DEF-010"
+    title: "体验必须覆盖心理、恢复与可访问性"
+    severity: "P1"
+    applies_when: "user-facing"
+    capabilities: ["ux-human-factor-reviewer"]
+    commands: ["02-产品文档", "02B-UI设计", "09-验收"]
+    check: "Task outcome, feedback, cognitive load, mistakes, recovery, trust, accessibility, and anti-dark-pattern rubric exist."
+
+  - id: "OWK-DEF-011"
+    title: "组织决策与依赖必须有 Owner"
+    severity: "P1"
+    applies_when: "multi-owner-or-external-dependency"
+    capabilities: ["organization-consensus-checker"]
+    commands: ["01-需求讨论", "03-技术架构", "09-验收"]
+    check: "DRI, decision owner, reviewers, dependency owner/SLA, approvals, and escalation path are explicit."
+
+  - id: "OWK-DEF-012"
+    title: "假设不得静默升级为事实"
+    severity: "P1"
+    applies_when: "all-features"
+    capabilities: ["definition-quality-linter"]
+    commands: ["01-需求讨论", "define-done", "12-复盘总结"]
+    check: "Each assumption has evidence, confidence, validation, owner, expiry, and state."
+
+  - id: "OWK-DEF-013"
+    title: "安全隐私合规必须进入完成定义"
+    severity: "P0"
+    applies_when: "identity-permission-sensitive-data-or-regulated"
+    capabilities: ["security-reviewer"]
+    commands: ["02-产品文档", "03-技术架构", "06-测试用例", "07-测试执行"]
+    check: "Threats, auth, least privilege, minimization, retention/deletion, audit, abuse, and approvals are covered."
+
+  - id: "OWK-DEF-014"
+    title: "运行态必须可发现可定位可处置"
+    severity: "P1"
+    applies_when: "runtime-service-job-or-critical-journey"
+    capabilities: ["observability-operability-checker"]
+    commands: ["03-技术架构", "04-代码实现", "07-测试执行"]
+    check: "Logs, metrics, traces, alerts, owners, dashboards, runbooks, and manual recovery are verifiable."
+
+  - id: "OWK-DEF-015"
+    title: "功能必须可逆、兼容并可安全下线"
+    severity: "P1"
+    applies_when: "release-data-or-public-contract"
+    capabilities: ["reversibility-evolution-checker"]
+    commands: ["02-产品文档", "03-技术架构", "07-测试执行", "12-复盘总结"]
+    check: "Flag/kill switch, rollback/forward fix, compatibility window, migration, cleanup, and decommission are explicit."
+
+  - id: "OWK-DEF-016"
+    title: "证据必须绑定可复现指纹"
+    severity: "P0"
+    applies_when: "all-executed-evidence"
+    capabilities: ["evidence-freshness-checker"]
+    commands: ["07-测试执行", "08-验收表格", "09-验收"]
+    check: "Evidence binds contract, source, environment, data, executor/tool, time, oracle, and artifact hash."
+
+  - id: "OWK-DEF-017"
+    title: "变更后受影响证据必须失效"
+    severity: "P0"
+    applies_when: "contract-source-environment-data-tool-or-model-change"
+    capabilities: ["evidence-freshness-checker"]
+    commands: ["define-done", "07-测试执行", "deliver-until-done"]
+    check: "Affected evidence becomes STALE before any completion aggregation."
+
+  - id: "OWK-DEF-018"
+    title: "WAIVED 不得伪装为 PASS"
+    severity: "P0"
+    applies_when: "waiver-exists"
+    capabilities: ["definition-quality-linter", "evidence-freshness-checker"]
+    commands: ["define-done", "08-验收表格", "09-验收"]
+    check: "Waiver has approver, scope, reason, compensation, expiry, and remains distinct from PASS."
+
+  - id: "OWK-DEF-019"
+    title: "Agent 不得通过弱化标准制造绿灯"
+    severity: "P0"
+    applies_when: "agent-implementation-or-autonomous-loop"
+    capabilities: ["autonomy-anti-cheating-guard"]
+    commands: ["04-代码实现", "05-代码审查", "deliver-until-done"]
+    check: "No unauthorized threshold/AC change, test deletion/skip, mock expansion, hardcoding, or evidence omission."
+
+  - id: "OWK-DEF-020"
+    title: "自主循环必须有预算、停止与恢复语义"
+    severity: "P1"
+    applies_when: "deliver-until-done"
+    capabilities: ["autonomy-anti-cheating-guard"]
+    commands: ["deliver-until-done"]
+    check: "Iteration/time/cost/diff budgets, failure convergence, stop conditions, checkpoint, and legal terminal states exist."
+
+  - id: "OWK-DEF-021"
+    title: "关键 Oracle 必须可证伪"
+    severity: "P1"
+    applies_when: "blocking-automated-oracle"
+    capabilities: ["test-evidence-reviewer", "automated-test-runner"]
+    commands: ["06-测试用例", "07-测试执行"]
+    check: "Negative control, mutation, fault injection, or equivalent proves the oracle rejects an incorrect implementation."
+
+  - id: "OWK-DEF-022"
+    title: "AI 质量必须按版本、分布与风险切片评估"
+    severity: "P1"
+    applies_when: "ai-feature"
+    capabilities: ["ai-quality-evaluator"]
+    commands: ["02-产品文档", "03-技术架构", "06-测试用例", "07-测试执行"]
+    check: "Versioned dataset/model/prompt/tool/evaluator, slices, variance, hallucination/safety, fallback, latency, and cost are measured."
+
+  - id: "OWK-DEF-023"
+    title: "供应链与外部依赖必须有韧性边界"
+    severity: "P1"
+    applies_when: "third-party-dependency"
+    capabilities: ["contract-tracer", "resilience-recovery-checker", "security-reviewer"]
+    commands: ["03-技术架构", "05-代码审查", "07-测试执行"]
+    check: "SLA, version, license/source, integrity, fallback, lock-in, failure behavior, and owner are explicit."
+
+  - id: "OWK-DEF-024"
+    title: "技术完成、人类签收、发布与商业成功必须分离"
+    severity: "P0"
+    applies_when: "all-features"
+    capabilities: ["business-value-validator", "evidence-freshness-checker"]
+    commands: ["07-测试执行", "09-验收", "12-复盘总结"]
+    check: "READY_FOR_HUMAN_ACCEPTANCE, ACCEPTED, RELEASED, and business outcome are separate states with separate evidence."

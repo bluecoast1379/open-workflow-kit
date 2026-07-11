@@ -1,0 +1,5 @@
+schema_version: "1.0"
+snapshot_at: "<SNAPSHOT_AT>"
+owner: "<TODO: 与 governance.findings_registry.owner 完全一致>"
+source: "<TODO: 与 governance.findings_registry.source 完全一致>"
+findings: []

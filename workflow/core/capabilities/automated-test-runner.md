@@ -13,10 +13,10 @@
 ### API 轨（接口测试）
 
 - 输入：`api-test-plan` 模板填写的用例（端点、方法、鉴权方式、入参、断言）+ 用户提供的测试数据（密钥、地址、账号、业务数据）。
-- 执行：优先把用例转成 `api-test-plan.example.json` 同结构的计划，通过初始化后的共享 runner `workflow/bin/run-api-tests.cjs` 逐用例发起 HTTP 调用，断言状态码、业务码和关键字段。
+- 执行：优先把用例转成 `api-test-plan.example.json` 同结构的 schema 1.1 计划，通过共享 runner `bin/run-api-tests.cjs` 逐用例发起 HTTP 调用。每个 case 强制至少一个明确 expect；支持 status 数组、response headers、JSON exact/exists/not-empty/range/schema、text contains/not-contains、duration/body budget、capture 和 bounded retry。
 - 凭证约定：写入本地未跟踪文件（默认 `workflow/local/test-credentials.env`），**不进版本库、不进文档**；证据中的敏感字段脱敏。
 - 边界：runner 不自动跟随 HTTP 重定向；生产、线上、`prod-*`、`production-*` 和 `live-*` 类环境名默认阻断。
-- 输出：只保留目标 host SHA-256 指纹、用例状态、HTTP 状态码、耗时和断言布尔结果；不写响应正文、JSON 实际值、私有 host、header 或凭证。
+- 输出：只保留目标 host SHA-256 指纹、用例状态、HTTP 状态码、attempts、耗时和断言布尔结果；不写响应正文、JSON 实际值、私有 host、header 或凭证。`/07` 另行绑定 contract/source/environment/fixture/tool fingerprint 并追加 Evidence Ledger。
 
 ### UI 轨（功能测试）
 
@@ -52,6 +52,7 @@ blocked_reason: "..."
 
 - 目标为生产环境（不在 `testing.environment_allowlist` 内，或标记为 production）时共享 runner 直接 BLOCK。确需只读探活生产必须在 runner 之外按执行策略单独审批和审计，不得修改 runner 绕过。
 - 共享 API runner 的 CLI 环境、计划环境或 host allowlist 任一不匹配即 BLOCK；runner 自身不提供生产绕过参数，也不跟随重定向。
+- API case 缺少明确 expect、capture 不是标量 / 变量名非法、或 retry 超出 1..5 次与 0..5000ms 边界时 BLOCK。
 - 凭证、token、真实账号密码出现在测试计划文档、阶段产物或仓库中即 BLOCK。
 - 断言失败的用例未闭环（修复或降级说明）前，不得把 `/07-测试执行` 标记为完成。
 - 测试数据含真实客户数据时必须用户确认脱敏或替换。
@@ -71,4 +72,5 @@ blocked_reason: "..."
 - 把密钥写进测试计划或提交进仓库。
 - 截图含敏感数据不脱敏直接入库。
 - 只截图不断言，把"页面打开了"当成"功能通过"。
+- 用 bounded retry 掩盖 flaky，或用单请求 duration 断言冒充 p95/p99 benchmark。
 - 断言失败但报告里只写"部分通过"不列失败清单。

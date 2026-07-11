@@ -1,0 +1,21 @@
+{
+  "criterion_id": "AC-001",
+  "status": "NOT_RUN",
+  "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "source_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "environment_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "executor": {
+    "type": "command",
+    "oracle_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "principal": "<automation principal mapped by governance.evidence_attestation.key_principals>"
+  },
+  "evidence_manifest": [],
+  "attestation": {
+    "algorithm": "hmac-sha256",
+    "key_id": "automation-local-v1",
+    "signature": "hmac-sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "result": {
+    "reason": "仅为模板；使用 evidence-ledger append 后才会生成 sequence、previous_hash 与 entry_hash"
+  }
+}

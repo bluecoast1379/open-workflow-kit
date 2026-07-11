@@ -1,0 +1,290 @@
+schema_version: "1.0"
+manifest_version: "1.0.0"
+capability_count: 31
+
+activation:
+  essential: "always-required"
+  recommended: "required-when-applicable"
+  optional: "explicit-or-policy-pack"
+  match_semantics: "A recommended capability becomes required when any applies_when keyword matches the request/diff or any listed contract path is populated."
+  no_silent_downgrade: true
+
+capabilities:
+  - id: "definition-quality-linter"
+    tier: "essential"
+    stages: ["define-done", "01-需求讨论", "02-产品文档", "03-技术架构"]
+    applies_when: { any_keywords: ["需求", "PRD", "完成定义", "acceptance"], contract_paths: ["acceptance", "scope", "quality_budgets"] }
+    required_inputs: ["completion/contract.yaml", "team-profile.yaml", "stage documents"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["lint-report", "traceability-matrix"]
+
+  - id: "evidence-freshness-checker"
+    tier: "essential"
+    stages: ["07-测试执行", "08-验收表格", "09-验收", "deliver-until-done"]
+    applies_when: { any_keywords: ["测试通过", "证据", "验收", "完成"], contract_paths: ["acceptance", "governance.evidence_freshness"] }
+    required_inputs: ["completion/contract.yaml", "completion/evidence/ledger.jsonl", "current fingerprints"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["freshness-report", "invalidation-record"]
+
+  - id: "autonomy-anti-cheating-guard"
+    tier: "essential"
+    stages: ["04-代码实现", "05-代码审查", "07-测试执行", "deliver-until-done"]
+    applies_when: { any_keywords: ["自主", "直到完成", "修复", "agent"], contract_paths: ["autonomy", "governance.anti_cheating"] }
+    required_inputs: ["frozen completion contract", "source diff", "test diff", "run-state"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["contract-drift-report", "test-weakening-report", "budget-report"]
+
+  - id: "branch-gatekeeper"
+    tier: "essential"
+    stages: ["04-代码实现", "04A-前端代码实现", "04B-后端代码实现", "deliver-until-done"]
+    applies_when: { any_keywords: ["实现", "代码", "迁移", "配置"], contract_paths: ["scope.repos", "scope.allowed_paths"] }
+    required_inputs: ["team-profile.yaml#branch_model", "repository status", "workflow status"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["branch-gate-report", "worktree-status"]
+
+  - id: "release-safety-checker"
+    tier: "essential"
+    stages: ["05-代码审查", "07-测试执行", "11-上线邮件通知"]
+    applies_when: { any_keywords: ["发布", "release", "部署", "上线"], contract_paths: ["governance.release", "scope.repos"] }
+    required_inputs: ["team-profile.yaml#branch_model", "release candidate", "production baseline", "completion evidence"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["release-diff", "commit-lineage", "scope-report"]
+
+  - id: "prd-code-diff-checker"
+    tier: "essential"
+    stages: ["04-代码实现", "04A-前端代码实现", "04B-后端代码实现", "05-代码审查"]
+    applies_when: { any_keywords: ["实现", "diff", "审查"], contract_paths: ["requirements", "acceptance"] }
+    required_inputs: ["PRD", "technical architecture", "completion contract", "source diff"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["requirement-diff-map", "scope-drift-report"]
+
+  - id: "contract-tracer"
+    tier: "essential"
+    stages: ["03-技术架构", "05-代码审查"]
+    applies_when: { any_keywords: ["API", "事件", "字段", "跨服务", "契约"], contract_paths: ["domain.interfaces", "domain.data_flows", "domain.events"] }
+    required_inputs: ["completion contract", "source call graph", "source diff"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["contract-trace", "terminal-map"]
+
+  - id: "business-value-validator"
+    tier: "recommended"
+    stages: ["01-需求讨论", "02-产品文档", "08-验收表格", "09-验收", "12-复盘总结"]
+    applies_when: { any_keywords: ["增长", "收入", "成本", "效率", "商业", "North Star"], contract_paths: ["outcome.north_star", "outcome.guardrails"] }
+    required_inputs: ["business model", "metric definitions", "completion contract outcome"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["metric-tree", "baseline-target-report", "outcome-readout"]
+
+  - id: "organization-consensus-checker"
+    tier: "recommended"
+    stages: ["01-需求讨论", "02-产品文档", "03-技术架构", "09-验收"]
+    applies_when: { any_keywords: ["跨团队", "审批", "依赖", "签收", "owner"], contract_paths: ["organization", "assumptions", "decisions"] }
+    required_inputs: ["team-profile organization", "decision log", "dependency map"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["role-matrix", "decision-log", "dependency-SLA"]
+
+  - id: "ux-human-factor-reviewer"
+    tier: "recommended"
+    stages: ["02-产品文档", "02B-UI设计", "06-测试用例", "09-验收"]
+    applies_when: { any_keywords: ["UI", "UX", "页面", "广告", "订阅", "通知"], contract_paths: ["domain.user_journeys", "quality_budgets.ux", "quality_budgets.accessibility"] }
+    required_inputs: ["user journeys", "UI baseline", "human rubric"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["task-rubric", "state-matrix", "accessibility-report"]
+
+  - id: "performance-cost-budget-checker"
+    tier: "recommended"
+    stages: ["02-产品文档", "03-技术架构", "06-测试用例", "07-测试执行", "12-复盘总结"]
+    applies_when: { any_keywords: ["性能", "延迟", "吞吐", "容量", "成本", "LLM"], contract_paths: ["quality_budgets.performance", "quality_budgets.cost"] }
+    required_inputs: ["load model", "quality budgets", "benchmark evidence"]
+    executor: "external"
+    blocking: true
+    evidence_types: ["benchmark", "resource-profile", "cost-report"]
+
+  - id: "resilience-recovery-checker"
+    tier: "recommended"
+    stages: ["03-技术架构", "06-测试用例", "07-测试执行", "11-上线邮件通知"]
+    applies_when: { any_keywords: ["弱网", "异步", "重试", "故障", "恢复", "RTO", "RPO"], contract_paths: ["quality_budgets.reliability", "domain.state_machines", "governance.rollback"] }
+    required_inputs: ["failure model", "RTO/RPO", "recovery plan", "fault evidence"]
+    executor: "external"
+    blocking: true
+    evidence_types: ["fault-injection", "restore-test", "RTO-RPO-report"]
+
+  - id: "observability-operability-checker"
+    tier: "recommended"
+    stages: ["03-技术架构", "04-代码实现", "06-测试用例", "07-测试执行", "11-上线邮件通知"]
+    applies_when: { any_keywords: ["日志", "指标", "trace", "告警", "runbook", "后台任务"], contract_paths: ["quality_budgets.observability", "domain.operations"] }
+    required_inputs: ["signal inventory", "SLO", "alerts", "runbooks"]
+    executor: "external"
+    blocking: true
+    evidence_types: ["log-query", "metric-query", "trace", "alert-test", "runbook-exercise"]
+
+  - id: "reversibility-evolution-checker"
+    tier: "recommended"
+    stages: ["02-产品文档", "03-技术架构", "05-代码审查", "07-测试执行", "11-上线邮件通知", "12-复盘总结"]
+    applies_when: { any_keywords: ["迁移", "回滚", "兼容", "灰度", "下线", "schema"], contract_paths: ["quality_budgets.reversibility", "domain.compatibility", "governance.rollback"] }
+    required_inputs: ["rollout plan", "migration plan", "consumer inventory", "rollback evidence"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["compatibility-matrix", "rollback-test", "decommission-plan"]
+
+  - id: "ai-quality-evaluator"
+    tier: "recommended"
+    stages: ["02-产品文档", "03-技术架构", "06-测试用例", "07-测试执行", "12-复盘总结"]
+    applies_when: { any_keywords: ["LLM", "模型", "prompt", "RAG", "agent", "生成式 AI"], contract_paths: ["domain.ai_system", "quality_budgets.ai_quality"] }
+    required_inputs: ["versioned AI system", "golden dataset", "evaluator", "quality budget"]
+    executor: "external"
+    blocking: true
+    evidence_types: ["eval-report", "risk-slices", "variance-report", "AI-cost-report"]
+
+  - id: "repo-baseline-scanner"
+    tier: "recommended"
+    stages: ["03-技术架构"]
+    applies_when: { any_keywords: ["仓库", "基线", "分支", "现有代码"], contract_paths: ["scope.repos"] }
+    required_inputs: ["team-profile repos", "local Git metadata"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["repo-baseline", "dirty-status", "fact-source-report"]
+
+  - id: "impact-scope-analyzer"
+    tier: "recommended"
+    stages: ["03-技术架构"]
+    applies_when: { any_keywords: ["跨仓", "影响面", "API", "配置", "数据"], contract_paths: ["scope", "domain.data_flows"] }
+    required_inputs: ["requirements", "repositories", "dependency graph"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["impact-map", "dependency-graph"]
+
+  - id: "security-reviewer"
+    tier: "recommended"
+    stages: ["02-产品文档", "03-技术架构", "05-代码审查", "06-测试用例", "07-测试执行"]
+    applies_when: { any_keywords: ["鉴权", "权限", "隐私", "合规", "敏感数据", "secret", "依赖"], contract_paths: ["quality_budgets.security_privacy", "domain.data_classification"] }
+    required_inputs: ["threat boundaries", "data classification", "source diff", "security evidence"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["security-findings", "privacy-review", "dependency-report"]
+
+  - id: "worktree-isolator"
+    tier: "recommended"
+    stages: ["04-代码实现", "04A-前端代码实现", "04B-后端代码实现"]
+    applies_when: { any_keywords: ["并行", "多个需求", "worktree"], contract_paths: ["scope.repos", "autonomy.allowed_actions"] }
+    required_inputs: ["team-profile branch model", "active features", "repository worktrees"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["worktree-map", "isolation-report"]
+
+  - id: "verify-app"
+    tier: "recommended"
+    stages: ["04-代码实现", "07-测试执行"]
+    applies_when: { any_keywords: ["构建", "运行", "浏览器", "App", "验证"], contract_paths: ["acceptance"] }
+    required_inputs: ["verification plan", "runnable source", "target environment"]
+    executor: "external"
+    blocking: true
+    evidence_types: ["command-log", "screenshot", "runtime-observation"]
+
+  - id: "deployment-readiness-checker"
+    tier: "recommended"
+    stages: ["07-测试执行", "11-上线邮件通知"]
+    applies_when: { any_keywords: ["部署", "上线", "路由", "域名"], contract_paths: ["governance.release"] }
+    required_inputs: ["release candidate", "deployment target", "runtime evidence", "rollback plan"]
+    executor: "external"
+    blocking: true
+    evidence_types: ["deployment-status", "route-probe", "release-commit-proof"]
+
+  - id: "runtime-evidence-triage"
+    tier: "recommended"
+    stages: ["03-技术架构", "05-代码审查", "07-测试执行"]
+    applies_when: { any_keywords: ["运行态", "日志", "路由", "配置", "消息", "定时任务"], contract_paths: ["domain.operations"] }
+    required_inputs: ["runtime access", "deployment/config evidence", "source hypothesis"]
+    executor: "external"
+    blocking: true
+    evidence_types: ["runtime-query", "log-evidence", "configuration-evidence"]
+
+  - id: "data-change-safety-checker"
+    tier: "recommended"
+    stages: ["03-技术架构", "05-代码审查", "07-测试执行"]
+    applies_when: { any_keywords: ["DDL", "DML", "迁移", "补数", "数据修复", "SQL"], contract_paths: ["scope.data_changes", "domain.transactions"] }
+    required_inputs: ["schema/entity mapping", "change script", "pre/post checks", "rollback plan"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["dry-run", "count-check", "migration-test", "restore-evidence"]
+
+  - id: "protocol-state-machine-checker"
+    tier: "recommended"
+    stages: ["03-技术架构", "05-代码审查", "07-测试执行"]
+    applies_when: { any_keywords: ["回调", "支付", "审批", "消息", "异步", "第三方"], contract_paths: ["domain.state_machines", "domain.interfaces"] }
+    required_inputs: ["protocol docs", "state machine", "implementation diff", "execution evidence"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["state-transition-matrix", "idempotency-test", "failure-semantics"]
+
+  - id: "ci-cd-automation-governor"
+    tier: "recommended"
+    stages: ["03-技术架构", "04-代码实现", "07-测试执行", "11-上线邮件通知", "12-复盘总结"]
+    applies_when: { any_keywords: ["CI", "CD", "workflow", "deploy", "发布", "secret"], contract_paths: ["governance.release", "autonomy.allowed_actions"] }
+    required_inputs: ["team-profile branch model", "execution policy", "workflow files", "release evidence"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["automation-level", "workflow-review", "deployment-policy-report"]
+
+  - id: "toolchain-mcp-planner"
+    tier: "recommended"
+    stages: ["init-workspace", "connect-toolchain", "03-技术架构"]
+    applies_when: { any_keywords: ["MCP", "工具链", "日志平台", "CI/CD", "数据库连接"], contract_paths: ["organization.toolchain"] }
+    required_inputs: ["team-profile toolchain", "official provider docs", "execution policy"]
+    executor: "agent"
+    blocking: false
+    evidence_types: ["toolchain-plan", "read-only-smoke-test", "connection-audit"]
+
+  - id: "automated-test-runner"
+    tier: "recommended"
+    stages: ["06-测试用例", "07-测试执行"]
+    applies_when: { any_keywords: ["API 测试", "功能测试", "自动化", "浏览器测试"], contract_paths: ["acceptance"] }
+    required_inputs: ["test plan", "environment allowlist", "local credentials", "completion contract"]
+    executor: "builtin"
+    blocking: true
+    evidence_types: ["assertion-result", "command-log", "screenshot", "timing"]
+
+  - id: "test-evidence-reviewer"
+    tier: "optional"
+    stages: ["06-测试用例", "07-测试执行"]
+    applies_when: { any_keywords: ["高风险测试", "验收证据", "独立验证"], contract_paths: ["acceptance"] }
+    required_inputs: ["completion contract", "test plan", "evidence ledger"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["coverage-matrix", "evidence-review", "oracle-gap"]
+
+  - id: "ui-baseline-reviewer"
+    tier: "optional"
+    stages: ["02-产品文档", "02B-UI设计", "02C-HTML原型", "04A-前端代码实现", "05-代码审查"]
+    applies_when: { any_keywords: ["UI", "前端", "原型", "design token"], contract_paths: ["quality_budgets.ux"] }
+    required_inputs: ["UI baseline", "design tokens", "implementation or prototype"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["token-audit", "component-map", "visual-diff"]
+
+  - id: "memory-curator"
+    tier: "optional"
+    stages: ["12-复盘总结"]
+    applies_when: { any_keywords: ["沉淀", "记忆", "复用经验"], contract_paths: ["governance.retrospective"] }
+    required_inputs: ["retrospective", "redaction policy", "evidence"]
+    executor: "agent"
+    blocking: false
+    evidence_types: ["redacted-memory-candidate"]
+
+  - id: "rule-extractor"
+    tier: "optional"
+    stages: ["12-复盘总结"]
+    applies_when: { any_keywords: ["规则候选", "复盘", "工作流改进"], contract_paths: ["governance.retrospective"] }
+    required_inputs: ["retrospective evidence", "existing rule catalogs"]
+    executor: "agent"
+    blocking: false
+    evidence_types: ["rule-candidate", "applicability-analysis"]

@@ -111,7 +111,12 @@ function validateCommandManifest(manifest, file = 'command-manifest.yaml') {
   }
 
   const gateIds = manifest.commands.filter((item) => item.implementation_gate).map((item) => item.id).sort();
-  const expectedGateIds = ['04-代码实现', '04A-前端代码实现', '04B-后端代码实现'].sort();
+  const expectedGateIds = [
+    '04-代码实现',
+    '04A-前端代码实现',
+    '04B-后端代码实现',
+    'deliver-until-done'
+  ].sort();
   if (JSON.stringify(gateIds) !== JSON.stringify(expectedGateIds)) {
     errors.push(`implementation_gate 只能标记 ${expectedGateIds.join(', ')}`);
   }

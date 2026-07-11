@@ -1,0 +1,13 @@
+name: "<TODO: 受控环境名称>"
+runtime_versions:
+  node: "<TODO: exact semantic version，runner 还会绑定 observed runtime>"
+dependency_versions:
+  lockfile: "<TODO: lockfile hash、release ID 或精确依赖集合版本>"
+service_versions:
+  reason: "N/A: <TODO: 不连接外部服务的原因；适用时替换为服务与版本>"
+dataset_versions:
+  fixture: "<TODO: 固定 fixture/dataset ID 与版本>"
+model_versions:
+  reason: "N/A: <TODO: 不执行模型推理的原因；适用时替换为模型、prompt 与评测集版本>"
+tool_versions:
+  open-workflow-kit: "1.0.0"

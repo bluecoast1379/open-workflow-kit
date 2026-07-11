@@ -1,5 +1,5 @@
 schema_version: "1.0"
-command_count: 21
+command_count: 23
 commands:
   - id: "init-workspace"
     skill_slug: "workflow-init-workspace"
@@ -17,6 +17,12 @@ commands:
     skill_slug: "workflow-new-feature"
     title: "初始化功能工作流"
     description: "创建 features/{feature}/ 容器、状态文件和截图目录。"
+    argument_hint: "<功能名称>"
+    implementation_gate: false
+  - id: "define-done"
+    skill_slug: "workflow-define-done"
+    title: "定义完成契约"
+    description: "把目标、边界、业务规则、质量预算和验收标准编译为可校验的 Completion Contract。"
     argument_hint: "<功能名称>"
     implementation_gate: false
   - id: "01-需求讨论"
@@ -55,6 +61,12 @@ commands:
     description: "在已有 PRD 和必要 UI 设计基线后串联生成 03 到 06 的研发准备文档；不授权代码实现。"
     argument_hint: "<功能名称>"
     implementation_gate: false
+  - id: "deliver-until-done"
+    skill_slug: "workflow-deliver-until-done"
+    title: "自主交付至完成"
+    description: "在冻结合同和明确授权范围内执行实现、验证、修复、复验和证据记录，直到达到可证明终态或精确阻塞。"
+    argument_hint: "<功能名称>"
+    implementation_gate: true
   - id: "04-代码实现"
     skill_slug: "workflow-04-code-implementation"
     title: "代码实现总览"

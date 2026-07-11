@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.dev/schemas/environment-manifest.schema.json",
+  "title": "Open Workflow Kit Environment Manifest",
+  "type": "object",
+  "required": ["name", "runtime_versions", "dependency_versions", "service_versions", "dataset_versions", "model_versions", "tool_versions"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "runtime_versions": { "$ref": "#/$defs/versionMap" },
+    "dependency_versions": { "$ref": "#/$defs/versionMap" },
+    "service_versions": { "$ref": "#/$defs/versionMap" },
+    "dataset_versions": { "$ref": "#/$defs/versionMap" },
+    "model_versions": { "$ref": "#/$defs/versionMap" },
+    "tool_versions": { "$ref": "#/$defs/versionMap" }
+  },
+  "$defs": {
+    "versionMap": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    }
+  }
+}

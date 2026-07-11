@@ -10,6 +10,7 @@ UI 设计: 在 `/02-产品文档` 之后、`/03-技术架构` 之前，输出可
 - `workflow/team-profile.yaml`
 - Workspace-level `features/{feature}/01-需求讨论.md`
 - Workspace-level `features/{feature}/02-产品文档.md`
+- Workspace-level `features/{feature}/completion/contract.yaml` (Completion Contract)
 - Existing design references declared in `workflow/team-profile.yaml#source_materials.ui_specs`
 - Existing frontend rules declared in `workflow/team-profile.yaml#source_materials.frontend_rules`
 - Platform references relevant to the feature, such as Apple Human Interface Guidelines, Apple Design Resources, Figma handoff practices, and any project-specific Figma/GitHub design system references
@@ -20,7 +21,7 @@ UI 设计: 在 `/02-产品文档` 之后、`/03-技术架构` 之前，输出可
 - Distinguish verified facts, design intent, assumptions, and missing evidence.
 - 默认使用简体中文展示工作流沟通和阶段产物；专有名词、产品名、品牌名、代码标识符、命令、文件路径、分支名、API、SDK、框架、协议、标准、错误信息和官方英文术语保留原文。
 - Do not claim prototypes, screenshots, design reviews, usability tests, builds, or visual QA passed unless they were actually executed.
-- Remote Git refresh, branch creation, push, tag, merge, build/deploy trigger, database write, production config write, and publishing a Figma file are manual-only actions unless explicitly authorized.
+- Git、数据库、部署、生产配置、外部系统写入和发布 Figma 文件统一按 `workflow/core/execution-policy.md` 四层最严格结果执行；本设计阶段不扩大授权。
 - This stage does not authorize business code changes.
 - If no external visual reference exists, create a written UI baseline first; do not invent polished final visuals without marking them as draft design intent.
 - 默认只产出 `02B-UI设计.md` 设计文档。除非用户在本阶段明确要求生成 UI 设计图/视觉稿/原型图，否则不调用任何设计图生成工具（设计类 MCP、图像生成、Figma 文件生成、可视化/HTML 视觉稿导出等）去生成设计文件。
@@ -72,3 +73,11 @@ The `02B-UI设计.md` output should include:
 ## 04A Gate
 
 `/04A-前端代码实现` 必须读取 `features/{feature}/02B-UI设计.md`。如果该文件缺失，或者关键页面没有 UI 设计基线，前端实现不得直接开始；只能先补齐 `/02B-UI设计`，或在 `04A` 文档中记录用户明确授权的设计豁免、影响范围和后续补齐计划。
+
+## Exit Criteria
+
+- Required Structure 全部完成；每个关键页面、流程和交互状态映射到 PRD 的 `REQ-###` 与 Completion Contract 的 `AC-###`。
+- 核心任务的正常 / 空 / 错 / 加载 / 权限 / 弱网状态、错误恢复、反馈时机和 human gate rubric 无遗漏。
+- design tokens、组件状态、响应式 / 平台适配、多语言和 accessibility 约束足以让 04A 不靠猜测实现。
+- 体验中的“流畅、克制、可信、美观”等词已转成反馈阈值、禁止模式、参考基线或有权 Owner 的人工 rubric。
+- 设计引用、待确认项与豁免均有来源、Owner 和到期日；不存在阻断性设计歧义。

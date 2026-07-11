@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "environment": {
     "name": "test",
     "base_url_env": "TEST_BASE_URL"
@@ -7,16 +7,75 @@
   "cases": [
     {
       "id": "API-001",
+      "ac_ids": ["AC-001"],
+      "method": "POST",
+      "path": "/resources",
+      "headers": {
+        "Authorization": "Bearer ${TEST_API_TOKEN}",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "${REQUEST_ID}"
+      },
+      "body": {
+        "name": "definition-to-done-fixture"
+      },
+      "expect": {
+        "status": [200, 201],
+        "json": {
+          "code": 0
+        },
+        "json_exists": ["data.id"],
+        "json_not_empty": ["data.id"],
+        "json_ranges": {
+          "data.version": {
+            "gte": 1
+          }
+        },
+        "json_schema": {
+          "type": "object",
+          "required": ["code", "data"],
+          "properties": {
+            "code": { "type": "integer", "enum": [0] },
+            "data": {
+              "type": "object",
+              "required": ["id", "version"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "version": { "type": "integer" }
+              }
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json"
+        },
+        "text_not_contains": ["stack trace", "api_key"],
+        "duration_ms_lte": 1500,
+        "body_bytes_lte": 65536
+      },
+      "capture": {
+        "RESOURCE_ID": "data.id"
+      },
+      "retry": {
+        "attempts": 2,
+        "delay_ms": 200
+      },
+      "retry_safe": true
+    },
+    {
+      "id": "API-002",
+      "ac_ids": ["AC-001"],
       "method": "GET",
-      "path": "/health",
+      "path": "/resources/${RESOURCE_ID}",
       "headers": {
         "Authorization": "Bearer ${TEST_API_TOKEN}"
       },
       "expect": {
         "status": 200,
+        "json_not_empty": ["data.id"],
         "json": {
-          "status": "ok"
-        }
+          "data.id": "${RESOURCE_ID}"
+        },
+        "text_contains": ["definition-to-done-fixture"]
       }
     }
   ]

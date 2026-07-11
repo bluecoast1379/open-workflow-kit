@@ -1,0 +1,9 @@
+{
+  "reason": "STALE FIXTURE ONLY. These fingerprints intentionally do not match valid-contract.yaml; never report this PASS as current.",
+  "criterion_id": "AC-001",
+  "status": "PASS",
+  "observed_at": "2025-01-01T00:00:00.000Z",
+  "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "source_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "environment_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

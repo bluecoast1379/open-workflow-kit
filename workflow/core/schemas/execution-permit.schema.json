@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.dev/schemas/execution-permit.schema.json",
+  "title": "Open Workflow Kit Owner Execution Permit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "permit_id", "key_id", "issued_at", "expires_at", "contract_hash", "environment_fingerprint", "findings_fingerprint", "scope_hash", "base_commit", "command_spec_hashes", "executable_fingerprints", "budgets", "nonce", "signature"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "permit_id": { "type": "string", "minLength": 1 },
+    "key_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "contract_hash": { "$ref": "#/$defs/hash" },
+    "environment_fingerprint": { "$ref": "#/$defs/hash" },
+    "findings_fingerprint": { "$ref": "#/$defs/hash" },
+    "scope_hash": { "$ref": "#/$defs/hash" },
+    "base_commit": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40,64}$" },
+    "command_spec_hashes": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/hash" } },
+    "executable_fingerprints": { "type": "object", "additionalProperties": { "$ref": "#/$defs/hash" } },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_iterations", "max_elapsed_ms", "max_command_executions", "max_cost_units", "cost_per_execution", "max_diff_lines"],
+      "properties": {
+        "max_iterations": { "type": "integer", "minimum": 1 },
+        "max_elapsed_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "max_command_executions": { "type": "integer", "minimum": 1 },
+        "max_cost_units": { "type": "number", "exclusiveMinimum": 0 },
+        "cost_per_execution": { "type": "number", "exclusiveMinimum": 0 },
+        "max_diff_lines": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "nonce": { "type": "string", "pattern": "^[a-f0-9]{32,}$" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "value"],
+      "properties": {
+        "algorithm": { "const": "ed25519" },
+        "value": { "type": "string", "minLength": 40 }
+      }
+    }
+  },
+  "$defs": { "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

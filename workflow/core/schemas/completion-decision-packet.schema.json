@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.dev/schemas/completion-decision-packet.schema.json",
+  "title": "Open Workflow Kit Completion Decision Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "outcome", "reason", "contract_hash", "source_fingerprint", "environment_fingerprint", "findings_fingerprint", "findings_manifest", "blockers", "pending_human_gates", "blocking_unknowns", "open_findings", "iteration", "command_executions", "cost_units", "elapsed_ms", "base_commit", "scope_violation", "required_decisions"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "outcome": { "enum": ["BLOCKED_WITH_DECISION_PACKET", "BUDGET_EXHAUSTED"] },
+    "reason": { "type": "string", "minLength": 1 },
+    "contract_hash": { "$ref": "#/$defs/hash" },
+    "source_fingerprint": { "$ref": "#/$defs/hash" },
+    "environment_fingerprint": { "$ref": "#/$defs/hash" },
+    "findings_fingerprint": { "$ref": "#/$defs/hash" },
+    "findings_manifest": { "type": ["object", "null"] },
+    "blockers": { "type": "array" },
+    "pending_human_gates": { "type": "array" },
+    "blocking_unknowns": { "type": "array" },
+    "open_findings": { "type": "array" },
+    "iteration": { "type": "integer", "minimum": 0 },
+    "command_executions": { "type": "integer", "minimum": 0 },
+    "cost_units": { "type": "number", "minimum": 0 },
+    "elapsed_ms": { "type": "number", "minimum": 0 },
+    "base_commit": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40,64}$" },
+    "scope_violation": { "type": ["object", "null"] },
+    "required_decisions": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "budget_reason": { "type": "string", "minLength": 1 }
+  },
+  "$defs": { "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

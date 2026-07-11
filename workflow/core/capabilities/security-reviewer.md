@@ -1,8 +1,8 @@
 # Capability: security-reviewer
 
 - **Tier**: recommended
-- **Stage**: `/05`
-- **Purpose**: 审查凭证、认证、授权、隐私、审计、配置和生产影响面，补足功能测试覆盖不到的安全风险。
+- **Stage**: `/02`, `/03`, `/05`, `/06`, `/07`
+- **Purpose**: 审查威胁边界、凭证、认证、授权、隐私、合规、滥用、审计、配置和供应链影响面，补足普通功能测试覆盖不到的风险。
 
 ## 为什么需要
 
@@ -13,6 +13,7 @@
 - 真实 Git diff
 - `workflow/team-profile.yaml#risk_policy`
 - 当前团队的合规、隐私和安全要求
+- Completion Contract 的数据分类、保留删除、最小化、威胁与滥用约束
 - 运行或测试证据
 
 ## 输出
@@ -21,7 +22,7 @@
 result: PASS | WARN | BLOCK
 findings:
   - severity: P0 | P1 | P2 | P3
-    category: credential | auth | privacy | audit | config | dependency
+    category: credential | auth | privacy | compliance | abuse | audit | config | dependency
     evidence: "<file:line 或验证证据>"
     recommendation: "..."
 ```
@@ -31,6 +32,8 @@ findings:
 - 明文凭证、私有 token、生产配置或真实敏感数据进入仓库时阻断。
 - 删除或放宽授权、访问控制、数据脱敏、审计记录且无明确需求依据时阻断。
 - 高风险配置文件被改动但没有发布影响说明时阻断。
+- 收集超出业务目的的数据、缺少保留删除 / 用户权利路径、或高风险滥用与脆弱用户保护未定义时阻断。
+- 依赖 / 模型 / 数据供应链无版本、许可证、来源或替代策略且进入关键路径时降级 WARN 或 BLOCK。
 
 ## Adapter 示例
 

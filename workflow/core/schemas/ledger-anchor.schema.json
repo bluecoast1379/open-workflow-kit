@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.dev/schemas/ledger-anchor.schema.json",
+  "title": "Open Workflow Kit Owner Ledger Anchor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "anchor_id", "key_id", "observed_at", "contract_hash", "source_fingerprint", "environment_fingerprint", "findings_fingerprint", "ledger_head_hash", "ledger_entry_count", "nonce", "signature"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "anchor_id": { "type": "string", "minLength": 1 },
+    "key_id": { "type": "string", "minLength": 1 },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "contract_hash": { "$ref": "#/$defs/hash" },
+    "source_fingerprint": { "$ref": "#/$defs/hash" },
+    "environment_fingerprint": { "$ref": "#/$defs/hash" },
+    "findings_fingerprint": { "$ref": "#/$defs/hash" },
+    "ledger_head_hash": { "oneOf": [{ "const": "GENESIS" }, { "$ref": "#/$defs/hash" }] },
+    "ledger_entry_count": { "type": "integer", "minimum": 0 },
+    "nonce": { "type": "string", "pattern": "^[a-f0-9]{32,}$" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "value"],
+      "properties": { "algorithm": { "const": "ed25519" }, "value": { "type": "string", "minLength": 40 } }
+    }
+  },
+  "$defs": { "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

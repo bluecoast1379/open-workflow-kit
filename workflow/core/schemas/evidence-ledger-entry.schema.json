@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.dev/schemas/evidence-ledger-entry.schema.json",
+  "title": "Open Workflow Kit Evidence Ledger Entry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "sequence", "previous_hash", "entry_hash", "observed_at", "criterion_id", "status", "contract_hash", "source_fingerprint", "environment_fingerprint", "executor"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "previous_hash": { "oneOf": [{ "const": "GENESIS" }, { "$ref": "#/$defs/hash" }] },
+    "entry_hash": { "$ref": "#/$defs/hash" },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "criterion_id": { "type": "string", "pattern": "^AC-[0-9]{3,}$" },
+    "status": { "enum": ["PASS", "FAIL", "BLOCKED", "NOT_RUN", "STALE", "WAIVED"] },
+    "contract_hash": { "$ref": "#/$defs/hash" },
+    "source_fingerprint": { "$ref": "#/$defs/hash" },
+    "environment_fingerprint": { "$ref": "#/$defs/hash" },
+    "executor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "oracle_hash": { "$ref": "#/$defs/hash" },
+        "principal": { "type": "string", "minLength": 1 },
+        "signed_by": { "type": "string", "minLength": 1 },
+        "record_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "evidence_manifest": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_id", "signature"],
+      "properties": {
+        "algorithm": { "const": "hmac-sha256" },
+        "key_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+        "signature": { "type": "string", "pattern": "^hmac-sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "$ref": "#/$defs/hash" }
+        }
+      }
+    },
+    "waiver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approved_by", "scope", "reason", "compensation", "expires_at"],
+      "properties": {
+        "approved_by": { "type": "string", "minLength": 1 },
+        "scope": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "compensation": { "type": "string", "minLength": 1 },
+        "expires_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "reason": { "type": "string" },
+    "result": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "WAIVED" } }, "required": ["status"] },
+      "then": { "required": ["waiver", "evidence_manifest", "attestation"] }
+    },
+    {
+      "if": { "properties": { "status": { "const": "PASS" } }, "required": ["status"] },
+      "then": { "required": ["evidence_manifest", "attestation"] }
+    }
+  ],
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

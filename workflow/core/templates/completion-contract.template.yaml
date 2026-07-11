@@ -1,0 +1,317 @@
+schema_version: "1.0"
+
+feature:
+  id: "<FEATURE_ID>"
+  contract_version: 1
+  objective: "<TODO: 用一句可证伪的话说明用户或业务结果>"
+  non_goals: []
+  owner: "<TODO: feature owner>"
+  reviewers:
+    - "<TODO: contract reviewer>"
+  status: "draft"
+  created_at: "<TODO: ISO-8601 timestamp>"
+  frozen_at: null
+
+policy_packs:
+  - id: "standard"
+    owner: "<TODO: policy pack owner>"
+    reason: "所有 feature 的 Definition-to-Done 基线"
+policy_pack_exceptions: []
+enabled_capabilities:
+  - "definition-quality-linter"
+  - "branch-gatekeeper"
+  - "evidence-freshness-checker"
+  - "autonomy-anti-cheating-guard"
+
+objective:
+  problem: "<TODO: 用户在什么情境下遇到什么可验证问题>"
+  target_users:
+    - "<TODO: 目标用户或使用角色>"
+  success_definition: "<TODO: 技术完成之外，什么业务结果才算成功>"
+
+outcome:
+  north_star_metric: "<TODO: 指标名与计算口径>"
+  baseline: "<TODO: 当前基线数值与采样时间>"
+  target: "<TODO: 目标数值与方向>"
+  observation_window: "<TODO: 上线后观测窗口>"
+  guardrails:
+    - "<TODO: 不得恶化的护栏指标与阈值>"
+
+stakeholders:
+  - "<TODO: 利益相关方与关注点>"
+approvers:
+  - "<TODO: 完成契约变更与最终验收批准人>"
+operational_owner: "<TODO: 上线后运行责任人>"
+
+organization:
+  dri: "<TODO: 直接责任人>"
+  decision_owner: "<TODO: 范围、阈值与例外的决策人>"
+  reviewers:
+    - "<TODO: 产品/设计/工程/安全等必要评审角色>"
+  dependency_owners:
+    - "<TODO: 外部依赖 Owner 与 SLA，或说明不适用>"
+  escalation_path: "<TODO: 分歧、故障与超时的升级路径>"
+
+assumptions: []
+decisions: []
+
+requirements:
+  - id: "REQ-001"
+    priority: "P0"
+    statement: "确定性验证命令必须在受控环境中以退出码 0 完成"
+  - id: "REQ-002"
+    priority: "P0"
+    statement: "有权验收人必须逐项签收人工体验与商业判断 rubric"
+
+risks: []
+
+glossary:
+  done: "所有 blocking 自动验收项均有当前 contract/source/environment 下的 PASS 或有效 WAIVED 证据，且 findings snapshot 有效并无开放 P0/P1"
+
+scope:
+  source_paths:
+    - "."
+  allowed_paths: []
+  forbidden_paths:
+    - ".git/**"
+  preserved_invariants:
+    - "不得为通过验收而删除用例、降低阈值或把 NOT_RUN 记为 PASS"
+  invariant_acceptance_refs:
+    - invariant: "不得为通过验收而删除用例、降低阈值或把 NOT_RUN 记为 PASS"
+      acceptance_refs:
+        - "AC-001"
+  fingerprint_excludes: []
+
+domain:
+  entities: []
+  data_flows: []
+  state_machines: []
+  sources_of_truth: []
+
+quality_budgets:
+  business:
+    target: "<TODO: North Star 与 guardrail 的硬阈值>"
+  ux:
+    target: "<TODO: 任务成功、反馈、恢复、认知负荷、反暗黑模式与可访问性 rubric>"
+  performance_cost:
+    target: "<TODO: p95/p99、吞吐、资源、单次与周期成本上限>"
+  reliability_resilience:
+    target: "<TODO: 可用性、错误率、重试/幂等/背压/恢复阈值>"
+  security_privacy:
+    target: "<TODO: 威胁、权限、数据最小化、保留删除、滥用和合规门槛>"
+  observability_operations:
+    target: "<TODO: 日志、指标、trace、告警、dashboard、runbook 与 Owner>"
+  reversibility_evolution:
+    target: "<TODO: flag/kill switch、RTO/RPO、兼容、迁移、下线与爆炸半径>"
+  ai_quality:
+    reason: "<TODO: 模型/提示词/黄金集/方差/幻觉率/安全/回退/成本，或说明不含 AI>"
+  # 以下细分键为兼容与更细口径；canonical policy pack 使用上面的组合键。
+  performance:
+    target: "<TODO: p95/p99、吞吐或资源阈值>"
+  reliability:
+    target: "<TODO: 可用性、错误率、重试/幂等阈值>"
+  cost:
+    target: "<TODO: 单次与周期成本上限>"
+  accessibility:
+    target: "<TODO: WCAG/平台可访问性标准，或不适用原因>"
+  security:
+    target: "<TODO: 威胁、权限与漏洞门槛>"
+  privacy:
+    target: "<TODO: 数据最小化、保留和删除口径>"
+  observability:
+    target: "<TODO: 日志、指标、trace、告警和 runbook>"
+  reversibility:
+    target: "<TODO: feature flag、kill switch、RTO/RPO 与爆炸半径>"
+  evolution:
+    target: "<TODO: schema/API 兼容、迁移和废弃策略>"
+  ai:
+    reason: "<TODO: 模型/提示词/黄金集/方差/幻觉率/成本约束，或说明本功能不含 AI>"
+
+unknowns: []
+
+release:
+  rollout:
+    plan: "<TODO: 灰度阶段、晋级与止损阈值>"
+  kill_switch:
+    plan: "<TODO: 触发条件、权限与验证方式>"
+  rollback:
+    plan: "<TODO: 代码、配置、数据回滚步骤和不可逆项>"
+  observation:
+    plan: "<TODO: 仪表盘、告警、观测窗口和复盘时间>"
+
+acceptance:
+  - id: "AC-001"
+    title: "确定性自动验证通过"
+    priority: "P0"
+    blocking: true
+    human_gate: false
+    requirement_refs:
+      - "REQ-001"
+    risk_refs: []
+    dimensions:
+      - "functional"
+      - "negative-boundary"
+      - "permissions"
+      - "recovery"
+      - "regression"
+    given: "代码与依赖已安装在受控测试环境"
+    when: "执行项目的确定性验证命令"
+    then: "命令退出码为 0，且 100% blocking assertions 通过"
+    threshold: "退出码 = 0 且 assertions pass rate = 100%"
+    environment:
+      name: "<TODO: 非生产受控环境名>"
+    fixture:
+      dataset: "<TODO: 固定 fixture/dataset 版本，或 N/A: reason>"
+    freshness:
+      max_age_minutes: 60
+    evidence_required:
+      - "退出码、断言摘要、contract/source/environment fingerprint 与 hash-chain entry"
+    oracle:
+      type: "command"
+      command: "npm"
+      args:
+        - "test"
+      cwd: "."
+      timeout_ms: 120000
+      expected_exit_code: 0
+      integrity_paths:
+        - "package.json"
+        - "test"
+      integrity_fingerprint: "<TODO: check-completion-contract 前计算 integrity_paths 的 sha256 fingerprint>"
+    waiver:
+      allowed: false
+      approvers: []
+      scopes: []
+  - id: "AC-002"
+    title: "有权角色完成人工签收"
+    priority: "P0"
+    blocking: true
+    human_gate: true
+    requirement_refs:
+      - "REQ-002"
+    risk_refs: []
+    dimensions:
+      - "functional"
+    given: "所有自动化 blocking AC 已在当前 contract/source/environment 下满足"
+    when: "有权验收人按真实目标场景逐项执行验收 rubric"
+    then: "rubric 的 100% 项目均明确签收，未签收项不得由 Agent 代判"
+    threshold: "rubric pass rate = 100%"
+    environment:
+      name: "<TODO: 真实目标场景或受控验收环境>"
+    fixture:
+      scenario: "<TODO: 验收任务与账号/数据前置，或 N/A: reason>"
+    freshness:
+      max_age_minutes: 1440
+    evidence_required:
+      - "验收人、时间、环境、逐项结论与签收记录"
+    oracle:
+      type: "manual"
+      rubric:
+        - "交付结果符合 feature objective、non-goals 与 preserved invariants"
+        - "体验、商业、组织或合规等不可自动证明的判断已由有权角色签收"
+    waiver:
+      allowed: false
+      approvers: []
+      scopes: []
+
+autonomy:
+  allowed_actions:
+    - "oracle:command"
+    - "oracle:file"
+  forbidden_actions:
+    - "contract:mutate"
+    - "remote:write"
+    - "production:write"
+  ask_before:
+    - "external:side-effect"
+  oracle_env_allowlist:
+    - "PATH"
+    - "TMPDIR"
+    - "TMP"
+    - "TEMP"
+    - "LANG"
+    - "LC_ALL"
+    - "CI"
+    - "SystemRoot"
+    - "PATHEXT"
+  max_iterations: 8
+  max_elapsed_minutes: 180
+  max_command_executions: 32
+  max_cost_units: 100
+  cost_unit: "externally supplied execution cost unit"
+  cost_per_execution: 1
+  max_diff_lines: 1200
+  max_same_failure: 2
+  max_no_progress: 2
+  flaky_policy:
+    rule: "同一快照重复结果不一致时 BLOCK，不以重跑取最好结果"
+    same_snapshot_conflict: "BLOCK"
+    max_rechecks: 0
+  retry_policy:
+    rule: "只重试 contract 明确允许的暂态失败；永久失败和断言失败不自动重试"
+    max_attempts: 1
+    retryable_reasons: []
+  checkpoint:
+    path: "features/{feature}/completion/run-state.yaml"
+    resume: "contract/environment/base/source 不匹配时拒绝续跑"
+    integrity_required: true
+    ledger_head_required: true
+  stop_condition_codes:
+    - "budget_exhausted"
+    - "scope_violation"
+    - "contract_change_required"
+    - "approval_required"
+    - "repeated_failure"
+    - "no_progress"
+    - "execution_permit_expired"
+  stop_conditions:
+    - "需要修改已冻结的完成契约或验收阈值"
+    - "需要未授权的高风险写操作或外部审批"
+    - "同一失败指纹重复达到上限，或 blocking failure 连续两轮没有下降"
+    - "任一时间、命令次数、diff 或迭代预算耗尽"
+    - "Owner execution permit 在运行开始前或任一 Oracle/remediation 边界到期"
+
+governance:
+  status: "draft"
+  change_approval:
+    rule: "冻结后，目标、scope、blocking、threshold、oracle、waiver 的修改必须由 approver 批准并递增 contract_version"
+  evidence_invalidation:
+    rule: "contract/source/environment/artifact 改变时，相关旧证据必须变为 STALE"
+  waiver_policy:
+    rule: "只有 criterion.waiver.allowed=true 且批准人、scope、补偿控制和期限均匹配时，WAIVED 才可满足 gate；WAIVED 永不计入 PASS"
+  anti_cheating:
+    rule: "Agent 不得删除/跳过失败用例、降低阈值、扩大 mock/scope/waiver，或把 NOT_RUN/STALE/WAIVED 改写成 PASS"
+  evidence_attestation:
+    required_for_success: true
+    automation_key_ids:
+      - "automation-local-v1"
+    human_key_ids:
+      - "human-owner-v1"
+    waiver_key_ids:
+      - "human-owner-v1"
+    key_principals:
+      automation-local-v1:
+        role: "automation"
+        principal: "local-runner"
+      human-owner-v1:
+        role: "human"
+        principal: "<TODO: 与 approvers 中真实签收角色一致>"
+  findings_registry:
+    required_for_completion: true
+    owner: "<TODO: finding registry Owner>"
+    source: "<TODO: code review / defect tracker / risk register 的唯一快照来源>"
+    max_age_minutes: 1440
+  ledger_anchor:
+    required_for_acceptance: true
+    external_anchor_owner: "<TODO: 保存和核对 ledger head/count 的独立 Owner>"
+    storage: "<TODO: agent 工作区之外的不可变 CI artifact、透明日志或签名记录>"
+    key_id: "owner-ledger-v1"
+    trusted_public_key_sha256: "<TODO: sha256 of Owner-controlled Ed25519 public key PEM>"
+    max_age_minutes: 1440
+  execution_authorization:
+    permit_required: true
+    key_id: "owner-execution-v1"
+    trusted_public_key_sha256: "<TODO: sha256 of Owner-controlled Ed25519 public key PEM>"
+    max_validity_minutes: 1440
+  blocking_rules_acknowledged:
+    - "standard"

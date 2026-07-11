@@ -53,7 +53,7 @@ recommended_action: "请按 team-profile 中的分支规则准备功能分支。
 
 - 因为目录名看起来正确就跳过分支检查。
 - 认为“小改动”可以绕过 04 阶段。
-- 在 `main`、`prod`、`test` 或 integration 分支上直接修代码。
+- 把常见分支名写死进 gate，而不读取 `team-profile#branch_model` 中该仓库的 production / integration / testing / protected 分支语义。
 - 两个需求混用同一个功能分支。
 
 ## 相关检查清单

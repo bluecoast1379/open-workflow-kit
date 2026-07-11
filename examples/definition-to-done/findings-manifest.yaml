@@ -1,0 +1,5 @@
+schema_version: "1.0"
+snapshot_at: "<TODO: replace with current ISO-8601 review snapshot before signing>"
+owner: "release-owner"
+source: "definition-to-done golden review registry"
+findings: []

@@ -1,6 +1,6 @@
 # 贡献说明
 
-感谢改进 Agent Workflow Starter Kit。本项目坚持三个原则：workflow core 保持通用、本地优先、工具无关。
+感谢改进 Open Workflow Kit。本项目坚持三个原则：workflow core 保持通用、本地优先、工具无关。
 
 ## 提交 PR 前
 

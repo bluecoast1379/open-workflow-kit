@@ -48,6 +48,16 @@ function assertContains(rel, text) {
   if (!content.includes(text)) throw new Error(`${rel} does not contain ${text}`);
 }
 
+if (process.platform !== 'win32') {
+  const symlinkWorkspace = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-symlink-'));
+  const outsideManagedPath = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-outside-'));
+  fs.symlinkSync(outsideManagedPath, path.join(symlinkWorkspace, '.agents'));
+  const unsafeInit = spawnSync(process.execPath, [init, '--target', symlinkWorkspace, '--tools', 'codex', '--yes'], { encoding: 'utf8' });
+  if (unsafeInit.status === 0 || !/symbolic link/.test(unsafeInit.stderr)) throw new Error(`initializer 必须拒绝 managed path symlink:\n${unsafeInit.stdout}\n${unsafeInit.stderr}`);
+  if (fs.readdirSync(outsideManagedPath).length !== 0) throw new Error('initializer 通过 managed path symlink 写出了工作区');
+  if (fs.existsSync(path.join(symlinkWorkspace, 'workflow'))) throw new Error('symlink preflight 失败前不应留下部分 workflow 安装');
+}
+
 mkdir('docs/product');
 write('docs/business-overview.md', '# Business overview\n');
 write('docs/frontend-rules.md', '# Frontend rules\n');
@@ -79,10 +89,16 @@ for (const rel of [
   '.claude/commands/04-代码实现.md',
   '.cursor/rules/agent-workflow-core.mdc',
   '.github/copilot-instructions.md',
+  '.github/prompts/workflow-04-code-implementation.prompt.md',
   '.codebuddy/rules/agent-workflow.md',
   '.codebuddy/commands/04-代码实现.md',
   '.kiro/steering/agent-workflow.md',
-  '.trae/instructions.md',
+  '.kiro/steering/workflow-04-code-implementation.md',
+  '.kiro/skills/workflow-04-code-implementation/SKILL.md',
+  '.trae/commands/04-代码实现.md',
+  '.trae/skills/workflow-04-code-implementation/SKILL.md',
+  '.trae-cn/commands/04-代码实现.md',
+  '.trae-cn/skills/workflow-04-code-implementation/SKILL.md',
   'workflow/team-profile.yaml',
   'workflow/local/.gitignore',
   'workflow/local/team-profile.local.yaml',
@@ -154,18 +170,30 @@ assertContains('workflow/team-profile.yaml', '- trae');
 assertContains('workflow/team-profile.yaml', 'apps/web');
 assertContains('workflow/team-profile.yaml', 'services/api');
 assertContains('workflow/INSTALL_REPORT.md', '初始化器没有执行远程 Git 命令');
-assertContains('workflow/core/command-manifest.yaml', 'command_count: 21');
+assertContains('workflow/core/command-manifest.yaml', `command_count: ${commands.length}`);
 
-// 同一 manifest 必须生成 21 个 Claude/Cursor/CodeBuddy 命令和 21 个分阶段 Agent Skills。
-if (commands.length !== 21) throw new Error(`源命令清单数量应为 21，当前 ${commands.length}`);
-for (const rel of ['.claude/commands', '.cursor/commands', '.codebuddy/commands']) {
+// 同一 manifest 必须为各平台生成数量一致的命令/skill 入口。
+if (commands.length < 23) throw new Error(`源命令清单应包含 Definition-to-Done 命令，当前 ${commands.length}`);
+for (const rel of [
+  '.claude/commands',
+  '.cursor/commands',
+  '.codebuddy/commands',
+  '.trae/commands',
+  '.trae-cn/commands'
+]) {
   const count = fs.readdirSync(path.join(tmp, rel)).filter((name) => name.endsWith('.md')).length;
-  if (count !== 21) throw new Error(`${rel} 命令数量应为 21，当前 ${count}`);
+  if (count !== commands.length) throw new Error(`${rel} 命令数量应为 ${commands.length}，当前 ${count}`);
 }
 const stageSkillCount = fs
   .readdirSync(path.join(tmp, '.agents/skills'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && entry.name.startsWith('workflow-')).length;
-if (stageSkillCount !== 21) throw new Error(`分阶段 Agent Skills 数量应为 21，当前 ${stageSkillCount}`);
+if (stageSkillCount !== commands.length) {
+  throw new Error(`分阶段 Agent Skills 数量应为 ${commands.length}，当前 ${stageSkillCount}`);
+}
+const copilotPromptCount = fs.readdirSync(path.join(tmp, '.github/prompts')).filter((name) => name.endsWith('.prompt.md')).length;
+if (copilotPromptCount !== commands.length) throw new Error(`Copilot prompt 数量应为 ${commands.length}`);
+const kiroSteeringCount = fs.readdirSync(path.join(tmp, '.kiro/steering')).filter((name) => name.endsWith('.md') && name !== 'agent-workflow.md').length;
+if (kiroSteeringCount !== commands.length) throw new Error(`Kiro steering 数量应为 ${commands.length}`);
 for (const command of commands) {
   const coreReference = `workflow/core/commands/${command.id}.md`;
   for (const dir of ['.claude/commands', '.cursor/commands', '.codebuddy/commands']) {
@@ -173,6 +201,12 @@ for (const command of commands) {
   }
   assertContains(`.agents/skills/${command.skill_slug}/SKILL.md`, coreReference);
   assertContains(`.agents/skills/${command.skill_slug}/agents/openai.yaml`, 'allow_implicit_invocation: false');
+  assertContains(`.github/prompts/${command.skill_slug}.prompt.md`, coreReference);
+  assertContains(`.kiro/steering/${command.skill_slug}.md`, coreReference);
+  assertContains(`.kiro/skills/${command.skill_slug}/SKILL.md`, coreReference);
+  assertContains(`.trae/commands/${command.id}.md`, coreReference);
+  assertContains(`.trae/skills/${command.skill_slug}/SKILL.md`, coreReference);
+  assertContains(`.trae-cn/commands/${command.id}.md`, coreReference);
 }
 assertContains('.codebuddy/commands/04-代码实现.md', 'argument-hint: "<功能名称>"');
 assertContains('.codebuddy/commands/04-代码实现.md', '$ARGUMENTS');
@@ -180,8 +214,13 @@ if (fs.readFileSync(path.join(tmp, '.codebuddy/commands/04-代码实现.md'), 'u
   throw new Error('CodeBuddy 阶段命令不得声明 allowed-tools');
 }
 
-// v0.8.0: 仓库只能请求执行模式，高危 auto 需外部受信策略。
-assertContains('workflow/team-profile.yaml', 'schema_version: "1.2"');
+// team-profile schema 必须与 core 模板保持一致；不在 smoke 里重复硬编码版本。
+const profileSchemaLine = fs
+  .readFileSync(path.join(root, 'workflow/core/templates/team-profile.template.yaml'), 'utf8')
+  .match(/^schema_version:\s*.+$/m);
+if (!profileSchemaLine) throw new Error('team-profile template 缺少 schema_version');
+assertContains('workflow/team-profile.yaml', profileSchemaLine[0]);
+// 仓库只能请求执行模式，高危 auto 需外部受信策略。
 assertContains('workflow/team-profile.yaml', 'execution_policy:');
 assertContains('workflow/team-profile.yaml', 'requested_default_mode: "ask"');
 assertContains('workflow/team-profile.yaml', 'external_trust_policy:');
@@ -302,11 +341,11 @@ write('workflow/local/test-credentials.env', 'PLACEHOLDER_ONLY=1\n');
   }
 }
 
-assertContains('workflow/adapters/support-matrix.yaml', 'claim: "5 native adapters + 2 compatible entries; discovery varies by tool"');
+assertContains('workflow/adapters/support-matrix.yaml', 'claim: "7 official project-level adapters; generated conformance is not real-tool certification"');
 assertContains('workflow/adapters/support-matrix.yaml', 'support_level: "native"');
-assertContains('workflow/adapters/support-matrix.yaml', 'support_level: "compatible"');
 assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "slash_fuzzy"');
-assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "skill_fuzzy"');
+assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "slash_skill_fuzzy"');
+assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "prompt_fuzzy"');
 {
   const generatedCommandCheck = path.join(tmp, 'workflow/bin/check-command-manifest.cjs');
   const commandResult = spawnSync(process.execPath, [generatedCommandCheck], { cwd: tmp, encoding: 'utf8' });
@@ -334,7 +373,9 @@ assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "skil
   const invalidCommandRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-command-manifest-'));
   fs.cpSync(path.join(tmp, 'workflow'), path.join(invalidCommandRoot, 'workflow'), { recursive: true });
   const manifestFile = path.join(invalidCommandRoot, 'workflow/core/command-manifest.yaml');
-  const invalidManifest = fs.readFileSync(manifestFile, 'utf8').replace('command_count: 21', 'command_count: 20');
+  const invalidManifest = fs
+    .readFileSync(manifestFile, 'utf8')
+    .replace(`command_count: ${commands.length}`, `command_count: ${commands.length - 1}`);
   fs.writeFileSync(manifestFile, invalidManifest);
   const invalid = spawnSync(process.execPath, [commandCheck, '--root', invalidCommandRoot], { encoding: 'utf8' });
   if (invalid.status === 0) throw new Error('command_count 与实际命令数不一致时必须阻断');
@@ -411,6 +452,11 @@ for (const stale of fs.readdirSync(path.join(tmp, 'workflow'))) {
 }
 const profileBefore = fs.readFileSync(path.join(tmp, 'workflow/team-profile.yaml'), 'utf8');
 fs.writeFileSync(path.join(tmp, 'workflow/team-profile.yaml'), profileBefore + '\n# user note\n');
+// manifest 删除/重命名后，旧的 kit adapter 不得继续留在 `/` 菜单；用户自定义入口必须保留。
+write('.claude/commands/removed-stage.md', '<!-- generated-by: open-workflow-kit; managed-adapter: true -->\n读取 AGENTS.md 与 workflow/core/commands/removed-stage.md。\n');
+write('.agents/skills/workflow-removed-stage/SKILL.md', '本 Skill 是由 workflow/core/command-manifest.yaml 生成的分阶段发现入口。\n读取 AGENTS.md 与 workflow/core/commands/removed-stage.md。\n');
+write('.agents/skills/workflow-removed-stage/agents/openai.yaml', 'interface:\n  display_name: "removed"\n  default_prompt: "AGENTS.md"\npolicy:\n  allow_implicit_invocation: false\n');
+write('.cursor/commands/my-team-command.md', '# 用户自定义 Cursor 命令\n不应被 kit 删除。\n');
 run(['--target', tmp, '--tools', 'codex,claude,cursor', '--upgrade', '--force', '--yes']);
 const profileAfter = fs.readFileSync(path.join(tmp, 'workflow/team-profile.yaml'), 'utf8');
 if (!profileAfter.includes('# user note')) {
@@ -424,6 +470,13 @@ const upgradeStrayFiles = fs
 if (upgradeStrayFiles.length) {
   throw new Error(`upgrade --force 除 team-profile 外不应产生 .agent-workflow-new，发现: ${upgradeStrayFiles.join(',')}`);
 }
+if (fs.existsSync(path.join(tmp, '.claude/commands/removed-stage.md'))) {
+  throw new Error('manifest 已移除的 Claude adapter 不得在 upgrade 后残留');
+}
+if (fs.existsSync(path.join(tmp, '.agents/skills/workflow-removed-stage'))) {
+  throw new Error('manifest 已移除的 Codex skill 不得在 upgrade 后残留');
+}
+assertFile('.cursor/commands/my-team-command.md');
 
 // v0.8.0 旧路径残留清理：kit 指纹文件自动删除；用户自定义内容保留。
 {
@@ -494,9 +547,18 @@ for (const [tool, required] of [
     '.codebuddy/rules/agent-workflow.md',
     '.codebuddy/commands/04-代码实现.md'
   ]],
+  ['copilot', [
+    '.github/copilot-instructions.md',
+    '.github/prompts/workflow-04-code-implementation.prompt.md'
+  ]],
+  ['kiro', [
+    '.kiro/steering/workflow-04-code-implementation.md',
+    '.kiro/skills/workflow-04-code-implementation/SKILL.md'
+  ]],
   ['trae', [
-    '.trae/instructions.md',
-    '.agents/skills/workflow-04-code-implementation/SKILL.md'
+    '.trae/commands/04-代码实现.md',
+    '.trae/skills/workflow-04-code-implementation/SKILL.md',
+    '.trae-cn/commands/04-代码实现.md'
   ]]
 ]) {
   const adapterTmp = fs.mkdtempSync(path.join(os.tmpdir(), `agent-workflow-${tool}-`));

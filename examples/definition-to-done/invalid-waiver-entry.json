@@ -1,0 +1,10 @@
+{
+  "criterion_id": "AC-001",
+  "status": "WAIVED",
+  "waiver": {
+    "scope": "AC-001 in the synthetic example only",
+    "reason": "An agent cannot approve its own exception.",
+    "compensation": "No compensation can replace an authorized approver in this negative fixture.",
+    "expires_at": "2030-01-01T00:00:00.000Z"
+  }
+}

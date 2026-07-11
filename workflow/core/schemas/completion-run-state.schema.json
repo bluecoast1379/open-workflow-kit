@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.dev/schemas/completion-run-state.schema.json",
+  "title": "Open Workflow Kit Completion Run State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "contract_hash", "source_fingerprint", "environment_fingerprint", "baseline_source_fingerprint", "iteration", "command_executions", "cost_units", "ledger_entry_count", "ledger_head_hash", "status", "elapsed_ms", "started_at", "updated_at"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "contract_hash": { "$ref": "#/$defs/hash" },
+    "source_fingerprint": { "$ref": "#/$defs/hash" },
+    "environment_fingerprint": { "$ref": "#/$defs/hash" },
+    "findings_fingerprint": { "$ref": "#/$defs/hash" },
+    "baseline_source_fingerprint": { "$ref": "#/$defs/hash" },
+    "base_commit": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40,64}$" },
+    "iteration": { "type": "integer", "minimum": 0 },
+    "command_executions": { "type": "integer", "minimum": 0 },
+    "cost_units": { "type": "number", "minimum": 0 },
+    "ledger_entry_count": { "type": "integer", "minimum": 0 },
+    "ledger_head_hash": { "oneOf": [{ "const": "GENESIS" }, { "$ref": "#/$defs/hash" }] },
+    "execution_permit_id": { "type": "string", "minLength": 1 },
+    "execution_permit_hash": { "$ref": "#/$defs/hash" },
+    "status": { "enum": ["NOT_STARTED", "RUNNING", "READY_FOR_HUMAN_ACCEPTANCE", "BLOCKED_WITH_DECISION_PACKET", "BUDGET_EXHAUSTED"] },
+    "automation_complete": { "type": "boolean" },
+    "accepted": { "const": false },
+    "blocker_count": { "type": "integer", "minimum": 0 },
+    "failure_fingerprint": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/hash" }] },
+    "same_failure_count": { "type": "integer", "minimum": 0 },
+    "no_progress_count": { "type": "integer", "minimum": 0 },
+    "elapsed_ms": { "type": "number", "minimum": 0 },
+    "started_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "checkpoint_attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_id", "signature"],
+      "properties": {
+        "algorithm": { "const": "hmac-sha256" },
+        "key_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+        "signature": { "type": "string", "pattern": "^hmac-sha256:[a-f0-9]{64}$" }
+      }
+    }
+  },
+  "allOf": [{
+    "if": { "properties": { "status": { "not": { "const": "NOT_STARTED" } } }, "required": ["status"] },
+    "then": { "required": ["checkpoint_attestation", "execution_permit_id", "execution_permit_hash", "findings_fingerprint"] }
+  }, {
+    "if": { "properties": { "status": { "const": "READY_FOR_HUMAN_ACCEPTANCE" } }, "required": ["status"] },
+    "then": { "properties": { "automation_complete": { "const": true }, "accepted": { "const": false } }, "required": ["automation_complete", "accepted"] }
+  }],
+  "$defs": { "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

@@ -1,0 +1,25 @@
+schema_version: "1.0"
+id: "user-facing-experience"
+title: "用户体验、付费、广告与行为引导"
+extends: ["standard"]
+applies_when:
+  any_keywords: ["UI", "UX", "付费墙", "subscription", "广告", "onboarding", "notification", "劝导"]
+  contract_paths: ["domain.user_journeys"]
+required_capabilities:
+  - ux-human-factor-reviewer
+  - business-value-validator
+  - ui-baseline-reviewer
+required_contract_sections:
+  - outcome.user_value
+  - domain.user_journeys
+  - quality_budgets.ux
+  - quality_budgets.accessibility
+mandatory_acceptance_dimensions:
+  - task-success
+  - feedback-and-recovery
+  - accessibility
+  - trust-and-transparency
+  - anti-dark-pattern
+blocking_rules:
+  - "Core journeys require measurable task outcomes or an owned human rubric."
+  - "Hidden cost, forced continuity, deceptive consent, or inaccessible P0/P1 paths block acceptance."

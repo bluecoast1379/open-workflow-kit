@@ -40,4 +40,4 @@ npm run build:release
 node bin/check-sanitized.cjs --extra-banned <private-denylist-file>
 ```
 
-`private-denylist-file` 必须放在 starter kit 外部，不要提交到仓库。
+`private-denylist-file` 必须放在 Open Workflow Kit 仓库外部，不要提交到仓库。

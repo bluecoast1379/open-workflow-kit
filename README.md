@@ -1,152 +1,248 @@
 # Open Workflow Kit
 
-一个可分发给其他团队的通用研发工作流 kit。它把可分发架构拆成四部分：
+Open Workflow Kit 1.0 把“什么叫完成”编译成可检查、可执行、可复验、可失效的研发契约。它保留完整阶段工作流，并新增 Completion Contract、Evidence Ledger 和有预算的 `run-until-done` 收敛循环，让 agent 只能在明确范围内持续交付，不能靠降低标准宣布完成。
 
-- `workflow/core`: 工具无关的流程、阶段、闸门、模板、检查能力、清单和 37 条规则 catalog。
-- `workflow/team-profile.yaml`: 可提交、可脱敏审查的团队契约；本地私有值进被忽略的 `workflow/local/team-profile.local.yaml`。
-- `workflow/adapters`: 各智能体工具的薄入口与支持矩阵，只调用当前工具自己的能力。
-- `examples`: 全部由合成数据组成的团队初始化示例，不是运行时信任源。
+## 1.0 的核心能力
 
-核心原则：同一套 workflow core，多工具 adapter 分层增强；不承诺所有工具体验完全一致。
-
-## 核心能力（v0.9）
-
-| 能力块 | 说明 |
+| 能力 | 作用 |
 | --- | --- |
-| 20 个检查能力 + 6 个事故模式清单 | `workflow/core/capabilities/` 定义检查契约；`workflow/core/checklists/` 把真实交付事故的脱敏教训展开为逐项清单（校验变更复扫、数据一致性、分支卫生、测试盲区、第三方集成、Java 陷阱） |
-| 工具链 MCP 连接计划 | 初始化时自动探测 CI/CD、部署、配置中心、数据库、日志、代码托管六大槽位，生成 `workflow/TOOLCHAIN_MCP_PLAN.md`；`/connect-toolchain` 问答补齐并按"现成 MCP 优先、只读默认"推进连接 |
-| 受信分级执行策略 | 生效权限取 core 硬上限、仓库外受信策略、team-profile 请求和当次授权的最严格值；生产部署/配置、DDL/DML、受保护分支写入和包发布不得仅凭仓库配置 auto |
-| 测试双轨自动化 | 接口轨内置 `workflow/bin/run-api-tests.cjs` 共享 runner，强制环境与 host allowlist；功能轨通过浏览器自动化 MCP 或 miniprogram-automator 执行 |
-| 生命周期治理（v0.7） | `--upgrade` 自动清理旧版适配器残留（kit 指纹校验，用户自定义内容保留）并永不覆盖 team-profile；内置 `npm run check:history` 全历史凭证扫描（掩码输出）；79 条清单条目稳定 ID（VCR/DCR/BH/TBS/TIR/LPJ）可跨文档引用；Claude skills 官方推荐格式入口 |
-| HTML 可点击原型 | `/02C-HTML原型` 显式阶段：强制先提取 design tokens + 组件清单，产出前端开发级单文件可点击原型（微路由 + 四态），`ui-baseline-reviewer` 用 tokens 反查卡关 |
-| 规则审计级可追溯 | `workflow/core/rules/rule-catalog.yaml` 以 `OWK-RULE-001..037` 映射 79 个清单 item、capability、stage、版本和脱敏证据；`npm run check:rules` 阻断重复或孤儿映射 |
-| 跨工具命令发现（v0.9） | `workflow/core/command-manifest.yaml` 统一维护 21 个命令；Claude/Cursor/CodeBuddy 使用 `/` 模糊选择，Codex 使用分阶段 Skill，Trae 使用兼容级 Agent Skills；不承诺所有工具体验完全一致 |
-| 工具支持分级 | Codex/Claude/Cursor/Copilot/CodeBuddy 5 个原生 adapter；Kiro/Trae 为兼容入口。无真实工具验收证据时不标记 `native_verified` |
+| Completion Contract | 用稳定 `AC-###` 定义业务结果、范围、不变量、领域数据流、质量预算、人工闸门、自动 Oracle 和自主预算 |
+| Definition Lint | 阻断重复 ID、模糊验收、缺失 Oracle、空质量预算、越界命令和未闭环的 blocking unknown |
+| Evidence Ledger | 以 append-only JSONL、HMAC entry 与外部 head/count anchor 保存 `PASS/FAIL/BLOCKED/NOT_RUN/STALE/WAIVED`；证据绑定 contract、source、environment、executor 与 artifact |
+| 可恢复收敛循环 | `run-until-done` 持久化 checkpoint，受迭代、时间、命令次数、diff、重复失败和无进展预算约束 |
+| 防作弊完成判定 | contract/source/environment 任一变化都会使旧证据失效；findings snapshot 变化会使 permit/checkpoint/anchor 失配；agent 不能自行降阈值、删除 AC、扩大 waiver 或把人工闸门改为自动通过 |
+| 安全 Oracle 执行 | 命令固定使用 `shell:false` 的 `command + args`，工作目录不能越出 workspace；Owner-signed permit 绑定完整 command spec、Oracle/executable integrity、environment/findings、scope、base 与预算 |
+| 31 个检查能力、24 条 Definition 规则、6 个 policy packs | 将商业价值、组织共识、UX、人因、性能成本、韧性、安全隐私、可观测性、可逆演进和 AI 质量纳入 Definition of Done |
+| 23 个统一命令 | `workflow/core/command-manifest.yaml` 是跨工具入口的单一事实源，包含 `/define-done` 与 `/deliver-until-done` |
+| 7 个项目级 adapter | Codex、Claude Code、Cursor、GitHub Copilot、CodeBuddy、Kiro、Trae 都生成项目级入口；自动 conformance 不等于真实工具认证 |
 
-## 一键初始化
+本 kit 的四层结构：
 
-在目标团队的项目根目录运行：
+- `workflow/core/`：工具无关的命令、能力、policy packs、schemas、模板、执行策略和规则目录。
+- `workflow/team-profile.yaml`：可提交、可脱敏审查的团队契约；本地私有值进入被忽略的 `workflow/local/`。
+- `workflow/adapters/`：七个平台的路径、发现方式、支持状态和验收口径。
+- `examples/`：只含合成数据和正负黄金样例，不是运行时信任源。
+
+## 快速开始
+
+在目标工作区根目录运行：
 
 ```bash
-node /path/to/open-workflow-kit/bin/init-workspace.cjs --target .
+node ../open-workflow-kit/bin/init-workspace.cjs \
+  --target . \
+  --tools codex,claude,cursor,copilot,codebuddy,kiro,trae
 ```
 
-也可以使用 shell wrapper：
+也可以使用 wrapper：
 
 ```bash
-/path/to/open-workflow-kit/install.sh . --tools codex,claude,cursor
+../open-workflow-kit/install.sh . --tools codex,claude,cursor
 ```
-
-如果你拿到的是 Git 地址或 npm 包地址，见 [可分享安装方式](./docs/shareable-install.md)。
 
 常用参数：
 
 ```bash
-# 指定工具入口
-node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,claude,cursor
+# 非交互初始化；待补资料写入 workflow/INITIALIZATION_QUESTIONS.md
+node ../open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,claude --yes
 
-# GitHub 包安装方式
-npx --yes --package "git+https://github.com/bluecoast1379/open-workflow-kit.git#v0.9.0" agent-workflow-init --target . --tools codex,claude,cursor
+# 只预览，不写入
+node ../open-workflow-kit/bin/init-workspace.cjs --target . --dry-run
 
-# 工具名支持 trea 别名，会自动归一为 trae
-node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --tools codex,trea,codebuddy
+# 升级已初始化的工作区；team-profile 永不被原地覆盖
+node ../open-workflow-kit/bin/init-workspace.cjs --target . --upgrade
 
-# 非交互模式，缺失资料会写入 workflow/INITIALIZATION_QUESTIONS.md
-node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --yes
-
-# 只查看会生成什么，不写文件
-node /path/to/open-workflow-kit/bin/init-workspace.cjs --target . --dry-run
+# trea 会归一为 trae
+node ../open-workflow-kit/bin/init-workspace.cjs --target . --tools trea
 ```
 
-## 初始化器会做什么
+从 tarball、Git commit 或 registry 安装见 [可分享安装方式](./docs/shareable-install.md)。文档不会假定某个远程 tag 已存在。
 
-1. 扫描目标工作区本地文件和目录，识别代码仓库、技术栈线索、项目资料、UI 规范、前后端规范和测试规范。
-2. 探测工具链六大槽位（CI/CD、部署运行态、配置中心、数据库、运行日志、代码托管），生成 `workflow/TOOLCHAIN_MCP_PLAN.md` 连接计划；未检出的槽位由 `/connect-toolchain` 问答补齐。
-3. 生成可提交的 `workflow/team-profile.yaml`（schema 1.2）和被忽略的 `workflow/local/team-profile.local.yaml`；前者只记仓库相对路径、技术栈、分支模型、逻辑槽位和请求策略，后者用于本地绝对路径、私有端点和凭证变量映射。同时生成被忽略的 `workflow/local/rule-provenance.private.yaml`，用于在私有环境维护 37 条规则的原始来源和 SHA-256 指纹。
-4. 如果必要资料缺失：
-   - 交互式终端：逐项提问。
-   - 非交互模式：生成 `workflow/INITIALIZATION_QUESTIONS.md`。
-5. 生成跨工具入口：
-   - Codex: 根 `AGENTS.md`（自动读取）+ 总入口 Skill + 21 个 `.agents/skills/workflow-*/` 分阶段 Skill（项目级 `.codex/prompts/` 不生成）
-   - Claude Code: `CLAUDE.md`、`.claude/commands/`
-   - Cursor: `.cursor/rules/` 和 `.cursor/commands/`
-   - Copilot: `.github/copilot-instructions.md`
-   - CodeBuddy: `.codebuddy/rules/agent-workflow.md` 和 `.codebuddy/commands/`
-   - Kiro: `.kiro/steering/agent-workflow.md`；Trae: `.trae/instructions.md` 和兼容级 `.agents/skills/workflow-*/`
-6. 不执行远程 Git 操作，不创建分支，不推送，不触发构建部署，不写数据库。
+## 先定义完成，再授权实现
 
-## 隐私与脱敏边界
-
-本 starter kit 自身不应包含任何具体公司的业务资料、仓库名、内部系统地址、真实客户字段、真实 URL 或凭证。对外分发前运行：
+初始化 Completion Contract：
 
 ```bash
-node open-workflow-kit/bin/check-sanitized.cjs
+node workflow/bin/check-completion-contract.cjs \
+  --init \
+  --feature account-export \
+  --workspace .
 ```
 
-目标团队自己的业务介绍、项目资料、代码、UI 文件、前后端规范和测试规范只在目标团队本地被引用；初始化器不把这些资料发送到外部服务。
-
-## 生成后的工作方式
-
-初始化完成后，目标团队按 `AGENTS.md` 和 `workflow/core/commands/` 推进：
-
-1. `/connect-toolchain`（可选，首次接入建议执行）
-2. `/new-feature`
-3. `/01-需求讨论`
-4. `/02-产品文档`
-5. `/02B-UI设计`（可选追加 `/02C-HTML原型` 产出可点击原型）
-6. `/03-技术架构`
-7. `/04-代码实现`、`/04A-前端代码实现`、`/04B-后端代码实现`
-8. `/05-代码审查`
-9. `/06-测试用例`
-10. `/07-测试执行`
-11. `/08-验收表格`
-12. `/09-验收`
-13. `/10-培训文档`
-14. `/11-上线邮件通知`
-15. `/12-复盘总结`
-
-业务代码修改必须先通过功能分支闸门、阶段闸门和并行开发隔离检查。涉及 UI 或前端的功能必须先完成 `/02B-UI设计` 并让 `/04A-前端代码实现` 遵循设计基线。文档分析和初始化不等于授权实现代码。
-
-高风险写操作按 `workflow/core/execution-policy.md` 分级处理。仓库内 `team-profile.yaml` 只能请求或收紧权限，不能单独提权；生产部署/配置、DDL/DML、受保护分支写入和包发布永远不能仅凭仓库配置 auto。代执行明细脱敏写入被忽略的 `workflow/local/execution-audit.jsonl`，需共享时只提交最小化脱敏摘要。
-
-## 维护建议
-
-- 通用规则只改 `workflow/core`。
-- 团队共享配置改 `workflow/team-profile.yaml`；本地私有配置只改 `workflow/local/team-profile.local.yaml`。
-- 工具入口由初始化器或 adapter 生成，不把业务规则硬编码到单个工具里。
-- 对外发布前先跑脱敏检查，再由人工复核许可证、示例和文档。
-
-## 开源协作
-
-- 贡献说明见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
-- 安全报告说明见 [SECURITY.md](./SECURITY.md)。
-- 行为准则见 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。
-- GitHub issue 和 PR 模板位于 `.github/`。
-
-## 本地验证
+完成 `features/account-export/completion/contract.yaml` 后 lint：
 
 ```bash
-cd /path/to/open-workflow-kit
+node workflow/bin/check-completion-contract.cjs \
+  --contract features/account-export/completion/contract.yaml
+```
+
+Contract 至少定义：
+
+- 可证伪的业务目标、North Star、baseline、target、观测窗口和 guardrails；
+- source paths、allowed/forbidden paths、non-goals、preserved invariants 及其 AC 映射；
+- 实体、数据流、状态机、权威数据源和共享术语；
+- 性能、可靠性、成本、可访问性、安全、隐私、可观测性、回滚、演进和 AI 质量预算；
+- 每条 AC 的 Given/When/Then、blocking、human gate、Oracle、证据和优先级；至少一条 blocking manual gate 保留给有权验收者；
+- 迭代、累计时间、命令、成本单位、diff、重复失败、无进展预算与停止条件。
+
+完整说明见 [Completion Contract](./docs/completion-contract.md)，黄金样例见 [Definition-to-Done examples](./examples/definition-to-done/README.md)。
+
+## 证据与完成判定
+
+验证 ledger：
+
+```bash
+node workflow/bin/evidence-ledger.cjs verify \
+  --ledger features/account-export/completion/evidence/ledger.jsonl \
+  --attestation-key automation-local-v1=OWK_AUTOMATION_KEY \
+  --attestation-key human-owner-v1=OWK_HUMAN_KEY
+```
+
+不提供 attestation key 时只验证 hash chain，输出 `attestation_valid: null`；只有 `valid: true` 才表示 chain 与所有 entry 的 HMAC 都已验证。
+
+聚合当前 DoD：
+
+```bash
+node workflow/bin/sign-ledger-anchor.cjs \
+  --contract features/account-export/completion/contract.yaml \
+  --ledger features/account-export/completion/evidence/ledger.jsonl \
+  --cwd . \
+  --environment-manifest features/account-export/completion/environment.yaml \
+  --findings features/account-export/completion/findings.yaml \
+  --private-key /owner-controlled/ledger-private.pem \
+  --public-key /owner-controlled/ledger-public.pem \
+  --output /owner-controlled/account-export.anchor.json
+
+node workflow/bin/evaluate-dod.cjs \
+  --contract features/account-export/completion/contract.yaml \
+  --ledger features/account-export/completion/evidence/ledger.jsonl \
+  --cwd . \
+  --environment-manifest features/account-export/completion/environment.yaml \
+  --findings features/account-export/completion/findings.yaml \
+  --attestation-key automation-local-v1=OWK_AUTOMATION_KEY \
+  --attestation-key human-owner-v1=OWK_HUMAN_KEY \
+  --ledger-anchor /owner-controlled/account-export.anchor.json \
+  --ledger-anchor-public-key /owner-controlled/ledger-public.pem
+```
+
+`automation_complete` 与 `accepted` 是两个不同结论：自动 blocking AC 全部满足后，runner 只能到 `READY_FOR_HUMAN_ACCEPTANCE`，永远无权输出 `ACCEPTED`；只有独立 evaluator 在 ledger 中看到有权角色的当前人工验收证据后，才可聚合为 `ACCEPTED`。`WAIVED` 是有范围、有批准人、有理由、有到期日的例外，不会被伪装成 `PASS`。
+
+生成本地 Done Cockpit：
+
+```bash
+node workflow/bin/generate-done-cockpit.cjs \
+  --contract features/account-export/completion/contract.yaml \
+  --ledger features/account-export/completion/evidence/ledger.jsonl \
+  --cwd . \
+  --environment-manifest features/account-export/completion/environment.yaml \
+  --findings features/account-export/completion/findings.yaml \
+  --attestation-key automation-local-v1=OWK_AUTOMATION_KEY \
+  --attestation-key human-owner-v1=OWK_HUMAN_KEY \
+  --ledger-anchor /owner-controlled/account-export.anchor.json \
+  --ledger-anchor-public-key /owner-controlled/ledger-public.pem \
+  --output features/account-export/completion/done-cockpit.html
+```
+
+Ledger anchor 必须在最后一条人工证据追加后由独立 Owner 签发，并保存在 Agent 工作区之外；任何新 entry、源码、环境或 findings snapshot 变化都要求重新验收并重签 anchor。
+
+## 有预算的自主交付
+
+只有 Contract 已冻结、实现闸门通过、执行范围被明确授权后，先用版本化 environment manifest 输出并人工复核完整运行上下文：
+
+```bash
+node workflow/bin/run-until-done.cjs \
+  --contract features/account-export/completion/contract.yaml \
+  --cwd . \
+  --environment-manifest features/account-export/completion/environment.yaml \
+  --findings features/account-export/completion/findings.yaml \
+  --print-required-specs
+```
+
+Owner 在 Agent 不可写的位置保管 Ed25519 private key，把 public key fingerprint 写入冻结 Contract，并签发短期 permit：
+
+```bash
+node workflow/bin/sign-execution-permit.cjs \
+  --contract features/account-export/completion/contract.yaml \
+  --private-key /owner-controlled/execution-private.pem \
+  --public-key /owner-controlled/execution-public.pem \
+  --environment-manifest features/account-export/completion/environment.yaml \
+  --findings features/account-export/completion/findings.yaml \
+  --cwd . \
+  --valid-minutes 60 \
+  --output /owner-controlled/account-export.permit.json
+```
+
+再用 permit、public key 和独立 Evidence HMAC key 运行：
+
+```bash
+node workflow/bin/run-until-done.cjs \
+  --contract features/account-export/completion/contract.yaml \
+  --cwd . \
+  --environment-manifest features/account-export/completion/environment.yaml \
+  --findings features/account-export/completion/findings.yaml \
+  --execution-permit /owner-controlled/account-export.permit.json \
+  --execution-public-key /owner-controlled/execution-public.pem \
+  --attestation-key-id automation-local-v1 \
+  --attestation-key-env OWK_AUTOMATION_KEY
+```
+
+Permit 用 Ed25519 签名同时绑定 contract、environment/fixture/runtime、显式 findings review snapshot、base commit、scope、完整 command specs、resolved executable fingerprints 与预算；公开 hash 本身不再被当作授权。`findings.yaml` 的空数组表示“Owner 已检查且当前无 finding”，缺失、过期或 owner/source 不匹配都会阻断。Evidence HMAC key 至少 32 bytes、按 principal 分权，并在读取后从进程环境移除。循环只会到达 `READY_FOR_HUMAN_ACCEPTANCE`、`BLOCKED_WITH_DECISION_PACKET` 或 `BUDGET_EXHAUSTED`，并用 HMAC checkpoint 锚定累计时间、成本、ledger head/count 与恢复点。它不隐含人工签收、push、merge、deploy、生产写入、数据库写入或 package publish 权限。详细边界见 [自主交付与恢复](./docs/autonomous-delivery.md)。
+
+## 23 个工作流命令
+
+建议路径如下；阶段可按项目裁剪，但硬闸门不能被 adapter 降级：
+
+1. `/init-workspace`、`/connect-toolchain`、`/new-feature`
+2. `/01-需求讨论`、`/02-产品文档`、`/02B-UI设计`，需要时追加 `/02C-HTML原型`
+3. `/03-06-研发准备`；手动路径则依次完成 `/03-技术架构` 与 `/06-测试用例`（全部 Oracle 保持 `NOT_RUN`）
+4. `/define-done` 最终复核并冻结 Completion Contract、environment 与 findings 边界
+5. `/deliver-until-done`；手动路径则推进 `/04-代码实现`（含适用的 04A/04B）→ `/05-代码审查` → `/07-测试执行`
+6. 自动证据达到 `READY_FOR_HUMAN_ACCEPTANCE` 后进入人工验收
+7. `/08-验收表格`、`/09-验收`
+8. `/10-培训文档`、`/11-上线邮件通知`、`/12-复盘总结`
+9. 随时使用 `/workflow-status`
+
+涉及 UI 或前端时，`/02B-UI设计` 是 `/04A-前端代码实现` 的设计闸门。`/03-06-研发准备` 只授权分析和文档；它先产出 03/06 draft，再由 `/define-done` 冻结，不能直接跳到实现。业务代码修改还必须通过功能分支、阶段和 worktree 隔离检查。
+
+## 七个平台的入口
+
+| 平台 | 项目级发现入口 | 当前状态 |
+| --- | --- | --- |
+| Codex | `.agents/skills/`；slash Skills 列表、`/skills` 或 `$<skill-slug>` | `native_not_yet_manually_certified` |
+| Claude Code | `.claude/commands/` 的 `/` 模糊搜索 | `native_not_yet_manually_certified` |
+| Cursor | `.cursor/commands/` 的 Agent `/` 菜单 | `native_not_yet_manually_certified` |
+| GitHub Copilot | `.github/prompts/` 的 Prompt picker；部分客户端支持 slash prompt | `native_not_yet_manually_certified` |
+| CodeBuddy | `.codebuddy/commands/` 的 `/` 菜单 | `native_not_yet_manually_certified` |
+| Kiro | IDE manual steering `/` 菜单与 CLI `.kiro/skills/` | `native_not_yet_manually_certified` |
+| Trae | `.trae/commands/`、项目 Skills 与 `/` panel | `native_not_yet_manually_certified` |
+
+`.trae-cn/` 只是 Trae 中文发行版的兼容镜像，不是第八个平台，也不能单独作为 native 认证证据。七个平台均已有结构 conformance；尚未宣称当前版本已在真实工具中逐一人工认证。路径、官方文档和验收方法见 [工具安装示例](./docs/tool-install-recipes.md) 与 [人工验收](./docs/adapter-manual-acceptance.md)。
+
+## 安全与隐私边界
+
+- 初始化器只扫描和写入本地工作区，不创建分支、不 push、不部署、不写数据库、不修改生产配置。
+- 生效权限取 core 硬上限、仓库外受信策略、team-profile 请求和当次授权的最严格值。
+- 生产部署/配置、DDL/DML、受保护分支写入和 package publish 不能仅凭仓库配置变成自动动作。
+- 共享 profile 只保存相对路径和逻辑槽位；绝对路径、私有端点、凭证映射和原始审计进入被忽略的 `workflow/local/`。
+- 证据可以证明检查发生过，但不能替代业务 Owner 对目标、waiver 和最终签收的权限。
+
+## 本地验证与打包
+
+```bash
 npm run check
 npm run check:history
 npm run check:commands
 npm run check:rules
 npm run check:adapters
 npm run check:links
-```
-
-`npm run check` 执行语法、工作树脱敏、prototype tokens、21 命令清单、37/79 规则映射、5 native/2 compatible 支持矩阵、API runner 和安装/升级 smoke；历史脱敏扫描单独由 `check:history` 执行。
-
-## 本地打包
-
-```bash
-cd /path/to/open-workflow-kit
 npm run build:release
 ```
 
-该命令会在 `dist/` 下生成本地 tarball 和 `RELEASE_MANIFEST.md`。它不创建远程仓库、不 push、不打 tag、不执行 npm publish。
+`npm run check` 覆盖语法、脱敏、规则、23 命令、Definition-to-Done、七个平台 adapter、API runner 和安装/升级 smoke。`check:history` 单独扫描 Git 历史。`build:release` 只生成本地归档与 manifest，不创建远程仓库、不 push、不打 tag、不发布 package。
 
-远程发布步骤见 [手动发布指南](./docs/manual-publish.md)。发布、push、tag、npm publish 必须由维护者手动执行。
+## 维护与发布
 
-维护者发布、接收方验收和支持边界见 [维护者交接](./docs/maintainer-handoff.md)。
-不同工具的真实命令发现和 04 闸门验证见 [多工具命令发现人工验收](./docs/adapter-manual-acceptance.md)。
+- 通用规则只改 `workflow/core/`；adapter 必须保持薄入口。
+- 对外发布前先看 [外部分发检查清单](./docs/release-checklist.md) 和 [维护者交接](./docs/maintainer-handoff.md)。
+- 远程 push、tag、release、registry publish 仍由维护者明确授权并手工执行，见 [手动发布指南](./docs/manual-publish.md)。
+- 贡献、安全与行为规范分别见 [CONTRIBUTING.md](./CONTRIBUTING.md)、[SECURITY.md](./SECURITY.md) 和 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。
+- 版本变化与迁移边界见 [CHANGELOG.md](./CHANGELOG.md)。

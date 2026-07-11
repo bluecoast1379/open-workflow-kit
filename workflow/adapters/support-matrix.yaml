@@ -1,21 +1,25 @@
-schema_version: "1.1"
-claim: "5 native adapters + 2 compatible entries; discovery varies by tool"
+schema_version: "2.0"
+claim: "7 official project-level adapters; generated conformance is not real-tool certification"
 last_documentation_check: "2026-07-11"
 
 native_verification_requirements:
-  - "official auto-load path"
-  - "stage or skill invocation"
+  - "official project-level discovery path"
+  - "every manifest command has a generated entry"
+  - "fuzzy discovery or the documented equivalent surface"
   - "workflow/core and team-profile loading"
   - "hard-gate non-regression"
-  - "install and upgrade smoke"
+  - "install and upgrade conformance"
   - "real-tool manual acceptance with tool version and date"
 
 tools:
   codex:
     support_level: "native"
-    invocation_style: "skill_fuzzy"
-    generated_entries: ["AGENTS.md", ".agents/skills/agent-workflow/SKILL.md", ".agents/skills/workflow-*/SKILL.md", ".agents/skills/workflow-*/agents/openai.yaml"]
-    documentation_url: "https://developers.openai.com/codex/skills"
+    invocation_style: "slash_skill_fuzzy"
+    discovery_surfaces: ["slash skill list", "/skills", "$<skill-slug>"]
+    generated_entries: ["AGENTS.md", ".agents/skills/agent-workflow/SKILL.md", ".agents/skills/{skill_slug}/SKILL.md", ".agents/skills/{skill_slug}/agents/openai.yaml"]
+    command_entry_patterns: [".agents/skills/{skill_slug}/SKILL.md", ".agents/skills/{skill_slug}/agents/openai.yaml"]
+    documentation_url: "https://learn.chatgpt.com/docs/build-skills"
+    secondary_documentation_urls: ["https://learn.chatgpt.com/docs/reference/slash-commands"]
     official_path_status: "verified"
     automated_conformance: "covered"
     manual_acceptance: "required-per-release"
@@ -24,7 +28,9 @@ tools:
   claude:
     support_level: "native"
     invocation_style: "slash_fuzzy"
-    generated_entries: ["CLAUDE.md", ".claude/commands/", ".claude/skills/agent-workflow/SKILL.md"]
+    discovery_surfaces: ["slash command menu"]
+    generated_entries: ["CLAUDE.md", ".claude/commands/{id}.md", ".claude/skills/agent-workflow/SKILL.md"]
+    command_entry_patterns: [".claude/commands/{id}.md"]
     documentation_url: "https://code.claude.com/docs/en/slash-commands"
     official_path_status: "verified"
     automated_conformance: "covered"
@@ -34,7 +40,9 @@ tools:
   cursor:
     support_level: "native"
     invocation_style: "slash_fuzzy"
-    generated_entries: [".cursor/rules/agent-workflow-core.mdc", ".cursor/commands/"]
+    discovery_surfaces: ["Agent slash command menu"]
+    generated_entries: [".cursor/rules/agent-workflow-core.mdc", ".cursor/commands/{id}.md"]
+    command_entry_patterns: [".cursor/commands/{id}.md"]
     documentation_url: "https://docs.cursor.com/en/agent/chat/commands"
     official_path_status: "verified"
     automated_conformance: "covered"
@@ -43,10 +51,13 @@ tools:
     verification_status: "native_not_yet_manually_certified"
   copilot:
     support_level: "native"
-    invocation_style: "instruction_reference"
-    generated_entries: [".github/copilot-instructions.md"]
-    documentation_url: "https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot"
-    official_path_status: "verified"
+    invocation_style: "prompt_fuzzy"
+    discovery_surfaces: ["Prompt picker", "IDE slash prompt invocation where supported"]
+    generated_entries: ["AGENTS.md", ".github/copilot-instructions.md", ".github/prompts/{skill_slug}.prompt.md"]
+    command_entry_patterns: [".github/prompts/{skill_slug}.prompt.md"]
+    documentation_url: "https://docs.github.com/en/copilot/reference/customization-cheat-sheet"
+    secondary_documentation_urls: ["https://docs.github.com/en/copilot/tutorials/customization-library/prompt-files/your-first-prompt-file"]
+    official_path_status: "verified-public-preview"
     automated_conformance: "covered"
     manual_acceptance: "required-per-release"
     manual_acceptance_evidence: []
@@ -54,7 +65,9 @@ tools:
   codebuddy:
     support_level: "native"
     invocation_style: "slash_fuzzy"
-    generated_entries: ["AGENTS.md", ".codebuddy/rules/agent-workflow.md", ".codebuddy/commands/"]
+    discovery_surfaces: ["slash command menu"]
+    generated_entries: ["AGENTS.md", ".codebuddy/rules/agent-workflow.md", ".codebuddy/commands/{id}.md"]
+    command_entry_patterns: [".codebuddy/commands/{id}.md"]
     documentation_url: "https://www.codebuddy.ai/docs/cli/slash-commands"
     official_path_status: "verified"
     automated_conformance: "covered"
@@ -62,20 +75,29 @@ tools:
     manual_acceptance_evidence: []
     verification_status: "native_not_yet_manually_certified"
   kiro:
-    support_level: "compatible"
-    invocation_style: "instruction_reference"
-    generated_entries: ["AGENTS.md", ".kiro/steering/agent-workflow.md"]
-    documentation_url: "https://kiro.dev/docs/steering/"
+    support_level: "native"
+    invocation_style: "slash_fuzzy"
+    discovery_surfaces: ["IDE manual steering slash menu", "CLI skill slash command"]
+    generated_entries: ["AGENTS.md", ".kiro/steering/agent-workflow.md", ".kiro/steering/{skill_slug}.md", ".kiro/skills/{skill_slug}/SKILL.md"]
+    command_entry_patterns: [".kiro/steering/{skill_slug}.md", ".kiro/skills/{skill_slug}/SKILL.md"]
+    documentation_url: "https://kiro.dev/docs/chat/slash-commands/"
+    secondary_documentation_urls: ["https://kiro.dev/docs/steering/", "https://kiro.dev/docs/cli/reference/slash-commands/"]
     official_path_status: "verified"
     automated_conformance: "covered"
-    manual_acceptance: "not-required-for-compatible"
-    verification_status: "compatible"
+    manual_acceptance: "required-per-release"
+    manual_acceptance_evidence: []
+    verification_status: "native_not_yet_manually_certified"
   trae:
-    support_level: "compatible"
-    invocation_style: "skill_fuzzy"
-    generated_entries: ["AGENTS.md", ".trae/instructions.md", ".agents/skills/workflow-*/SKILL.md"]
-    documentation_url: "https://www.trae.ai/changelog"
-    official_path_status: "verified-for-agent-skills; slash-panel-project-import-unverified"
+    support_level: "native"
+    invocation_style: "slash_fuzzy"
+    discovery_surfaces: ["Settings > Skills & Commands", "slash command panel", "project Skills"]
+    generated_entries: ["AGENTS.md", ".trae/commands/{id}.md", ".trae/skills/agent-workflow/SKILL.md", ".trae/skills/{skill_slug}/SKILL.md", ".trae-cn/commands/{id}.md", ".trae-cn/skills/{skill_slug}/SKILL.md"]
+    command_entry_patterns: [".trae/commands/{id}.md", ".trae/skills/{skill_slug}/SKILL.md"]
+    compatibility_entries: [".trae-cn/commands/{id}.md", ".trae-cn/skills/{skill_slug}/SKILL.md"]
+    documentation_url: "https://docs.trae.ai/ide/skills"
+    secondary_documentation_urls: ["https://www.trae.ai/changelog"]
+    official_path_status: "verified-primary; trae-cn-compatibility-unverified"
     automated_conformance: "covered"
-    manual_acceptance: "not-required-for-compatible"
-    verification_status: "compatible"
+    manual_acceptance: "required-per-release"
+    manual_acceptance_evidence: []
+    verification_status: "native_not_yet_manually_certified"

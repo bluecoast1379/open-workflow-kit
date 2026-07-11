@@ -10,6 +10,7 @@ HTML 可点击原型: 在 `/02-产品文档` 与 `/02B-UI设计` 基线之上，
 - `workflow/team-profile.yaml`（重点读 `source_materials.ui_specs` 与 `source_materials.frontend_rules`）
 - 工作区级 `features/{feature}/02-产品文档.md`
 - 工作区级 `features/{feature}/02B-UI设计.md`（缺失时先补齐 02B 或记录用户明确豁免）
+- 工作区级 `features/{feature}/completion/contract.yaml`（Completion Contract）
 - `workflow/design/tokens.css` 与 `workflow/design/components.md`（design 基线三件套，见下）
 - `workflow/core/templates/prototype-page.html`（骨架模板）
 
@@ -43,6 +44,20 @@ HTML 可点击原型: 在 `/02-产品文档` 与 `/02B-UI设计` 基线之上，
 - 本阶段不授权修改业务代码；原型只写在 `features/{feature}/prototype/`。
 - 未真实打开验证过的交互不得写成"可点击"；至少记录一次浏览器打开与关键流程点击的验证结果（有浏览器自动化 MCP 时截图存证到 `features/{feature}/screenshots/`）。
 - 原型是沟通产物不是实现代码：不引入框架、构建步骤或外部 CDN 依赖。
+
+## Required Structure
+
+- 原型文件顶部记录 feature、PRD / 02B / Completion Contract 版本与 `AC-###` 映射。
+- 页面、组件、design tokens、核心路由、四态、响应式、长文本 / 小屏、键盘与 accessibility 演示完整。
+- 每个交互演示都有进入条件、用户动作、预期反馈、失败 / 恢复和对应 AC；纯静态跳转不得冒充业务已实现。
+- 验证记录包含真实浏览器 / 视口、关键点击路径、截图或等价证据与已知偏差。
+
+## Exit Criteria
+
+- 02B 与 design 基线闸门通过；页面 / 流程无未解释的多页、少页或断链。
+- token / component 反查无 BLOCK；不存在外部 CDN、构建依赖或业务代码写入。
+- 核心流程在目标视口真实打开并点击验证，四态切换、恢复路径和可访问性关键行为可演示。
+- 原型与 `AC-###` 可追溯，且明确标为设计验证证据而非实现 / 测试 PASS。
 
 ## 必要输出
 

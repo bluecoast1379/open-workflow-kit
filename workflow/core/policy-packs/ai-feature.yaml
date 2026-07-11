@@ -1,0 +1,27 @@
+schema_version: "1.0"
+id: "ai-feature"
+title: "AI / LLM / Agent 非确定性质量"
+extends: ["standard"]
+applies_when:
+  any_keywords: ["LLM", "AI model", "prompt", "RAG", "embedding", "AI agent", "生成式 AI", "模型推理"]
+  contract_paths: ["domain.ai_system"]
+required_capabilities:
+  - ai-quality-evaluator
+  - performance-cost-budget-checker
+  - security-reviewer
+  - autonomy-anti-cheating-guard
+required_contract_sections:
+  - domain.ai_system
+  - quality_budgets.ai_quality
+  - quality_budgets.cost
+mandatory_acceptance_dimensions:
+  - golden-dataset
+  - risk-slices
+  - hallucination-and-safety
+  - variance
+  - fallback
+  - latency-and-cost
+blocking_rules:
+  - "Model, prompt, retrieval, tool, evaluator, and dataset versions must be fingerprinted."
+  - "Averages cannot hide failing safety or business-critical slices."
+  - "Model or prompt changes invalidate affected evidence."

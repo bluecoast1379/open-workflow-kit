@@ -1,0 +1,25 @@
+schema_version: "1.0"
+id: "public-contract"
+title: "对外 API、事件与 Schema 演进"
+extends: ["standard"]
+applies_when:
+  any_keywords: ["public API", "webhook", "event", "schema", "SDK", "consumer", "序列化"]
+  contract_paths: ["domain.interfaces", "domain.events", "domain.schemas"]
+required_capabilities:
+  - contract-tracer
+  - protocol-state-machine-checker
+  - reversibility-evolution-checker
+  - automated-test-runner
+required_contract_sections:
+  - domain.interfaces
+  - domain.compatibility
+  - domain.error_semantics
+mandatory_acceptance_dimensions:
+  - contract-test
+  - backward-forward-compatibility
+  - provider-consumer-order
+  - idempotency-retry
+  - deprecation
+blocking_rules:
+  - "All known consumers and terminals must be traced before a breaking change."
+  - "Compatibility window, migration order, error semantics, and deprecation path are mandatory."

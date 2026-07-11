@@ -1,0 +1,28 @@
+schema_version: "1.0"
+id: "high-risk-change"
+title: "生产数据、不可逆状态与高可用变更"
+extends: ["standard"]
+applies_when:
+  any_keywords: ["migration", "DDL", "DML", "生产数据", "payment", "订单", "账务", "高可用", "irreversible"]
+  contract_paths: ["domain.transactions", "scope.data_changes"]
+required_capabilities:
+  - data-change-safety-checker
+  - resilience-recovery-checker
+  - observability-operability-checker
+  - reversibility-evolution-checker
+  - security-reviewer
+required_contract_sections:
+  - domain.invariants
+  - domain.transactions
+  - quality_budgets.reliability
+  - governance.rollback
+mandatory_acceptance_dimensions:
+  - concurrency-idempotency
+  - fault-injection
+  - backup-restore
+  - rollback-or-forward-fix
+  - observability-alerting
+blocking_rules:
+  - "Irreversible data change requires explicit decision owner and forward-fix plan."
+  - "RTO/RPO and recovery evidence must be bound to the release candidate."
+  - "Production write remains governed by execution-policy and is never implied by this pack."

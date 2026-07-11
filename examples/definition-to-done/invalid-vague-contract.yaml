@@ -1,0 +1,261 @@
+# NEGATIVE FIXTURE ONLY. This contract is intentionally invalid and must not be used for delivery.
+schema_version: "1.0"
+
+feature:
+  id: "negative-vague-demo"
+  contract_version: 1
+  objective: "演示模糊验收必须被 Definition Lint 阻断"
+  non_goals:
+    - "不作为真实 feature 的完成定义"
+  owner: "kit-maintainer"
+  reviewers:
+    - "independent-verifier"
+  status: "frozen"
+  created_at: "2026-07-11T00:00:00.000Z"
+  frozen_at: "2026-07-11T00:30:00.000Z"
+
+policy_packs:
+  - id: "standard"
+    owner: "kit-maintainer"
+    reason: "负例除目标歧义外遵循标准基线"
+policy_pack_exceptions: []
+enabled_capabilities:
+  - "definition-quality-linter"
+  - "branch-gatekeeper"
+  - "evidence-freshness-checker"
+  - "autonomy-anti-cheating-guard"
+
+objective:
+  problem: "演示没有阈值或 rubric 的形容词型验收无法执行"
+  target_users:
+    - "kit 维护者"
+  success_definition: "Definition Lint 只因 AMBIGUOUS_WITHOUT_ORACLE 拒绝本负例"
+
+outcome:
+  north_star_metric: "负例被 linter 拒绝的次数"
+  baseline: "0 次"
+  target: "每个发布候选执行 1 次且拒绝率为 100%"
+  observation_window: "每个发布候选的 1 次检查"
+  guardrails:
+    - "为接受本文件而修改 linter 的文件数必须为 0"
+
+stakeholders:
+  - "kit 维护者"
+approvers:
+  - "release-owner"
+operational_owner: "kit-maintainer"
+
+organization:
+  dri: "kit-maintainer"
+  decision_owner: "release-owner"
+  reviewers:
+    - "independent-verifier"
+  dependency_owners:
+    - "none-with-reason: 本负例没有外部依赖"
+  escalation_path: "linter 拒绝后停止，不修改规则"
+
+assumptions: []
+decisions: []
+
+requirements:
+  - id: "REQ-001"
+    priority: "P0"
+    statement: "本负例必须包含不可执行的形容词型标准"
+
+risks: []
+
+glossary:
+  negative_fixture: "只用于证明校验器会拒绝错误输入"
+
+scope:
+  source_paths:
+    - "examples/definition-to-done/invalid-vague-contract.yaml"
+  allowed_paths: []
+  forbidden_paths:
+    - ".git/**"
+  preserved_invariants:
+    - "本文件必须保持无效"
+  invariant_acceptance_refs:
+    - invariant: "本文件必须保持无效"
+      acceptance_refs:
+        - "AC-001"
+  fingerprint_excludes: []
+
+domain:
+  entities: []
+  data_flows: []
+  state_machines: []
+  sources_of_truth:
+    - "Definition Lint 的 AMBIGUOUS_WITHOUT_ORACLE 规则"
+
+quality_budgets:
+  business:
+    target: "本负例拒绝率为 100%"
+  ux:
+    reason: "本负例不含用户界面"
+  performance_cost:
+    target: "linter 在 5000 ms 内拒绝，外部付费调用数为 0"
+  reliability_resilience:
+    target: "连续 3 次均返回非零退出码"
+  security_privacy:
+    target: "远程命令执行数为 0，真实个人与客户数据条数为 0"
+  observability_operations:
+    target: "错误输出包含 AMBIGUOUS_WITHOUT_ORACLE"
+  reversibility_evolution:
+    target: "检查为只读操作，schema 版本固定为 1.0"
+  ai_quality:
+    reason: "本负例不执行模型推理"
+
+unknowns: []
+
+release:
+  rollout:
+    plan: "不得发布为可运行 Contract"
+  kill_switch:
+    plan: "linter 非零退出即停止"
+  rollback:
+    plan: "无需回滚，只读检查"
+  observation:
+    plan: "在负例测试中检查错误码"
+
+governance:
+  status: "frozen"
+  change_approval:
+    rule: "只有 release-owner 可修改负例目的"
+  evidence_invalidation:
+    rule: "source 变化后重新运行负例"
+  waiver_policy:
+    rule: "禁止为本负例创建 waiver"
+  anti_cheating:
+    rule: "禁止删除模糊词或添加阈值来让负例通过"
+  evidence_attestation:
+    required_for_success: true
+    automation_key_ids:
+      - "automation-local-v1"
+    human_key_ids:
+      - "human-owner-v1"
+    waiver_key_ids:
+      - "human-owner-v1"
+    key_principals:
+      automation-local-v1:
+        role: "automation"
+        principal: "negative-fixture-runner"
+      human-owner-v1:
+        role: "human"
+        principal: "release-owner"
+  findings_registry:
+    required_for_completion: true
+    owner: "release-owner"
+    source: "definition-to-done negative fixture review registry"
+    max_age_minutes: 1440
+  ledger_anchor:
+    required_for_acceptance: true
+    external_anchor_owner: "release-owner"
+    storage: "负例测试的仓库外签名记录"
+    key_id: "owner-ledger-v1"
+    trusted_public_key_sha256: "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+    max_age_minutes: 1440
+  execution_authorization:
+    permit_required: true
+    key_id: "owner-execution-v1"
+    trusted_public_key_sha256: "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    max_validity_minutes: 60
+  blocking_rules_acknowledged:
+    - "standard"
+
+acceptance:
+  - id: "AC-001"
+    priority: "P0"
+    blocking: true
+    human_gate: false
+    requirement_refs:
+      - "REQ-001"
+    risk_refs: []
+    dimensions:
+      - "functional"
+      - "negative-boundary"
+      - "permissions"
+      - "recovery"
+      - "regression"
+    given: "用户进入页面"
+    when: "用户执行操作"
+    then: "交互必须流畅、快速、自然且友好"
+    threshold: "以形容词主观判定，无数值边界（故意无效）"
+    environment:
+      name: "negative-fixture"
+    fixture:
+      dataset: "synthetic-vague-copy-v1"
+    freshness:
+      max_age_minutes: 60
+    evidence_required:
+      - "故意缺失可量化证明"
+    oracle:
+      type: "metric"
+  - id: "AC-002"
+    priority: "P2"
+    blocking: true
+    human_gate: true
+    requirement_refs:
+      - "REQ-001"
+    risk_refs: []
+    dimensions:
+      - "functional"
+    given: "Definition Lint 已输出结构化 issues"
+    when: "independent-verifier 检查本负例目的"
+    then: "rubric 的 2 项均被逐项记录"
+    threshold: "rubric pass rate = 100%"
+    environment:
+      name: "maintainer-review"
+    fixture:
+      scenario: "negative contract review"
+    freshness:
+      max_age_minutes: 1440
+    evidence_required:
+      - "人工 rubric 结论"
+    oracle:
+      type: "manual"
+      rubric:
+        - "AC-001 保留无法量化的形容词"
+        - "本文件标记为不可运行负例"
+
+autonomy:
+  allowed_actions:
+    - "oracle:metric"
+  forbidden_actions:
+    - "contract:mutate"
+    - "remote:write"
+  ask_before:
+    - "external:side-effect"
+  oracle_env_allowlist:
+    - "PATH"
+  max_iterations: 1
+  max_elapsed_minutes: 1
+  max_command_executions: 1
+  max_same_failure: 1
+  max_no_progress: 1
+  max_cost_units: 1
+  cost_unit: "one local lint execution"
+  cost_per_execution: 1
+  flaky_policy:
+    rule: "结果不一致即 BLOCK"
+    same_snapshot_conflict: "BLOCK"
+    max_rechecks: 0
+  retry_policy:
+    rule: "本负例不自动重试"
+    max_attempts: 1
+    retryable_reasons: []
+  checkpoint:
+    path: "examples/definition-to-done/.runtime/negative-run-state.yaml"
+    resume: "source 变化即重新验证"
+    integrity_required: true
+    ledger_head_required: true
+  stop_condition_codes:
+    - "budget_exhausted"
+    - "scope_violation"
+    - "contract_change_required"
+    - "approval_required"
+    - "repeated_failure"
+    - "no_progress"
+    - "execution_permit_expired"
+  stop_conditions:
+    - "linter 拒绝后立即停止"

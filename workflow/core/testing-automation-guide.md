@@ -4,7 +4,7 @@
 
 ## 1. 接口测试轨（API）
 
-默认使用初始化后的 `workflow/bin/run-api-tests.cjs` 执行机器可读 JSON 计划，避免每个 adapter 重新手写 curl 和断言。JSON 样例见 `workflow/core/templates/api-test-plan.example.json`；Markdown `api-test-plan.md` 保留给人工评审和证据回填。
+默认使用初始化后的 `bin/run-api-tests.cjs` 执行机器可读 JSON 计划，避免每个 adapter 重新手写 curl 和断言。JSON 计划建议使用 schema `1.1`，样例见 `workflow/core/templates/api-test-plan.example.json`；Markdown `api-test-plan.md` 保留给人工评审、AC 映射和证据回填。
 
 接入准备（一次性）：
 
@@ -15,15 +15,20 @@
 执行示例：
 
 ```bash
-node workflow/bin/run-api-tests.cjs \
+node bin/run-api-tests.cjs \
   --plan features/<feature>/api-test-plan.json \
   --env-file workflow/local/test-credentials.env \
   --environment test \
   --allow-host test-api.example.test \
+  --max-response-bytes 2097152 \
   --output features/<feature>/api-test-result.json
 ```
 
-runner 同时校验 CLI 环境名、计划环境名和显式 host allowlist；三者不一致即阻断。生产、线上、`prod-*`、`production-*` 和 `live-*` 类环境名默认不可执行，且 runner 不提供绕过开关、不自动跟随 HTTP 重定向。结果只记目标 host SHA-256 指纹、状态码、断言布尔结果和耗时，不回显私有 host、请求凭证、JSON 实际值或完整响应体。
+runner 同时校验 CLI 环境名、计划环境名和显式 host allowlist；三者不一致即阻断。生产、线上、`prod-*`、`production-*` 和 `live-*` 类环境名默认不可执行，且 runner 不提供绕过开关、不自动跟随 HTTP 重定向。每个 case 强制至少一个明确 `expect`，不能把“收到响应”当 PASS。
+
+schema 1.1 支持：单个 / 数组 HTTP status、JSON path 精确值 / exists / not-empty / range、有限 JSON Schema、响应 headers、text contains / not-contains、duration / body byte budget、成功后标量 capture 和 1..5 次 bounded retry。case 必须使用同 origin 相对路径；runner 默认在 2 MiB 处物理截断响应体。capture 不得覆盖已有 env 变量。POST/PUT/PATCH/DELETE 等方法重试时必须显式 `retry_safe: true` 并传入 `Idempotency-Key`；重试不得替代 flaky 诊断或突破 Completion Contract。结果只记目标 host SHA-256 指纹、状态码、断言布尔结果、attempts 和耗时，不回显私有 host、请求凭证、JSON 实际值或完整响应体。
+
+runner 输出只是单计划执行结果；`/07` 还必须把它与 contract/source/environment/fixture/tool fingerprint、artifact hash 一起登记到 Evidence Ledger。代码、合同、环境、数据或工具变化后，受影响证据标为 `STALE`。
 
 ## 2. 功能测试轨（Web / H5）
 

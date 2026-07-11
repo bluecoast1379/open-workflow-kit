@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.dev/schemas/completion-contract.schema.json",
+  "title": "Open Workflow Kit Completion Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "feature",
+    "policy_packs",
+    "policy_pack_exceptions",
+    "enabled_capabilities",
+    "objective",
+    "outcome",
+    "stakeholders",
+    "approvers",
+    "operational_owner",
+    "glossary",
+    "organization",
+    "assumptions",
+    "decisions",
+    "requirements",
+    "risks",
+    "scope",
+    "domain",
+    "quality_budgets",
+    "unknowns",
+    "release",
+    "acceptance",
+    "autonomy",
+    "governance"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "feature": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "contract_version", "objective", "non_goals", "owner", "reviewers", "status", "created_at"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "contract_version": { "type": "integer", "minimum": 1 },
+        "objective": { "type": "string", "minLength": 1 },
+        "non_goals": { "type": "array", "items": { "type": "string" } },
+        "owner": { "type": "string", "minLength": 1 },
+        "reviewers": { "type": "array", "minItems": 1 },
+        "status": { "enum": ["draft", "frozen"] },
+        "created_at": { "type": "string" },
+        "frozen_at": { "type": ["string", "null"] }
+      }
+    },
+    "policy_packs": { "type": "array", "minItems": 1 },
+    "policy_pack_exceptions": { "type": "array" },
+    "enabled_capabilities": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "objective": {
+      "type": "object",
+      "required": ["problem", "target_users", "success_definition"],
+      "properties": {
+        "problem": { "type": "string", "minLength": 1 },
+        "target_users": { "type": "array", "minItems": 1 },
+        "success_definition": { "type": "string", "minLength": 1 }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["north_star_metric", "baseline", "target", "observation_window", "guardrails"],
+      "properties": {
+        "north_star_metric": { "type": "string", "minLength": 1 },
+        "baseline": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 },
+        "observation_window": { "type": "string", "minLength": 1 },
+        "guardrails": { "type": "array", "minItems": 1 }
+      }
+    },
+    "stakeholders": { "type": "array", "minItems": 1 },
+    "approvers": { "type": "array", "minItems": 1 },
+    "operational_owner": { "type": "string", "minLength": 1 },
+    "glossary": { "type": "object", "minProperties": 1 },
+    "organization": {
+      "type": "object",
+      "required": ["dri", "decision_owner", "reviewers", "dependency_owners", "escalation_path"],
+      "properties": {
+        "dri": { "type": "string", "minLength": 1 },
+        "decision_owner": { "type": "string", "minLength": 1 },
+        "reviewers": { "type": "array", "minItems": 1 },
+        "dependency_owners": { "type": "array", "minItems": 1 },
+        "escalation_path": { "type": "string", "minLength": 1 }
+      }
+    },
+    "assumptions": { "type": "array" },
+    "decisions": { "type": "array" },
+    "requirements": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/requirement" } },
+    "risks": { "type": "array", "items": { "$ref": "#/$defs/risk" } },
+    "scope": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["source_paths", "allowed_paths", "forbidden_paths", "preserved_invariants", "invariant_acceptance_refs"],
+      "properties": {
+        "source_paths": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "allowed_paths": { "type": "array", "items": { "type": "string" } },
+        "forbidden_paths": { "type": "array", "items": { "type": "string" } },
+        "preserved_invariants": { "type": "array", "items": { "type": "string" } },
+        "invariant_acceptance_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["invariant", "acceptance_refs"],
+            "properties": {
+              "invariant": { "type": "string", "minLength": 1 },
+              "acceptance_refs": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^AC-[0-9]{3,}$" } }
+            }
+          }
+        },
+        "fingerprint_excludes": { "type": "array", "maxItems": 0 }
+      }
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["entities", "data_flows", "state_machines", "sources_of_truth"],
+      "properties": {
+        "entities": { "type": "array" },
+        "data_flows": { "type": "array" },
+        "state_machines": { "type": "array" },
+        "sources_of_truth": { "type": "array" }
+      }
+    },
+    "quality_budgets": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["business", "ux", "performance_cost", "reliability_resilience", "security_privacy", "observability_operations", "reversibility_evolution", "ai_quality"],
+      "properties": {
+        "business": { "$ref": "#/$defs/nonEmptyObject" },
+        "ux": { "$ref": "#/$defs/nonEmptyObject" },
+        "performance_cost": { "$ref": "#/$defs/nonEmptyObject" },
+        "reliability_resilience": { "$ref": "#/$defs/nonEmptyObject" },
+        "security_privacy": { "$ref": "#/$defs/nonEmptyObject" },
+        "observability_operations": { "$ref": "#/$defs/nonEmptyObject" },
+        "reversibility_evolution": { "$ref": "#/$defs/nonEmptyObject" },
+        "ai_quality": { "$ref": "#/$defs/nonEmptyObject" },
+        "performance": { "$ref": "#/$defs/nonEmptyObject" },
+        "reliability": { "$ref": "#/$defs/nonEmptyObject" },
+        "cost": { "$ref": "#/$defs/nonEmptyObject" },
+        "accessibility": { "$ref": "#/$defs/nonEmptyObject" },
+        "security": { "$ref": "#/$defs/nonEmptyObject" },
+        "privacy": { "$ref": "#/$defs/nonEmptyObject" },
+        "observability": { "$ref": "#/$defs/nonEmptyObject" },
+        "reversibility": { "$ref": "#/$defs/nonEmptyObject" },
+        "evolution": { "$ref": "#/$defs/nonEmptyObject" },
+        "ai": { "$ref": "#/$defs/nonEmptyObject" }
+      }
+    },
+    "unknowns": { "type": "array", "items": { "$ref": "#/$defs/unknown" } },
+    "release": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["rollout", "kill_switch", "rollback", "observation"],
+      "properties": {
+        "rollout": { "$ref": "#/$defs/nonEmptyObject" },
+        "kill_switch": { "$ref": "#/$defs/nonEmptyObject" },
+        "rollback": { "$ref": "#/$defs/nonEmptyObject" },
+        "observation": { "$ref": "#/$defs/nonEmptyObject" }
+      }
+    },
+    "acceptance": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/criterion" },
+      "contains": {
+        "type": "object",
+        "properties": { "blocking": { "const": true }, "human_gate": { "const": true }, "oracle": { "type": "object", "properties": { "type": { "const": "manual" } }, "required": ["type"] } },
+        "required": ["blocking", "human_gate", "oracle"]
+      },
+      "minContains": 1
+    },
+    "autonomy": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["allowed_actions", "forbidden_actions", "ask_before", "oracle_env_allowlist", "max_iterations", "max_elapsed_minutes", "max_command_executions", "max_cost_units", "cost_unit", "cost_per_execution", "max_same_failure", "max_no_progress", "flaky_policy", "retry_policy", "checkpoint", "stop_condition_codes", "stop_conditions"],
+      "properties": {
+        "allowed_actions": { "type": "array" },
+        "forbidden_actions": { "type": "array" },
+        "ask_before": { "type": "array" },
+        "oracle_env_allowlist": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" } },
+        "max_iterations": { "type": "integer", "minimum": 1 },
+        "max_elapsed_minutes": { "type": "number", "exclusiveMinimum": 0 },
+        "max_command_executions": { "type": "integer", "minimum": 1 },
+        "max_cost_units": { "type": "number", "exclusiveMinimum": 0 },
+        "cost_unit": { "type": "string", "minLength": 1 },
+        "cost_per_execution": { "type": "number", "exclusiveMinimum": 0 },
+        "max_diff_lines": { "type": "integer", "minimum": 0 },
+        "max_same_failure": { "type": "integer", "minimum": 1 },
+        "max_no_progress": { "type": "integer", "minimum": 1 },
+        "flaky_policy": { "$ref": "#/$defs/nonEmptyObject" },
+        "retry_policy": { "$ref": "#/$defs/nonEmptyObject" },
+        "checkpoint": { "$ref": "#/$defs/nonEmptyObject" },
+        "stop_condition_codes": { "type": "array", "minItems": 7, "items": { "type": "string" }, "uniqueItems": true },
+        "stop_conditions": { "type": "array", "minItems": 1 },
+        "iteration_command": { "$ref": "#/$defs/commandSpec" }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "required": ["status", "change_approval", "evidence_invalidation", "waiver_policy", "anti_cheating", "evidence_attestation", "findings_registry", "ledger_anchor", "execution_authorization", "blocking_rules_acknowledged"],
+      "properties": {
+        "status": { "enum": ["draft", "frozen"] },
+        "change_approval": { "$ref": "#/$defs/nonEmptyObject" },
+        "evidence_invalidation": { "$ref": "#/$defs/nonEmptyObject" },
+        "waiver_policy": { "$ref": "#/$defs/nonEmptyObject" },
+        "anti_cheating": { "$ref": "#/$defs/nonEmptyObject" },
+        "evidence_attestation": {
+          "type": "object",
+          "required": ["required_for_success", "automation_key_ids", "human_key_ids", "waiver_key_ids", "key_principals"],
+          "properties": {
+            "required_for_success": { "const": true },
+            "automation_key_ids": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "human_key_ids": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "waiver_key_ids": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "key_principals": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["role", "principal"],
+                "properties": {
+                  "role": { "enum": ["automation", "human"] },
+                  "principal": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
+          }
+        },
+        "findings_registry": {
+          "type": "object",
+          "required": ["required_for_completion", "owner", "source", "max_age_minutes"],
+          "properties": {
+            "required_for_completion": { "const": true },
+            "owner": { "type": "string", "minLength": 1 },
+            "source": { "type": "string", "minLength": 1 },
+            "max_age_minutes": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "ledger_anchor": {
+          "type": "object",
+          "required": ["required_for_acceptance", "external_anchor_owner", "storage", "key_id", "trusted_public_key_sha256", "max_age_minutes"],
+          "properties": {
+            "required_for_acceptance": { "const": true },
+            "external_anchor_owner": { "type": "string", "minLength": 1 },
+            "storage": { "type": "string", "minLength": 1 },
+            "key_id": { "type": "string", "minLength": 1 },
+            "trusted_public_key_sha256": { "$ref": "#/$defs/hash" },
+            "max_age_minutes": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "execution_authorization": {
+          "type": "object",
+          "required": ["permit_required", "key_id", "trusted_public_key_sha256", "max_validity_minutes"],
+          "properties": {
+            "permit_required": { "const": true },
+            "key_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+            "trusted_public_key_sha256": { "$ref": "#/$defs/hash" },
+            "max_validity_minutes": { "type": "number", "exclusiveMinimum": 0, "maximum": 10080 }
+          }
+        },
+        "blocking_rules_acknowledged": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyObject": { "type": "object", "minProperties": 1 },
+    "requirement": {
+      "type": "object",
+      "required": ["id", "priority", "statement"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^REQ-[0-9]{3,}$" },
+        "priority": { "enum": ["P0", "P1", "P2", "P3"] },
+        "statement": { "type": "string", "minLength": 1 }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "required": ["id", "title", "priority", "owner", "likelihood", "impact", "mitigation", "acceptance_refs", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^RISK-[0-9]{3,}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "priority": { "enum": ["P0", "P1", "P2", "P3"] },
+        "owner": { "type": "string", "minLength": 1 },
+        "likelihood": { "enum": ["low", "medium", "high"] },
+        "impact": { "type": "string", "minLength": 1 },
+        "mitigation": { "type": "string", "minLength": 1 },
+        "acceptance_refs": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^AC-[0-9]{3,}$" } },
+        "status": { "enum": ["open", "mitigated", "accepted", "closed"] }
+      }
+    },
+    "unknown": {
+      "type": "object",
+      "required": ["id", "question", "blocking"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "question": { "type": "string", "minLength": 1 },
+        "blocking": { "type": "boolean" },
+        "owner": { "type": "string" },
+        "validation_method": { "type": "string" },
+        "deadline": { "type": "string" },
+        "resolved": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "blocking": { "const": true } }, "required": ["blocking"] },
+          "then": { "required": ["owner", "validation_method"] }
+        }
+      ]
+    },
+    "criterion": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "priority", "blocking", "human_gate", "requirement_refs", "risk_refs", "dimensions", "given", "when", "then", "threshold", "environment", "fixture", "freshness", "evidence_required", "oracle"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^AC-[0-9]{3,}$" },
+        "priority": { "enum": ["P0", "P1", "P2", "P3"] },
+        "blocking": { "type": "boolean" },
+        "human_gate": { "type": "boolean" },
+        "requirement_refs": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^REQ-[0-9]{3,}$" } },
+        "risk_refs": { "type": "array", "items": { "type": "string", "pattern": "^RISK-[0-9]{3,}$" } },
+        "dimensions": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "given": { "type": "string", "minLength": 1 },
+        "when": { "type": "string", "minLength": 1 },
+        "then": { "type": "string", "minLength": 1 },
+        "threshold": { "type": "string", "minLength": 1 },
+        "environment": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "minProperties": 1 }] },
+        "fixture": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "minProperties": 1 }] },
+        "freshness": { "type": "object", "required": ["max_age_minutes"], "properties": { "max_age_minutes": { "type": "number", "exclusiveMinimum": 0 } } },
+        "evidence_required": { "type": "array", "items": { "type": "string" } },
+        "oracle": { "$ref": "#/$defs/oracle" },
+        "waiver": { "$ref": "#/$defs/waiverPolicy" }
+      }
+    },
+    "oracle": {
+      "oneOf": [
+        { "allOf": [{ "$ref": "#/$defs/commandSpec" }, { "properties": { "type": { "const": "command" } }, "required": ["type"] }] },
+        { "allOf": [{ "$ref": "#/$defs/fileSpec" }, { "properties": { "type": { "const": "file" } }, "required": ["type"] }] },
+        { "type": "object", "properties": { "type": { "enum": ["api", "browser", "metric"] } }, "required": ["type"] },
+        { "type": "object", "properties": { "type": { "const": "manual" }, "rubric": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } } }, "required": ["type", "rubric"] }
+      ]
+    },
+    "waiverPolicy": {
+      "type": "object",
+      "required": ["allowed", "approvers", "scopes"],
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "approvers": { "type": "array", "items": { "type": "string" } },
+        "scopes": { "type": "array", "items": { "type": "string" } },
+        "max_expiry_days": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "fileSpec": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "exists": { "type": "boolean" },
+        "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "text_contains": { "type": "array", "items": { "type": "string" } },
+        "max_bytes": { "type": "integer", "minimum": 0 }
+      },
+      "anyOf": [{ "required": ["exists"] }, { "required": ["sha256"] }, { "required": ["text_contains"] }, { "required": ["max_bytes"] }]
+    },
+    "commandSpec": {
+      "type": "object",
+      "required": ["command", "args", "integrity_paths", "integrity_fingerprint"],
+      "not": { "required": ["shell"] },
+      "properties": {
+        "command": { "type": "string", "minLength": 1, "pattern": "^[^\\u0000\\r\\n]+$" },
+        "args": { "type": "array", "items": { "type": "string", "pattern": "^[^\\u0000\\r\\n]*$" } },
+        "cwd": { "type": "string" },
+        "timeout_ms": { "type": "integer", "minimum": 1, "maximum": 3600000 },
+        "expected_exit_code": { "type": "integer" },
+        "integrity_paths": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "integrity_fingerprint": { "$ref": "#/$defs/hash" },
+        "stdout_contains": { "type": "array", "items": { "type": "string" } },
+        "stderr_contains": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

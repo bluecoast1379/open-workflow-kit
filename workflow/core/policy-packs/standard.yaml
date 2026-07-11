@@ -1,0 +1,32 @@
+schema_version: "1.0"
+id: "standard"
+title: "默认 Definition-to-Done 基线"
+extends: []
+applies_when:
+  always: true
+required_capabilities:
+  - definition-quality-linter
+  - branch-gatekeeper
+  - evidence-freshness-checker
+  - autonomy-anti-cheating-guard
+required_contract_sections:
+  - objective
+  - outcome
+  - scope
+  - domain
+  - organization
+  - assumptions
+  - quality_budgets
+  - acceptance
+  - autonomy
+  - governance
+mandatory_acceptance_dimensions:
+  - functional
+  - negative-boundary
+  - permissions
+  - recovery
+  - regression
+blocking_rules:
+  - "Blocking AC must have a reproducible oracle or an owned human rubric."
+  - "FAIL, BLOCKED, NOT_RUN, or STALE blocking evidence prevents READY_FOR_HUMAN_ACCEPTANCE."
+  - "WAIVED is never counted as PASS and requires owner, scope, reason, compensation, and expiry."

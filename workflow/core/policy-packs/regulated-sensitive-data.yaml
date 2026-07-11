@@ -1,0 +1,26 @@
+schema_version: "1.0"
+id: "regulated-sensitive-data"
+title: "敏感数据与受监管场景"
+extends: ["standard"]
+applies_when:
+  any_keywords: ["PII", "个人信息", "health", "医疗", "finance", "金融", "location", "定位", "未成年人", "biometric"]
+  contract_paths: ["domain.data_classification"]
+required_capabilities:
+  - security-reviewer
+  - organization-consensus-checker
+  - evidence-freshness-checker
+required_contract_sections:
+  - domain.data_classification
+  - quality_budgets.security_privacy
+  - governance.data_retention
+  - organization.approvals
+mandatory_acceptance_dimensions:
+  - least-privilege
+  - data-minimization
+  - retention-deletion
+  - auditability
+  - abuse-and-vulnerable-users
+blocking_rules:
+  - "Purpose, lawful basis or equivalent policy basis, retention, deletion, and access owner must be explicit."
+  - "Real sensitive data must not enter test plans, evidence, logs, screenshots, or prompts without approved handling."
+  - "Required security or compliance human gates cannot be auto-signed."

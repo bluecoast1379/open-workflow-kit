@@ -15,7 +15,8 @@ const TOOL_ALIASES = {
   github_copilot: 'copilot',
   'github-copilot': 'copilot'
 };
-const GENERATED_BY = 'open-workflow-kit 0.9.0';
+const GENERATED_BY = `open-workflow-kit ${readPackageVersion()}`;
+const MANAGED_ADAPTER_MARKER = 'generated-by: open-workflow-kit; managed-adapter: true';
 
 const REQUIRED_SOURCES = [
   {
@@ -53,6 +54,18 @@ const REQUIRED_SOURCES = [
     label: '测试规范',
     question: '请提供测试规范、测试用例或 QA 资料路径',
     match: /(test|testing|qa|测试|用例|验收)/i
+  },
+  {
+    key: 'security_privacy_rules',
+    label: '安全、隐私与合规规范',
+    question: '请提供安全、隐私、合规或威胁模型资料路径',
+    match: /(security|privacy|compliance|threat|安全|隐私|合规|威胁)/i
+  },
+  {
+    key: 'operations_rules',
+    label: '可观测性、值班与恢复规范',
+    question: '请提供日志、指标、告警、值班、灾备或恢复资料路径',
+    match: /(observability|monitor|alert|oncall|runbook|recovery|日志|指标|告警|值班|灾备|恢复)/i
   }
 ];
 
@@ -69,41 +82,6 @@ const SKIP_DIRS = new Set([
   'workflow'
 ]);
 
-const CAPABILITY_FILES = [
-  'branch-gatekeeper.md',
-  'release-safety-checker.md',
-  'prd-code-diff-checker.md',
-  'contract-tracer.md',
-  'worktree-isolator.md',
-  'repo-baseline-scanner.md',
-  'impact-scope-analyzer.md',
-  'security-reviewer.md',
-  'verify-app.md',
-  'ci-cd-automation-governor.md',
-  'deployment-readiness-checker.md',
-  'runtime-evidence-triage.md',
-  'data-change-safety-checker.md',
-  'protocol-state-machine-checker.md',
-  'test-evidence-reviewer.md',
-  'ui-baseline-reviewer.md',
-  'memory-curator.md',
-  'rule-extractor.md',
-  'toolchain-mcp-planner.md',
-  'automated-test-runner.md'
-];
-
-const CHECKLIST_FILES = [
-  'README.md',
-  'validation-change-review.md',
-  'data-consistency-review.md',
-  'branch-hygiene.md',
-  'test-blind-spots.md',
-  'third-party-integration-review.md',
-  'language-pitfalls-java.md'
-];
-
-const RULE_FILES = ['README.md', 'rule-catalog.yaml'];
-
 // 历史版本生成过、当前版本已不再生成的适配器路径。
 // --upgrade 时对这些路径做指纹校验后自动清理（详见 cleanupLegacyArtifacts）。
 const LEGACY_ARTIFACTS = [
@@ -111,6 +89,7 @@ const LEGACY_ARTIFACTS = [
   { rel: '.kiro/instructions.md', kind: 'file', reason: 'Kiro 官方路径为 .kiro/steering/（v0.6.0 起）' },
   { rel: '.codebuddy/instructions.md', kind: 'file', reason: 'CodeBuddy 不使用旧 instructions.md 路径（v0.6.0 起）' },
   { rel: '.codebuddy/rules/agent-workflow/RULE.mdc', kind: 'file', reason: 'CodeBuddy 项目规则应为 .codebuddy/rules/*.md（v0.8.0 起）' },
+  { rel: '.trae/instructions.md', kind: 'file', reason: 'Trae 官方项目入口已迁移到 .trae/commands/ 与 .trae/skills/' },
   {
     rel: 'workflow/core/checklists/rule-catalog.yaml',
     kind: 'file',
@@ -147,10 +126,11 @@ if (require.main === module) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
-  const target = path.resolve(options.target || process.cwd());
-  if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
-    throw new Error(`目标目录不存在: ${target}`);
+  const requestedTarget = path.resolve(options.target || process.cwd());
+  if (!fs.existsSync(requestedTarget) || !fs.statSync(requestedTarget).isDirectory()) {
+    throw new Error(`目标目录不存在: ${requestedTarget}`);
   }
+  const target = fs.realpathSync(requestedTarget);
 
   const detectedTools = detectTools(target);
   let enabledTools = options.tools ? normalizeTools(options.tools) : detectedTools;
@@ -201,14 +181,15 @@ async function main() {
   }
 
   const plannedWrites = buildInstallPlan(target, profile, options);
-  const legacyPlan = planLegacyCleanup(target, options);
+  const legacyPlan = planLegacyCleanup(target, options, plannedWrites, profile.enabledTools);
   if (options.dryRun) {
     printDryRun(target, profile, plannedWrites, legacyPlan);
     return;
   }
 
+  assertSafeWritePlan(target, plannedWrites);
   for (const write of plannedWrites) {
-    writeManagedFile(write, options);
+    writeManagedFile(write, { ...options, target });
   }
   executeLegacyCleanup(legacyPlan);
 
@@ -294,7 +275,7 @@ function detectTools(root) {
   if (exists('.github/copilot-instructions.md') || exists('.github/prompts')) hits.push('copilot');
   if (exists('.codebuddy')) hits.push('codebuddy');
   if (exists('.kiro')) hits.push('kiro');
-  if (exists('.trae')) hits.push('trae');
+  if (exists('.trae') || exists('.trae-cn')) hits.push('trae');
   return hits;
 }
 
@@ -331,7 +312,7 @@ function scanRepos(root) {
   }
 
   visit(root, 0);
-  return repos.sort((a, b) => a.path.localeCompare(b.path));
+  return repos.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 }
 
 function detectRepoMarker(dir) {
@@ -428,53 +409,31 @@ function buildInstallPlan(target, profile, options) {
   add('workflow/local/team-profile.local.yaml', makeLocalTeamProfileYaml(profile), { preserveOnUpgrade: true });
   add('workflow/local/rule-provenance.private.yaml', makePrivateRuleProvenanceYaml(), { preserveOnUpgrade: true });
   add('workflow/README.md', makeWorkflowReadme());
-  add('workflow/bin/run-api-tests.cjs', readKitFile('bin/run-api-tests.cjs'));
-  add('workflow/bin/command-manifest.cjs', readKitFile('bin/command-manifest.cjs'));
-  add('workflow/bin/check-command-manifest.cjs', readKitFile('bin/check-command-manifest.cjs'));
-  add('workflow/bin/check-rule-catalog.cjs', readKitFile('bin/check-rule-catalog.cjs'));
-  add('workflow/bin/check-support-matrix.cjs', readKitFile('bin/check-support-matrix.cjs'));
-  add('workflow/bin/check-markdown-links.cjs', readKitFile('bin/check-markdown-links.cjs'));
-  add('workflow/core/README.md', readKitFile('workflow/core/README.md'));
-  add('workflow/core/command-manifest.yaml', readKitFile('workflow/core/command-manifest.yaml'));
-  add('workflow/core/commands/README.md', readKitFile('workflow/core/commands/README.md'));
-  add('workflow/core/templates/README.md', readKitFile('workflow/core/templates/README.md'));
-  add('workflow/core/templates/00-workflow-status.md', readKitFile('workflow/core/templates/00-workflow-status.md'));
-  add('workflow/core/templates/stage-document.md', readKitFile('workflow/core/templates/stage-document.md'));
-  add('workflow/core/templates/team-profile.template.yaml', readKitFile('workflow/core/templates/team-profile.template.yaml'));
-  add('workflow/core/templates/trusted-execution-policy.template.yaml', readKitFile('workflow/core/templates/trusted-execution-policy.template.yaml'));
-  add('workflow/core/templates/api-test-plan.md', readKitFile('workflow/core/templates/api-test-plan.md'));
-  add('workflow/core/templates/api-test-plan.example.json', readKitFile('workflow/core/templates/api-test-plan.example.json'));
-  add('workflow/core/templates/ui-test-plan.md', readKitFile('workflow/core/templates/ui-test-plan.md'));
-  add('workflow/core/templates/prototype-page.html', readKitFile('workflow/core/templates/prototype-page.html'));
-  add('workflow/core/execution-policy.md', readKitFile('workflow/core/execution-policy.md'));
-  add('workflow/core/testing-automation-guide.md', readKitFile('workflow/core/testing-automation-guide.md'));
-  add('workflow/core/capabilities/README.md', readKitFile('workflow/core/capabilities/README.md'));
-  for (const name of CAPABILITY_FILES) {
-    add(`workflow/core/capabilities/${name}`, readKitFile(`workflow/core/capabilities/${name}`));
+
+  // Static workflow assets are directory-driven. New commands, schemas, policy packs,
+  // capabilities and completion templates are therefore installable without maintaining
+  // a second hard-coded list in the initializer.
+  for (const rel of listKitFiles('workflow')) {
+    if (isGeneratedWorkflowPath(rel)) continue;
+    add(rel, readKitFile(rel));
   }
-  for (const name of CHECKLIST_FILES) {
-    add(`workflow/core/checklists/${name}`, readKitFile(`workflow/core/checklists/${name}`));
+
+  // Ship every workspace-safe runtime/checker. init-workspace itself is package-scoped:
+  // copying it under workflow/bin would change KIT_ROOT and make it unusable.
+  for (const rel of listKitFiles('bin')) {
+    if (path.basename(rel) === 'init-workspace.cjs') continue;
+    add(path.join('workflow/bin', path.relative('bin', rel)), readKitFile(rel));
   }
-  for (const name of RULE_FILES) {
-    add(`workflow/core/rules/${name}`, readKitFile(`workflow/core/rules/${name}`));
-  }
-  add('workflow/adapters/README.md', readKitFile('workflow/adapters/README.md'));
-  add('workflow/adapters/support-matrix.yaml', readKitFile('workflow/adapters/support-matrix.yaml'));
   add('workflow/TOOLCHAIN_MCP_PLAN.md', makeToolchainPlan(profile));
   add('workflow/INSTALL_REPORT.md', makeInstallReport(profile, options));
   if (profile.missing.length) add('workflow/INITIALIZATION_QUESTIONS.md', makeQuestions(profile));
 
-  for (const command of COMMANDS) {
-    const rel = `workflow/core/commands/${command.id}.md`;
-    add(rel, readKitFileIfExists(rel, makeCoreCommand(command)));
-  }
-
   // AGENTS.md is the tool-neutral entry document and the full usage guide.
   // Generate it regardless of selected tools so every adapter can point to it.
   add('AGENTS.md', makeAgentsEntry(profile));
-  if (profile.enabledTools.includes('codex') || profile.enabledTools.includes('trae')) {
-    // 官方约定：Codex 项目级机制是根 AGENTS.md（自动读取）与 .agents/skills/；
-    // Trae 也支持从 .agents/skills/ 加载 Agent Skills。项目级 .codex/prompts/ 不会被加载。
+  if (profile.enabledTools.includes('codex')) {
+    // Codex 项目级机制是根 AGENTS.md（自动读取）与 .agents/skills/。
+    // 项目级 .codex/prompts/ 不会被加载。
     add('.agents/skills/agent-workflow/SKILL.md', makeAgentWorkflowSkill());
     for (const command of COMMANDS) {
       const base = `.agents/skills/${command.skill_slug}`;
@@ -485,7 +444,7 @@ function buildInstallPlan(target, profile, options) {
   if (profile.enabledTools.includes('claude')) {
     add('CLAUDE.md', '先读取 AGENTS.md，再遵循 workflow/core 和 workflow/team-profile.yaml。.claude/commands 下的工具命令只是薄 adapter。\n');
     for (const command of COMMANDS) {
-      add(`.claude/commands/${command.id}.md`, makeThinCommand('Claude Code', command));
+      add(`.claude/commands/${command.id}.md`, makeSlashCommand('Claude Code', command, '$ARGUMENTS'));
     }
     // 官方推荐的 skills 格式入口（可被 Claude 自主调用）；分阶段中文命令仍走 commands
     // （官方兼容格式），待非 ASCII skill 命名支持明确后再整体切换。
@@ -495,11 +454,14 @@ function buildInstallPlan(target, profile, options) {
     add('.cursor/rules/agent-workflow-core.mdc', makeCursorRule());
     // Cursor 1.6+ supports custom slash commands from .cursor/commands/*.md.
     for (const command of COMMANDS) {
-      add(`.cursor/commands/${command.id}.md`, makeThinCommand('Cursor', command));
+      add(`.cursor/commands/${command.id}.md`, makeSlashCommand('Cursor', command, '命令后附加的用户输入'));
     }
   }
   if (profile.enabledTools.includes('copilot')) {
     add('.github/copilot-instructions.md', makeGenericInstructions('GitHub Copilot'));
+    for (const command of COMMANDS) {
+      add(`.github/prompts/${command.skill_slug}.prompt.md`, makeCopilotPrompt(command));
+    }
   }
   if (profile.enabledTools.includes('codebuddy')) {
     // CodeBuddy 项目规则与自定义 slash commands 都使用官方项目级目录。
@@ -509,11 +471,24 @@ function buildInstallPlan(target, profile, options) {
     }
   }
   if (profile.enabledTools.includes('kiro')) {
-    // 官方约定：项目级 steering 文件位于 .kiro/steering/*.md；Kiro 也会自动读取根 AGENTS.md
-    add('.kiro/steering/agent-workflow.md', makeGenericInstructions('Kiro'));
+    // Kiro IDE 会把 inclusion: manual 的 workspace steering 暴露为 slash command；
+    // Kiro CLI 会把 .kiro/skills/ 中的 skills 暴露为 slash command。
+    add('.kiro/steering/agent-workflow.md', makeKiroRootSteering());
+    for (const command of COMMANDS) {
+      add(`.kiro/steering/${command.skill_slug}.md`, makeKiroManualSteering(command));
+      add(`.kiro/skills/${command.skill_slug}/SKILL.md`, makeStageSkill(command));
+    }
   }
   if (profile.enabledTools.includes('trae')) {
-    add('.trae/instructions.md', makeGenericInstructions('Trae'));
+    // Trae 的项目级 Commands 与 Skills 是主入口；.trae-cn 是中文发行版兼容镜像，
+    // 不把兼容镜像的文件存在视为真实工具验收。
+    for (const base of ['.trae', '.trae-cn']) {
+      add(`${base}/skills/agent-workflow/SKILL.md`, makeAgentWorkflowSkill());
+      for (const command of COMMANDS) {
+        add(`${base}/commands/${command.id}.md`, makeSlashCommand('Trae', command, '命令后附加的用户输入'));
+        add(`${base}/skills/${command.skill_slug}/SKILL.md`, makeStageSkill(command));
+      }
+    }
   }
 
   return writes;
@@ -523,14 +498,45 @@ function readKitFile(rel) {
   return fs.readFileSync(path.join(KIT_ROOT, rel), 'utf8');
 }
 
-function readKitFileIfExists(rel, fallback) {
-  const file = path.join(KIT_ROOT, rel);
-  return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : fallback;
+function listKitFiles(relativeRoot) {
+  const files = [];
+  const absoluteRoot = path.join(KIT_ROOT, relativeRoot);
+
+  function visit(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === '.DS_Store' || entry.name.endsWith('.agent-workflow-new')) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) visit(full);
+      else if (entry.isFile()) files.push(path.relative(KIT_ROOT, full));
+    }
+  }
+
+  visit(absoluteRoot);
+  return files.sort();
+}
+
+function isGeneratedWorkflowPath(rel) {
+  const normalized = rel.split(path.sep).join('/');
+  if (normalized === 'workflow/README.md' || normalized === 'workflow/team-profile.yaml') return true;
+  if (normalized === 'workflow/TOOLCHAIN_MCP_PLAN.md' || normalized === 'workflow/INSTALL_REPORT.md') return true;
+  if (normalized === 'workflow/INITIALIZATION_QUESTIONS.md') return true;
+  return normalized.startsWith('workflow/local/');
+}
+
+function readPackageVersion() {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(KIT_ROOT, 'package.json'), 'utf8'));
+    return typeof pkg.version === 'string' && pkg.version ? pkg.version : 'development';
+  } catch {
+    return 'development';
+  }
 }
 
 function writeManagedFile(write, options) {
   const { file, content, preserveOnUpgrade } = write;
+  assertSafeManagedPath(options.target, file);
   fs.mkdirSync(path.dirname(file), { recursive: true });
+  assertSafeManagedPath(options.target, file);
   const exists = fs.existsSync(file);
   // 升级保护：team-profile 等团队手工维护文件在 --upgrade 下永不原地覆盖（即使 --force）。
   const protectedNow = exists && preserveOnUpgrade && options.upgrade;
@@ -548,6 +554,29 @@ function writeManagedFile(write, options) {
   }
   fs.writeFileSync(file, content);
   console.log(`wrote ${path.relative(process.cwd(), file)}`);
+}
+
+function assertSafeWritePlan(target, writes) {
+  for (const write of writes) assertSafeManagedPath(target, write.file);
+}
+
+function assertSafeManagedPath(target, file) {
+  const root = path.resolve(target);
+  const resolved = path.resolve(file);
+  const relative = path.relative(root, resolved);
+  if (relative === '' || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error(`拒绝写入工作区外路径: ${file}`);
+  let current = root;
+  const parts = relative.split(path.sep).filter(Boolean);
+  for (let index = 0; index < parts.length; index++) {
+    current = path.join(current, parts[index]);
+    let stat;
+    try { stat = fs.lstatSync(current); } catch (error) {
+      if (error.code === 'ENOENT') break;
+      throw error;
+    }
+    if (stat.isSymbolicLink()) throw new Error(`拒绝通过 symbolic link 写入 managed path: ${current}`);
+    if (index < parts.length - 1 && !stat.isDirectory()) throw new Error(`managed path 的父路径不是目录: ${current}`);
+  }
 }
 
 function printDryRun(target, profile, writes, legacyPlan) {
@@ -571,17 +600,30 @@ function looksKitGenerated(text) {
   return text.includes('AGENTS.md') && (text.includes('workflow/core') || text.includes('workflow/team-profile'));
 }
 
+function looksManagedAdapter(text) {
+  return text.includes(MANAGED_ADAPTER_MARKER) || (
+    looksKitGenerated(text) &&
+    (text.includes('由命令清单生成') || text.includes('command-manifest.yaml') || text.includes('分阶段发现入口'))
+  );
+}
+
 function looksLegacyGenerated(text, artifact) {
   if (artifact.marker) return text.includes(artifact.marker);
   return looksKitGenerated(text);
 }
 
-function planLegacyCleanup(target, options) {
+function planLegacyCleanup(target, options, plannedWrites = [], enabledTools = []) {
   const plan = { remove: [], keep: [], dirs: [] };
   if (!options.upgrade) return plan;
   for (const artifact of LEGACY_ARTIFACTS) {
     const full = path.join(target, artifact.rel);
     if (!fs.existsSync(full)) continue;
+    let artifactStat;
+    try { artifactStat = fs.lstatSync(full); } catch { continue; }
+    if (artifactStat.isSymbolicLink()) {
+      plan.keep.push({ file: full, reason: `${artifact.reason}；路径是 symbolic link，拒绝跟随或自动删除` });
+      continue;
+    }
     if (artifact.kind === 'file') {
       const text = safeReadFile(full, 256 * 1024);
       if (looksLegacyGenerated(text, artifact)) {
@@ -605,7 +647,76 @@ function planLegacyCleanup(target, options) {
       plan.dirs.push(full);
     }
   }
+  planOrphanAdapterCleanup(target, plannedWrites, enabledTools, plan);
   return plan;
+}
+
+function planOrphanAdapterCleanup(target, plannedWrites, enabledTools, plan) {
+  const expected = new Set(plannedWrites.map((item) => path.resolve(item.file)));
+  const rootsByTool = {
+    codex: ['.agents/skills'],
+    claude: ['.claude/commands'],
+    cursor: ['.cursor/commands'],
+    copilot: ['.github/prompts'],
+    codebuddy: ['.codebuddy/commands'],
+    kiro: ['.kiro/steering', '.kiro/skills'],
+    trae: ['.trae/commands', '.trae/skills', '.trae-cn/commands', '.trae-cn/skills']
+  };
+  const scanRoots = [...new Set(enabledTools.flatMap((tool) => rootsByTool[tool] || []))];
+  const alreadyPlanned = new Set([...plan.remove, ...plan.keep].map((item) => path.resolve(item.file)));
+  for (const relativeRoot of scanRoots) {
+    const absoluteRoot = path.join(target, relativeRoot);
+    if (!fs.existsSync(absoluteRoot)) continue;
+    for (const file of listExistingFiles(absoluteRoot)) {
+      const resolved = path.resolve(file);
+      if (expected.has(resolved) || alreadyPlanned.has(resolved)) continue;
+      const text = safeReadFile(resolved, 256 * 1024);
+      const reason = 'manifest 已删除或重命名该 adapter 入口';
+      if (looksManagedAdapter(text) || looksKitGeneratedMetadata(text, resolved)) {
+        plan.remove.push({ file: resolved, reason });
+        alreadyPlanned.add(resolved);
+        let directory = path.dirname(resolved);
+        while (directory.startsWith(path.resolve(absoluteRoot)) && directory !== path.dirname(path.resolve(absoluteRoot))) {
+          plan.dirs.push(directory);
+          if (directory === path.resolve(absoluteRoot)) break;
+          directory = path.dirname(directory);
+        }
+      } else if (isLikelyAdapterEntry(resolved, absoluteRoot)) {
+        plan.keep.push({ file: resolved, reason });
+        alreadyPlanned.add(resolved);
+      }
+    }
+  }
+}
+
+function looksKitGeneratedMetadata(text, file) {
+  const normalized = file.split(path.sep).join('/');
+  return normalized.includes('/.agents/skills/workflow-') && normalized.endsWith('/agents/openai.yaml') &&
+    text.includes('display_name:') && text.includes('default_prompt:') && text.includes('allow_implicit_invocation: false');
+}
+
+function listExistingFiles(root) {
+  const files = [];
+  function visit(directory) {
+    try {
+      const rootStat = fs.lstatSync(directory);
+      if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) return;
+    } catch { return; }
+    let entries;
+    try { entries = fs.readdirSync(directory, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const file = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(file);
+      else if (entry.isFile()) files.push(file);
+    }
+  }
+  visit(root);
+  return files;
+}
+
+function isLikelyAdapterEntry(file, adapterRoot) {
+  const relative = path.relative(adapterRoot, file).split(path.sep).join('/');
+  return /(?:^|\/)(?:workflow-[^/]+\/)?(?:SKILL\.md|openai\.yaml|[^/]+\.md|[^/]+\.prompt\.md)$/.test(relative);
 }
 
 function executeLegacyCleanup(plan) {
@@ -696,7 +807,7 @@ function makePrivateRuleProvenanceYaml() {
 
 function makeTeamProfileYaml(profile) {
   const lines = [];
-  lines.push('schema_version: "1.2"');
+  lines.push('schema_version: "1.3"');
   lines.push(`generated_at: "${new Date().toISOString()}"`);
   lines.push(`generated_by: "${GENERATED_BY}"`);
   lines.push('');
@@ -704,6 +815,17 @@ function makeTeamProfileYaml(profile) {
   lines.push('  name: "<TODO: 团队名称>"');
   lines.push('  business_definition: "<TODO: 简短业务描述>"');
   lines.push('  target_users: []');
+  lines.push('  north_star:');
+  lines.push('    metric: "<TODO: 北极星指标>"');
+  lines.push('    definition: "<TODO: 指标口径>"');
+  lines.push('    owner: "<TODO: 指标 owner>"');
+  lines.push('    guardrails: []');
+  lines.push('  organization:');
+  lines.push('    default_dri: "<TODO>"');
+  lines.push('    decision_owner: "<TODO>"');
+  lines.push('    reviewers: []');
+  lines.push('    dependency_response_sla: "<TODO>"');
+  lines.push('    escalation_path: []');
   lines.push('');
   lines.push('workspace_context:');
   lines.push('  operating_defaults:');
@@ -745,10 +867,15 @@ function makeTeamProfileYaml(profile) {
   }
   lines.push('');
   lines.push('branch_model:');
-  lines.push('  type: "<TODO: trunk-based | gitflow | prod-test | custom>"');
+  lines.push('  type: "<TODO: trunk-based | gitflow | environment-branches | custom>"');
   lines.push('  production_branch: "<TODO>"');
   lines.push('  integration_branch: "<TODO>"');
+  lines.push('  development_branch_base: "<TODO>"');
+  lines.push('  testing_branch: null');
+  lines.push('  test_branch_policy: "<TODO>"');
+  lines.push('  release_flow: "<TODO>"');
   lines.push('  feature_branch_rule: "<TODO>"');
+  lines.push('  protected_branches: []');
   lines.push('  worktree_dir: "_worktrees"');
   lines.push('');
   lines.push('# 仓库内只记请求策略，不是信任根。生效值取 core/外部受信策略/仓库请求/当次授权中最严格值。');
@@ -778,25 +905,6 @@ function makeTeamProfileYaml(profile) {
   lines.push('  risk_statement_required: true');
   lines.push('  audit_log: "workflow/local/execution-audit.jsonl"');
   lines.push('');
-  lines.push('risk_policy:');
-  lines.push('  # 执行模式已迁移到 execution_policy；本段保留 CI/CD 成熟度规则与高风险文件清单。');
-  lines.push('  ci_workflow_changes: "manual-review-required"');
-  lines.push('  cd_workflow_changes: "manual-review-required"');
-  lines.push('  auto_deploy_before_first_prod_release: "blocked"');
-  lines.push('  production_deployments: "manual-approval-required-until-guarded-auto-approved"');
-  lines.push('  high_risk_files:');
-  lines.push('    - "ci/**"');
-  lines.push('    - "cd/**"');
-  lines.push('    - "deploy/**"');
-  lines.push('    - "*.env*"');
-  lines.push('    - "application*.yml"');
-  lines.push('    - "application*.yaml"');
-  lines.push('    - "bootstrap*.yml"');
-  lines.push('    - "bootstrap*.yaml"');
-  lines.push('    - "pom.xml"');
-  lines.push('    - "package.json"');
-  lines.push('    - "lockfiles"');
-  lines.push('');
   lines.push('# 工具链槽位（初始化探测结果；provider 与状态由 /connect-toolchain 维护）');
   lines.push('toolchain:');
   for (const [key, label] of TOOLCHAIN_SLOTS) {
@@ -823,6 +931,75 @@ function makeTeamProfileYaml(profile) {
   lines.push('    browser_automation: "<TODO: 浏览器自动化 MCP，如 playwright-mcp | 工具内置 | none>"');
   lines.push('    miniprogram_automation: "disabled"   # 启用见 workflow/core/testing-automation-guide.md');
   lines.push('    evidence_dir: "features/{feature}/screenshots"');
+  lines.push('');
+  lines.push('  reproducibility:');
+  lines.push('    fixture_version_required: true');
+  lines.push('    random_seed_required: true');
+  lines.push('    environment_fingerprint_required: true');
+  lines.push('    flaky_policy: "quarantine-does-not-pass"');
+  lines.push('');
+  lines.push('quality_budgets:');
+  lines.push('  performance:');
+  lines.push('    latency_percentiles: { p50_ms: null, p95_ms: null, p99_ms: null }');
+  lines.push('    throughput: null');
+  lines.push('    resource_limits: { memory_mb: null, cpu_percent: null, battery: null, network_bytes: null }');
+  lines.push('  reliability:');
+  lines.push('    availability_target: null');
+  lines.push('    error_budget: null');
+  lines.push('    rto: null');
+  lines.push('    rpo: null');
+  lines.push('  cost:');
+  lines.push('    per_operation: null');
+  lines.push('    monthly: null');
+  lines.push('    currency: null');
+  lines.push('  accessibility:');
+  lines.push('    standard: "<TODO: WCAG 2.2 AA | platform standard | N/A>"');
+  lines.push('  ai_quality:');
+  lines.push('    enabled: false');
+  lines.push('    golden_dataset: null');
+  lines.push('    model_and_prompt_version_required: true');
+  lines.push('    max_hallucination_rate: null');
+  lines.push('    safety_refusal_target: null');
+  lines.push('    max_cost_per_evaluation: null');
+  lines.push('');
+  lines.push('completion_contract:');
+  lines.push('  path_pattern: "features/{feature}/completion/contract.yaml"');
+  lines.push('  evidence_ledger_pattern: "features/{feature}/completion/evidence/ledger.jsonl"');
+  lines.push('  run_state_pattern: "features/{feature}/completion/run-state.yaml"');
+  lines.push('  acceptance_id_pattern: "AC-[0-9]{3,}"');
+  lines.push('  evidence_statuses: ["PASS", "FAIL", "BLOCKED", "NOT_RUN", "STALE", "WAIVED"]');
+  lines.push('  require_definition_lint: true');
+  lines.push('  require_source_fingerprint: true');
+  lines.push('  require_environment_fingerprint: true');
+  lines.push('  invalidate_evidence_on_contract_change: true');
+  lines.push('  invalidate_evidence_on_source_change: true');
+  lines.push('  anti_cheating:');
+  lines.push('    forbid_threshold_weakening: true');
+  lines.push('    forbid_test_deletion_to_pass: true');
+  lines.push('    forbid_not_run_as_pass: true');
+  lines.push('    forbid_silent_scope_expansion: true');
+  lines.push('    require_waiver_expiry: true');
+  lines.push('');
+  lines.push('risk_policy:');
+  lines.push('  default_profile: "standard"');
+  lines.push('  policy_packs: []');
+  lines.push('  # 执行模式已迁移到 execution_policy；本段保留 CI/CD 成熟度规则与高风险文件清单。');
+  lines.push('  ci_workflow_changes: "manual-review-required"');
+  lines.push('  cd_workflow_changes: "manual-review-required"');
+  lines.push('  auto_deploy_before_first_prod_release: "blocked"');
+  lines.push('  production_deployments: "manual-approval-required-until-guarded-auto-approved"');
+  lines.push('  high_risk_files:');
+  lines.push('    - "ci/**"');
+  lines.push('    - "cd/**"');
+  lines.push('    - "deploy/**"');
+  lines.push('    - "*.env*"');
+  lines.push('    - "application*.yml"');
+  lines.push('    - "application*.yaml"');
+  lines.push('    - "bootstrap*.yml"');
+  lines.push('    - "bootstrap*.yaml"');
+  lines.push('    - "pom.xml"');
+  lines.push('    - "package.json"');
+  lines.push('    - "lockfiles"');
   lines.push('');
   lines.push('workflow:');
   lines.push('  features_dir: "features"');
@@ -1028,7 +1205,7 @@ function makeWorkflowReadme() {
 - \`local/team-profile.local.yaml\`: 绝对路径、私有端点与本地账号的私有配置（Git 忽略）。
 - \`local/rule-provenance.private.yaml\`: 37 条规则的私有原始来源与 SHA-256 指纹骨架（Git 忽略）。
 - \`core/\`: 工具无关的工作流规则、命令、模板、能力和检查清单。
-- \`core/command-manifest.yaml\`: 21 个阶段命令及 adapter 元数据的机器可读单一事实源。
+- \`core/command-manifest.yaml\`: 全部工作流命令及 adapter 元数据的机器可读单一事实源；实际数量以 manifest 的 \`command_count\` 为准。
 - \`core/execution-policy.md\`: 高风险写操作的分级执行策略。
 - \`core/checklists/\`: 高频事故模式的逐项检查清单。
 - \`core/rules/rule-catalog.yaml\`: 37 条规则到 79 个清单 item 的公开审计级映射。
@@ -1077,40 +1254,6 @@ ${profile.missing.map((item) => `## ${item.label}\n\n${item.question}\n\n- path:
 `;
 }
 
-function makeCoreCommand(command) {
-  const reviewStage = command.id === '05-代码审查';
-  const prepStage = command.id === '03-06-研发准备';
-  return `# /${command.id}
-
-## 目标
-
-${command.title}: ${command.description}
-
-## 必要输入
-
-- \`AGENTS.md\`
-- \`workflow/team-profile.yaml\`
-- \`features/{feature}/\` 下的前序阶段文档
-- team-profile 中登记的本地代码、本地文档和用户提供资料
-
-## 执行规则
-
-- 先读取本地事实，再写结论。
-- 区分已验证事实、设计意图、假设和缺失证据。
-- 未真实执行的测试、构建、截图、部署或审查，不得写成已通过。
-- 高风险写操作（远程 Git 刷新、创建分支、push/tag/merge、构建 / 部署触发、数据库写入、生产配置写入）按 \`workflow/core/execution-policy.md\` 分级处理：默认每次询问，由用户选择执行者。
-${command.implementation_gate ? '- 只有功能分支闸门、实现阶段闸门和同仓并行闸门全部通过后，才允许修改业务代码。' : '- 本阶段不授权修改业务代码；除非当前命令是实现命令且所有闸门已通过。'}
-${prepStage ? '- 本编排命令只准备 03 到 06 文档，不授权代码实现。' : ''}
-${reviewStage ? '- 审查输出以问题优先，按严重级别排序，并引用文件、diff、测试或运行证据。' : ''}
-
-## 必要输出
-
-- 更新或创建 \`features/{feature}/\` 下对应阶段文件。
-- 阶段状态变化时更新 \`features/{feature}/00-工作流状态.md\`。
-- 明确记录未解决问题和证据缺口。
-`;
-}
-
 function makeCommandTable() {
   const header = '| 命令 | 阶段 | 作用 |\n| --- | --- | --- |';
   const rows = COMMANDS.map(
@@ -1136,7 +1279,7 @@ function makeToolUsage(profile) {
     blocks.push(`### Codex
 
 - Codex 会自动读取本 \`AGENTS.md\`（官方项目级指令机制）。
-- 本 kit 同时生成总入口和 21 个分阶段 \`.agents/skills/workflow-*/\`。在 CLI/IDE 中输入 \`$\` 或 \`/skills\`，按编号或中英文描述模糊选择阶段。
+- 本 kit 同时生成总入口和 ${COMMANDS.length} 个分阶段 \`.agents/skills/workflow-*/\`。这些 Skill 会出现在支持的 \`/\` 列表中，也可用 \`/skills\` 或 \`$\` 按编号、英文 slug 或中文展示名模糊选择。
 - Codex Desktop 通过 Skills 入口选择分阶段 Skill；所有阶段 Skill 默认禁止隐式调用，必须由用户显式选择。
 - 注意：项目级 \`.codex/prompts/\` 不会被 Codex 加载（custom prompts 仅支持全局 \`~/.codex/prompts/\`），本 kit 不生成该目录。`);
   }
@@ -1155,7 +1298,8 @@ function makeToolUsage(profile) {
     blocks.push(`### GitHub Copilot
 
 - \`.github/copilot-instructions.md\` 会自动生效。
-- 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
+- 每个 manifest 命令都会生成 \`.github/prompts/<skill-slug>.prompt.md\`；在支持 Prompt Files 的 VS Code、Visual Studio 或 JetBrains 中，从 Prompt 选择器或 \`/\` 后按编号/slug 模糊选择。
+- Prompt Files 的可用方式随 IDE 和版本变化；找不到时直接引用 \`workflow/core/commands/<stage>.md\`，不要把生成文件存在当成真机验收。`);
   }
 
   if (tools.includes('codebuddy')) {
@@ -1169,16 +1313,17 @@ function makeToolUsage(profile) {
   if (tools.includes('kiro')) {
     blocks.push(`### Kiro
 
-- 生成兼容级 steering 文件 \`.kiro/steering/agent-workflow.md\`；Kiro 也可读取本 \`AGENTS.md\`。
-- 执行阶段时，在 chat 中引用 \`workflow/core/commands/<stage>.md\` 并描述功能。`);
+- Kiro IDE 为每个 manifest 命令生成 \`.kiro/steering/<skill-slug>.md\`，并设置 \`inclusion: manual\`，因此会出现在 \`/\` 模糊菜单中。
+- Kiro CLI 同时从 \`.kiro/skills/<skill-slug>/SKILL.md\` 暴露 slash skill；根 \`AGENTS.md\` 继续作为自动加载的共享规则。
+- IDE 与 CLI 是两条不同发现路径，发布前必须分别真机验收。`);
   }
 
   if (tools.includes('trae')) {
     blocks.push(`### Trae
 
-- \`.trae/instructions.md\` 是兼容增强入口，\`.agents/skills/workflow-*/\` 提供分阶段 Skill。
-- 在支持 Agent Skills 的 Trae 版本中按 Skill 名或编号选择阶段；不同版本的命令面板行为必须真机验收。
-- 本 kit 不生成未经官方确认的 \`.trae/commands\`，也不承诺与 Claude Code 的 \`/\` 体验完全一致。`);
+- 每个 manifest 命令都会生成 \`.trae/commands/<id>.md\` 与 \`.trae/skills/<skill-slug>/SKILL.md\`，可从 Settings > Skills & Commands 或输入 \`/\` 后按编号、名称、slug 模糊选择。
+- 同步生成 \`.trae-cn/\` 兼容镜像；它不属于主官方路径，不能单独作为 native 验收证据。
+- 文件生成只证明结构一致性；具体版本的命令面板、参数传递与硬闸门仍需真机验收。`);
   }
 
   if (!blocks.length) {
@@ -1197,10 +1342,12 @@ function makeAgentsEntry(profile) {
 
 1. 先读取 \`workflow/team-profile.yaml\`，加载当前团队的仓库、分支模型和资料来源。
 2. 首次接入建议执行 \`/connect-toolchain\`：按 \`workflow/TOOLCHAIN_MCP_PLAN.md\` 把团队的日志、CI/CD、部署、配置中心、数据库等工具接成只读证据链。
-3. 用 \`/new-feature <name>\` 初始化需求，它会创建 \`features/<name>/\` 和状态文件。
-4. 按顺序推进阶段：\`/01-需求讨论\` -> \`/02-产品文档\` -> \`/02B-UI设计\` -> \`/03-技术架构\` -> \`/04-代码实现\` -> \`/05-代码审查\` -> \`/06-测试用例\` -> \`/07-测试执行\` -> \`/08-验收表格\` -> \`/09-验收\` -> \`/10-培训文档\` -> \`/11-上线邮件通知\` -> \`/12-复盘总结\`。需要可点击原型对齐时，在 02B 后显式执行 \`/02C-HTML原型\`（可选阶段）。
-5. 每个阶段都必须读取 \`features/<name>/\` 下的前序文档，并把本阶段产物写回同目录。
-6. 随时可执行 \`/workflow-status\` 汇总全部需求的阶段、阻塞和下一步。
+3. 用 \`/new-feature <name>\` 初始化需求，它会创建 \`features/<name>/\`、Completion Contract 骨架、Evidence Ledger 与状态文件。
+4. 先完成 \`/01-需求讨论\` -> \`/02-产品文档\` -> \`/02B-UI设计\`；需要可点击原型时在 02B 后显式执行 \`/02C-HTML原型\`。随后运行 \`/03-06-研发准备\`，或手动依次完成 \`/03-技术架构\` -> \`/06-测试用例\`，此时 Oracle 全部保持 \`NOT_RUN\`。
+5. 用 \`/define-done <name>\` 最终复核并冻结目标、边界、质量预算、验收 Oracle、environment 与 findings。合同未冻结或 Definition Lint 未通过，不得进入自主实现。
+6. 可选择 \`/deliver-until-done <name>\` 在授权边界内执行实现、独立审查、验证、修复与全量复验，也可逐阶段运行 \`/04-代码实现\` -> \`/05-代码审查\` -> \`/07-测试执行\`。两条路径都消费同一份 06 Oracle 并产出同一 Evidence Ledger，且都不包含 push、部署或生产写入授权。
+7. 自动 blocking AC 达到 \`READY_FOR_HUMAN_ACCEPTANCE\` 后，再推进 \`/08-验收表格\` -> \`/09-验收\` -> \`/10-培训文档\` -> \`/11-上线邮件通知\` -> \`/12-复盘总结\`。
+8. 每个阶段都必须读取 \`features/<name>/\` 下的前序文档，并把本阶段产物写回同目录；随时可执行 \`/workflow-status\` 查看合同、证据、阻塞和下一步。
 
 不同工具触发阶段的方式不同，见下方“工具使用方式”。
 
@@ -1231,7 +1378,9 @@ ${makeCommandTable()}
 - 产品和工作流文档必须与代码仓库分开：除非用户明确要求公开文档并确认它应随代码发布，否则不要把 \`features/<feature>/\`、PRD、竞品调研、法务草案、隐私政策、合规说明、验收文档或内部决策包提交到应用或源码仓库。
 - 功能分支闸门和实现阶段闸门通过前，禁止修改业务代码。
 - \`/02B-UI设计\` 是前端实现的设计闸门；\`/04A-前端代码实现\` 必须读取并遵循工作区级 \`features/<feature>/02B-UI设计.md\`，缺失时先补齐 02B，除非用户明确给出范围有限的设计豁免。可点击原型只能通过 \`/02C-HTML原型\` 显式产出，且必须受 \`workflow/design/tokens.css\` 与组件清单约束。
-- \`/03-06-研发准备\` 以及 01/02/02B/03 阶段只授权分析和工作流文档。
+- \`/03-06-研发准备\`、\`/define-done\` 以及 01/02/02B/03 阶段只授权分析和工作流文档。
+- \`/deliver-until-done\` 只有在冻结合同、Definition Lint、功能分支、worktree、实现阶段和执行策略闸门全部通过后才授权范围内代码修改；命令调用本身不授权 push、merge、部署、生产配置或数据库写入。
+- Agent 可以建议合同变更，但不得自行降低 blocking 阈值、删除 AC/测试、扩大 scope/waiver 或把 NOT_RUN/STALE/WAIVED 伪装为 PASS。
 - 仓库内 \`team-profile.yaml\` 不是信任根。生效执行模式取 core 硬上限、仓库外受信策略、team-profile 请求和当次授权中最严格值。
 - 生产部署/配置、DDL/DML、受保护分支写入和包发布永远不得仅凭仓库配置 auto；无外部受信策略时最高为 ask。
 - 代执行明细必须脱敏写入被忽略的 \`workflow/local/execution-audit.jsonl\`；不创建、不追加可提交的 \`workflow/EXECUTION_AUDIT.md\`。
@@ -1248,7 +1397,7 @@ workflow core 是共享的。工具 adapter 可按当前工具能力增强或降
 - L3：hooks 或前置检查
 - L4：subagents 或多 agent 路由
 
-对外口径为 Codex/Claude/Cursor/Copilot/CodeBuddy 5 个原生 adapter，Kiro/Trae 2 个兼容入口；命令发现方式分为 \`slash_fuzzy\`、\`skill_fuzzy\` 和 \`instruction_reference\`。详细证据见 \`workflow/adapters/support-matrix.yaml\`。不要承诺所有工具体验完全一致。
+对外口径为 Codex、Claude Code、Cursor、GitHub Copilot、CodeBuddy、Kiro、Trae 7 个官方项目级 adapter。所有 adapter 都必须保持 \`native_not_yet_manually_certified\`，直到当前发布版本完成真实工具人工验收。命令发现方式分为 \`slash_fuzzy\`、\`slash_skill_fuzzy\` 和 \`prompt_fuzzy\`；详细路径和差异见 \`workflow/adapters/support-matrix.yaml\`。不要承诺所有工具体验完全一致。
 
 ## 工具使用方式
 
@@ -1277,17 +1426,91 @@ ${profile.enabledTools.map((tool) => `- ${tool}`).join('\n')}
 `;
 }
 
-function makeThinCommand(toolName, command) {
-  return `# ${toolName} adapter for /${command.id}
+function makeSlashCommand(toolName, command, argumentSource) {
+  return `---
+description: ${yamlQuote(`${command.id} ${command.title}：${command.description}`)}
+argument-hint: ${yamlQuote(command.argument_hint)}
+---
 
-这是薄 adapter。执行时必须按顺序读取：
+<!-- ${MANAGED_ADAPTER_MARKER} -->
+
+# ${toolName} adapter for /${command.id}
+
+这是由命令清单生成的薄 adapter。用户参数来自：${argumentSource}。
+
+执行时必须按顺序读取：
 
 1. \`AGENTS.md\`
 2. \`workflow/team-profile.yaml\`
 3. \`workflow/core/command-manifest.yaml\`
 4. \`workflow/core/commands/${command.id}.md\`
 
-不得加入与 workflow/core 冲突的工具特定行为。
+不得加入与 workflow/core 冲突的工具特定行为，不得把命令调用本身当成实现、高风险写操作或发布授权。
+`;
+}
+
+function makeCopilotPrompt(command) {
+  return `---
+description: ${yamlQuote(`${command.id} ${command.title}：${command.description}`)}
+---
+
+<!-- ${MANAGED_ADAPTER_MARKER} -->
+
+# GitHub Copilot prompt for /${command.id}
+
+这是由 \`workflow/core/command-manifest.yaml\` 生成的项目 Prompt File。将用户在 prompt 后附加的文本视为功能名称或阶段参数。
+
+- 阶段作用：${command.description}
+- 参数提示：\`${command.argument_hint}\`
+
+执行前必须读取并遵循：
+
+1. \`AGENTS.md\`
+2. \`workflow/team-profile.yaml\`
+3. \`workflow/core/command-manifest.yaml\`
+4. \`workflow/core/commands/${command.id}.md\`
+
+Prompt File 只是阶段发现入口。它不得覆盖 workflow/core 的实现闸门、Git 闸门、高风险执行策略或验收证据要求。
+`;
+}
+
+function makeKiroRootSteering() {
+  return `---
+inclusion: always
+---
+
+<!-- ${MANAGED_ADAPTER_MARKER} -->
+
+# Kiro 工作流说明
+
+先读取 \`AGENTS.md\`，再按用户选择的阶段读取 \`workflow/team-profile.yaml\` 和 \`workflow/core/commands/\`。
+
+本文件是始终加载的薄 adapter，不得覆盖 workflow/core 的硬闸门。分阶段 slash 入口由同目录中 \`inclusion: manual\` 的 steering 文件提供；Kiro CLI 的等价入口位于 \`.kiro/skills/\`。
+`;
+}
+
+function makeKiroManualSteering(command) {
+  return `---
+inclusion: manual
+---
+
+<!-- ${MANAGED_ADAPTER_MARKER} -->
+
+# /${command.skill_slug} — ${command.id} ${command.title}
+
+这是由命令清单生成的 Kiro IDE 手动 steering。选择本 slash command 后，将用户附加的自然语言视为功能名称或阶段参数。
+
+- 阶段作用：${command.description}
+- 参数提示：\`${command.argument_hint}\`
+
+执行时必须按顺序读取：
+
+1. \`AGENTS.md\`
+2. \`workflow/team-profile.yaml\`
+3. \`workflow/core/command-manifest.yaml\`
+4. \`workflow/core/commands/${command.id}.md\`
+
+\`inclusion: manual\` 只负责把本入口放入 Kiro 的 \`/\` 菜单；它不授予修改代码、高风险写操作或发布权限。
 `;
 }
 
@@ -1296,6 +1519,8 @@ function makeCodeBuddyCommand(command) {
 description: ${yamlQuote(command.description)}
 argument-hint: ${yamlQuote(command.argument_hint)}
 ---
+
+<!-- ${MANAGED_ADAPTER_MARKER} -->
 
 # CodeBuddy adapter for /${command.id}
 
@@ -1318,9 +1543,14 @@ name: ${command.skill_slug}
 description: ${yamlQuote(`仅在用户显式选择 ${command.id}（${command.title}）阶段时使用。${command.description}`)}
 ---
 
+<!-- ${MANAGED_ADAPTER_MARKER} -->
+
 # /${command.id} ${command.title}
 
 本 Skill 是由 \`workflow/core/command-manifest.yaml\` 生成的分阶段发现入口，不复制阶段规则。
+
+- 阶段作用：${command.description}
+- 参数提示：\`${command.argument_hint}\`
 
 执行时必须按顺序读取：
 
@@ -1334,7 +1564,8 @@ description: ${yamlQuote(`仅在用户显式选择 ${command.id}（${command.tit
 }
 
 function makeStageSkillMetadata(command) {
-  return `interface:
+  return `# ${MANAGED_ADAPTER_MARKER}
+interface:
   display_name: ${yamlQuote(`${command.id} ${command.title}`)}
   short_description: ${yamlQuote(shortDescription(command.description))}
   default_prompt: ${yamlQuote(`执行 /${command.id} 阶段，并严格读取 AGENTS.md、team profile 与对应 core command；若参数不足先说明缺失项。`)}
@@ -1354,7 +1585,7 @@ function yamlQuote(value) {
 function makeClaudeWorkflowSkill() {
   return `---
 name: agent-workflow
-description: 按 open-workflow-kit 的阶段契约推进需求交付。当用户提到需求讨论、产品文档、UI 设计、技术架构、代码实现、代码审查、测试、验收、上线通知或复盘等阶段性工作时使用本 skill。
+description: 按 open-workflow-kit 的阶段契约和 Completion Contract 推进需求交付。当用户提到定义完成、需求讨论、产品文档、UI 设计、技术架构、自主交付、代码实现、审查、测试、验收、上线通知或复盘等阶段性工作时使用本 skill。
 ---
 
 # agent-workflow
@@ -1372,7 +1603,8 @@ description: 按 open-workflow-kit 的阶段契约推进需求交付。当用户
 规则：
 
 - 阶段产物写入工作区级 \`features/<feature>/\`，不写入代码仓库。
-- 只有用户显式调用 \`/04-代码实现\`、\`/04A-前端代码实现\`、\`/04B-后端代码实现\`，或 core 允许的等价 04 状态证据存在时，才可能通过阶段闸门。
+- 只有用户显式调用 \`/deliver-until-done\`、\`/04-代码实现\`、\`/04A-前端代码实现\`、\`/04B-后端代码实现\`，或 core 允许的等价实现状态证据存在时，才可能通过阶段闸门。
+- \`/deliver-until-done\` 还要求冻结且 lint 通过的合同、可执行 Oracle、明确授权范围与自主预算；该命令不授权外部高风险操作。
 - 高风险写操作按 \`workflow/core/execution-policy.md\` 分级处理（默认每次询问 + 审计留痕）。
 - 审查/测试记录引用检查清单条目时使用稳定 ID（如 BH-05、TBS-12）。
 `;
@@ -1381,7 +1613,7 @@ description: 按 open-workflow-kit 的阶段契约推进需求交付。当用户
 function makeAgentWorkflowSkill() {
   return `---
 name: agent-workflow
-description: 按 open-workflow-kit 的阶段契约推进需求交付。适用于需求讨论、产品文档、UI 设计、技术架构、代码实现、审查、测试、验收、上线与复盘等阶段请求。
+description: 按 open-workflow-kit 的阶段契约和 Completion Contract 推进需求交付。适用于定义完成、需求讨论、产品文档、UI 设计、技术架构、自主交付、代码实现、审查、测试、验收、上线与复盘等阶段请求。
 ---
 
 # agent-workflow
@@ -1398,6 +1630,7 @@ description: 按 open-workflow-kit 的阶段契约推进需求交付。适用于
 
 - 阶段产物写入工作区级 \`features/<feature>/\`，不写入代码仓库。
 - 代码实现仍要求用户显式选择对应分阶段 Skill 或满足 core 定义的等价 04 状态证据，并通过功能分支与并行开发闸门。
+- 自主交付还要求冻结且 lint 通过的合同、可执行 Oracle、明确授权范围与自主预算；Agent 无权自行修改完成标准来获得通过。
 - 高风险写操作按 \`workflow/core/execution-policy.md\` 分级处理。
 - 优先使用本地证据；必要资料缺失时更新 \`workflow/INITIALIZATION_QUESTIONS.md\` 或向用户索要路径。
 `;
@@ -1430,8 +1663,10 @@ agent 随后读取阶段契约、\`workflow/team-profile.yaml\` 和前序
 
 ## 阶段顺序
 
-new-feature -> 01-需求讨论 -> 02-产品文档 -> 02B-UI设计 -> (可选 02C-HTML原型) -> 03-技术架构 -> 04-代码实现 -> 05-代码审查 ->
-06-测试用例 -> 07-测试执行 -> 08-验收表格 -> 09-验收 -> 10-培训文档 -> 11-上线邮件通知 -> 12-复盘总结
+new-feature -> 01-需求讨论 -> 02-产品文档 -> 02B-UI设计 -> (可选 02C-HTML原型) ->
+(03-06-研发准备 或 03-技术架构 -> 06-测试用例[NOT_RUN]) -> define-done ->
+(deliver-until-done 或 04-代码实现 -> 05-代码审查 -> 07-测试执行) -> 08-验收表格 -> 09-验收 ->
+10-培训文档 -> 11-上线邮件通知 -> 12-复盘总结
 
 工具链接入执行 \`/connect-toolchain\`；查看全部需求状态时，执行 \`workflow/core/commands/workflow-status.md\`。
 
@@ -1449,6 +1684,7 @@ new-feature -> 01-需求讨论 -> 02-产品文档 -> 02B-UI设计 -> (可选 02C
 ## 硬闸门
 
 - 功能分支闸门和实现阶段闸门通过前，禁止修改业务代码。
+- 完成合同未冻结、Definition Lint 未通过或缺少可执行 Oracle 时，禁止进入 \`deliver-until-done\` 自主循环。
 - 有 UI 或前端工作的需求必须先完成 \`/02B-UI设计\`，\`/04A-前端代码实现\` 必须遵循对应设计基线。
 - 高风险写操作（远程 Git、创建分支、push、构建 / 部署触发、数据库写入、生产配置写入）按
   \`workflow/core/execution-policy.md\` 分级处理：默认每次询问，agent 出命令 + 风险说明，用户选择执行者。

@@ -1,0 +1,306 @@
+schema_version: "1.0"
+
+feature:
+  id: "synthetic-definition-demo"
+  contract_version: 1
+  objective: "让维护者在本地确定性地验证一份合成 Completion Contract"
+  non_goals:
+    - "不连接外部服务"
+    - "不修改业务代码"
+  owner: "kit-maintainer"
+  reviewers:
+    - "independent-verifier"
+  status: "frozen"
+  created_at: "2026-07-11T00:00:00.000Z"
+  frozen_at: "2026-07-11T00:30:00.000Z"
+
+policy_packs:
+  - id: "standard"
+    owner: "kit-maintainer"
+    reason: "合成正例使用默认 Definition-to-Done 基线"
+policy_pack_exceptions: []
+enabled_capabilities:
+  - "definition-quality-linter"
+  - "branch-gatekeeper"
+  - "evidence-freshness-checker"
+  - "autonomy-anti-cheating-guard"
+
+objective:
+  problem: "维护者缺少一份能同时演示自动 AC、人工 gate 和 evidence freshness 的最小正例"
+  target_users:
+    - "kit 维护者"
+    - "接收团队"
+  success_definition: "正例 lint 通过，自动 Oracle 通过后停在 READY_FOR_HUMAN_ACCEPTANCE"
+
+outcome:
+  north_star_metric: "首次执行 contract lint 的成功率"
+  baseline: "合成样例创建前为 0%"
+  target: "在 Node.js 20 环境中达到 100%"
+  observation_window: "每个发布候选执行 1 次"
+  guardrails:
+    - "验证期间外部网络请求数必须为 0"
+    - "验证期间仓库文件修改数必须为 0"
+
+stakeholders:
+  - "kit 维护者：需要可复现的正例"
+  - "接收团队：需要理解自动完成与人工签收的边界"
+approvers:
+  - "release-owner"
+operational_owner: "kit-maintainer"
+
+organization:
+  dri: "kit-maintainer"
+  decision_owner: "release-owner"
+  reviewers:
+    - "independent-verifier"
+  dependency_owners:
+    - "Node.js runtime maintainer"
+  escalation_path: "blocking 失败升级给 release-owner，禁止 agent 自行改 Contract"
+
+assumptions: []
+decisions: []
+
+requirements:
+  - id: "REQ-001"
+    priority: "P0"
+    statement: "正例必须能用本地确定性命令产生当前 fingerprint 上的证据"
+  - id: "REQ-002"
+    priority: "P1"
+    statement: "负例必须被人工确认具有醒目的不可运行边界"
+
+risks: []
+
+glossary:
+  automatic_completion: "所有非人工 blocking AC 在当前三个 evidence fingerprint 上为 PASS 或有效 WAIVED，且 signed findings snapshot 有效并无开放 P0/P1"
+  accepted: "自动完成且所有人工 blocking AC 已由有权角色按 rubric 签收"
+  stale: "证据与当前 contract、source 或 environment fingerprint 不一致"
+
+scope:
+  source_paths:
+    - "examples/definition-to-done/README.md"
+    - "examples/definition-to-done/valid-contract.yaml"
+  allowed_paths:
+    - "examples/definition-to-done/.runtime/**"
+  forbidden_paths:
+    - ".git/**"
+    - "workflow/core/**"
+  preserved_invariants:
+    - "不得为通过正例而编辑 linter 或 schema"
+    - "不得把负例复制成可运行配置"
+  invariant_acceptance_refs:
+    - invariant: "不得为通过正例而编辑 linter 或 schema"
+      acceptance_refs:
+        - "AC-001"
+    - invariant: "不得把负例复制成可运行配置"
+      acceptance_refs:
+        - "AC-002"
+  fingerprint_excludes: []
+
+domain:
+  entities:
+    - "CompletionContract：冻结的完成定义"
+    - "EvidenceEntry：绑定三个 fingerprint 的单次观察"
+  data_flows:
+    - "contract -> lint -> oracle -> ledger -> DoD evaluation"
+  state_machines:
+    - "INCOMPLETE -> READY_FOR_HUMAN_ACCEPTANCE -> ACCEPTED"
+  sources_of_truth:
+    - "workflow/core 的 Completion Contract 定义格式"
+    - "workflow/core/command-manifest.yaml"
+
+quality_budgets:
+  business:
+    target: "发布候选中的正例 lint 成功率为 100%"
+  ux:
+    reason: "本样例不含用户界面；README 使用结构化标题和文本表格"
+  performance_cost:
+    target: "contract lint 在 5000 ms 内结束，外部付费 API 调用数为 0"
+  reliability_resilience:
+    target: "同一 source 和 environment 连续执行 3 次得到相同 valid 结论"
+  security_privacy:
+    target: "命令使用 shell:false 且只允许 node；真实个人、客户、凭证和私有 URL 数量为 0"
+  observability_operations:
+    target: "每次 Oracle 记录退出码、断言摘要和三个 fingerprint"
+  reversibility_evolution:
+    target: "运行产物只进入 .runtime；schema 固定为 1.0，破坏性变更递增 major 版本"
+  ai_quality:
+    reason: "本样例不执行模型推理"
+
+unknowns: []
+
+release:
+  rollout:
+    plan: "先在本地发布候选执行，全部检查通过后再由维护者决定是否发布"
+  kill_switch:
+    plan: "任一 blocking AC 失败即停止，不运行远程发布命令"
+  rollback:
+    plan: "删除 .runtime 运行产物；样例 source 不应被改变"
+  observation:
+    plan: "在每次 npm run check 中记录样例 lint 与负例结论"
+
+governance:
+  status: "frozen"
+  change_approval:
+    rule: "只有 release-owner 可批准目标、阈值、scope 或 human gate 变更"
+  evidence_invalidation:
+    rule: "contract、source、environment 任一 fingerprint 变化即将旧证据投影为 STALE"
+  waiver_policy:
+    rule: "waiver 必须有有权批准人、理由和未来到期日；agent 不得自批"
+  anti_cheating:
+    rule: "禁止删除 AC、降低阈值、排除 source 或修改测试来适配错误实现"
+  evidence_attestation:
+    required_for_success: true
+    automation_key_ids:
+      - "automation-local-v1"
+    human_key_ids:
+      - "human-owner-v1"
+    waiver_key_ids:
+      - "human-owner-v1"
+    key_principals:
+      automation-local-v1:
+        role: "automation"
+        principal: "example-runner"
+      human-owner-v1:
+        role: "human"
+        principal: "release-owner"
+  findings_registry:
+    required_for_completion: true
+    owner: "release-owner"
+    source: "definition-to-done golden review registry"
+    max_age_minutes: 1440
+  ledger_anchor:
+    required_for_acceptance: true
+    external_anchor_owner: "release-owner"
+    storage: "release-owner 持有的仓库外签名验收记录"
+    key_id: "owner-ledger-v1"
+    trusted_public_key_sha256: "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+    max_age_minutes: 1440
+  execution_authorization:
+    permit_required: true
+    key_id: "owner-execution-v1"
+    trusted_public_key_sha256: "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    max_validity_minutes: 60
+  blocking_rules_acknowledged:
+    - "standard"
+
+acceptance:
+  - id: "AC-001"
+    priority: "P0"
+    blocking: true
+    human_gate: false
+    requirement_refs:
+      - "REQ-001"
+    risk_refs: []
+    dimensions:
+      - "functional"
+      - "negative-boundary"
+      - "permissions"
+      - "recovery"
+      - "regression"
+    given: "Node.js 20 或更高版本已安装"
+    when: "执行固定的本地 oracle 脚本"
+    then: "进程退出码为 0，且输出包含 definition-to-done oracle PASS"
+    threshold: "exit code = 0 且 stdout assertion pass rate = 100%"
+    environment:
+      name: "local-node-test"
+    fixture:
+      script: "examples/definition-to-done/oracle.cjs"
+    freshness:
+      max_age_minutes: 60
+    evidence_required:
+      - "退出码、命令 hash、contract/source/environment fingerprint"
+    oracle:
+      type: "command"
+      command: "node"
+      args:
+        - "examples/definition-to-done/oracle.cjs"
+      cwd: "."
+      timeout_ms: 5000
+      expected_exit_code: 0
+      stdout_contains:
+        - "definition-to-done oracle PASS"
+      integrity_paths:
+        - "examples/definition-to-done/oracle.cjs"
+      integrity_fingerprint: "sha256:2d76ac1a122efd30b7efd45620462b8443b82eec0b27664a326ea90f16900ebc"
+  - id: "AC-002"
+    priority: "P1"
+    blocking: true
+    human_gate: true
+    requirement_refs:
+      - "REQ-002"
+    risk_refs: []
+    dimensions:
+      - "functional"
+    given: "维护者已阅读正例与三个负例说明"
+    when: "release-owner 按 rubric 检查本目录"
+    then: "3 个负例均有醒目的不可运行声明，且没有真实业务数据"
+    threshold: "3/3 负例逐项 rubric 均由 release-owner 签收"
+    environment:
+      name: "maintainer-review"
+    fixture:
+      scenario: "examples/definition-to-done 中的三份负例"
+    freshness:
+      max_age_minutes: 1440
+    evidence_required:
+      - "release-owner、日期和逐项 rubric 结论"
+    oracle:
+      type: "manual"
+      rubric:
+        - "invalid-vague-contract.yaml 标明只用于 linter 负例"
+        - "invalid-waiver-entry.json 缺少批准人且明确不可追加到真实 ledger"
+        - "stale-evidence.json 使用旧 fingerprint 且明确不得视为 PASS"
+
+autonomy:
+  allowed_actions:
+    - "oracle:command"
+  forbidden_actions:
+    - "contract:mutate"
+    - "remote:write"
+    - "production:write"
+  ask_before:
+    - "external:side-effect"
+  oracle_env_allowlist:
+    - "PATH"
+    - "TMPDIR"
+    - "TMP"
+    - "TEMP"
+    - "LANG"
+    - "LC_ALL"
+    - "CI"
+    - "SystemRoot"
+    - "PATHEXT"
+  max_iterations: 2
+  max_elapsed_minutes: 5
+  max_command_executions: 4
+  max_cost_units: 4
+  cost_unit: "one local oracle execution"
+  cost_per_execution: 1
+  max_diff_lines: 100000
+  max_same_failure: 1
+  max_no_progress: 1
+  flaky_policy:
+    rule: "同一快照结果不一致即 BLOCK，不挑选最好结果"
+    same_snapshot_conflict: "BLOCK"
+    max_rechecks: 0
+  retry_policy:
+    rule: "断言失败不自动重试"
+    max_attempts: 1
+    retryable_reasons: []
+  checkpoint:
+    path: "examples/definition-to-done/.runtime/run-state.yaml"
+    resume: "contract/environment/base/source 任一不匹配即拒绝续跑"
+    integrity_required: true
+    ledger_head_required: true
+  stop_condition_codes:
+    - "budget_exhausted"
+    - "scope_violation"
+    - "contract_change_required"
+    - "approval_required"
+    - "repeated_failure"
+    - "no_progress"
+    - "execution_permit_expired"
+  stop_conditions:
+    - "需要修改正例 Contract 或降低 AC 阈值"
+    - "需要网络、远程 Git、发布或生产写入"
+    - "任一预算耗尽"
+    - "Owner execution permit 在运行中到期"
