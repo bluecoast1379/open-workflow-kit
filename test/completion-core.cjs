@@ -928,6 +928,11 @@ function testCockpitEscaping() {
   assert.ok(html.includes('&lt;owner&gt;'));
   assert.ok(html.includes('证据时间'));
   assert.ok(html.includes('决策与人工 Gate'));
+  assert.ok(html.includes('.status-fail{color:#b42318}'));
+  assert.ok(html.includes('.status-blocked{color:#6941c6}'));
+  assert.ok(html.includes('.status-not_run{color:#667085}'));
+  assert.ok(html.includes('.status-stale{color:#b54708}'));
+  assert.ok(html.includes('.status-waived{color:#175cd3}'));
   assert.ok(html.includes('@media(max-width:360px)'));
   assert.ok(html.includes("default-src 'none'"));
   assert.ok(validated.contract_hash);
