@@ -1,6 +1,7 @@
 schema_version: "2.0"
 claim: "7 official project-level adapters; generated conformance is not real-tool certification"
 last_documentation_check: "2026-07-11"
+multi_tool_coexistence_note: "Codex requires shared .agents/skills; Cursor, Trae and other Agent Skills clients may also display those Skills beside their direct Commands. The kit removes tool-owned duplicate stage Skills but cannot hide an open-standard repo Skill from peer clients."
 
 native_verification_requirements:
   - "official project-level discovery path"
@@ -14,8 +15,10 @@ native_verification_requirements:
 tools:
   codex:
     support_level: "native"
-    invocation_style: "slash_skill_fuzzy"
-    discovery_surfaces: ["slash skill list", "/skills", "$<skill-slug>"]
+    invocation_style: "skill_picker_fuzzy"
+    exact_command_id_slash: "unsupported"
+    discovery_surfaces: ["Codex Desktop slash Skills group", "/skills", "$<skill-slug>"]
+    invocation_examples: ["Desktop: type /01 and choose the 01-需求讨论 Skill", "CLI/IDE: /skills", "$workflow-01-requirement-discussion"]
     generated_entries: ["AGENTS.md", ".agents/skills/agent-workflow/SKILL.md", ".agents/skills/{skill_slug}/SKILL.md", ".agents/skills/{skill_slug}/agents/openai.yaml"]
     command_entry_patterns: [".agents/skills/{skill_slug}/SKILL.md", ".agents/skills/{skill_slug}/agents/openai.yaml"]
     documentation_url: "https://learn.chatgpt.com/docs/build-skills"
@@ -28,6 +31,7 @@ tools:
   claude:
     support_level: "native"
     invocation_style: "slash_fuzzy"
+    exact_command_id_slash: "supported"
     discovery_surfaces: ["slash command menu"]
     generated_entries: ["CLAUDE.md", ".claude/commands/{id}.md", ".claude/skills/agent-workflow/SKILL.md"]
     command_entry_patterns: [".claude/commands/{id}.md"]
@@ -40,9 +44,11 @@ tools:
   cursor:
     support_level: "native"
     invocation_style: "slash_fuzzy"
+    exact_command_id_slash: "supported"
     discovery_surfaces: ["Agent slash command menu"]
     generated_entries: [".cursor/rules/agent-workflow-core.mdc", ".cursor/commands/{id}.md"]
     command_entry_patterns: [".cursor/commands/{id}.md"]
+    coexistence_note: "When Codex is also enabled, Codex .agents/skills entries may additionally appear in Cursor's Skills group. The direct /{id} Command remains the canonical Cursor entry."
     documentation_url: "https://docs.cursor.com/en/agent/chat/commands"
     official_path_status: "verified"
     automated_conformance: "covered"
@@ -52,6 +58,7 @@ tools:
   copilot:
     support_level: "native"
     invocation_style: "prompt_fuzzy"
+    exact_command_id_slash: "client-dependent"
     discovery_surfaces: ["Prompt picker", "IDE slash prompt invocation where supported"]
     generated_entries: ["AGENTS.md", ".github/copilot-instructions.md", ".github/prompts/{skill_slug}.prompt.md"]
     command_entry_patterns: [".github/prompts/{skill_slug}.prompt.md"]
@@ -65,6 +72,7 @@ tools:
   codebuddy:
     support_level: "native"
     invocation_style: "slash_fuzzy"
+    exact_command_id_slash: "supported"
     discovery_surfaces: ["slash command menu"]
     generated_entries: ["AGENTS.md", ".codebuddy/rules/agent-workflow.md", ".codebuddy/commands/{id}.md"]
     command_entry_patterns: [".codebuddy/commands/{id}.md"]
@@ -77,6 +85,7 @@ tools:
   kiro:
     support_level: "native"
     invocation_style: "slash_fuzzy"
+    exact_command_id_slash: "unsupported-use-skill-slug"
     discovery_surfaces: ["IDE manual steering slash menu", "CLI skill slash command"]
     generated_entries: ["AGENTS.md", ".kiro/steering/agent-workflow.md", ".kiro/steering/{skill_slug}.md", ".kiro/skills/{skill_slug}/SKILL.md"]
     command_entry_patterns: [".kiro/steering/{skill_slug}.md", ".kiro/skills/{skill_slug}/SKILL.md"]
@@ -90,13 +99,14 @@ tools:
   trae:
     support_level: "native"
     invocation_style: "slash_fuzzy"
-    discovery_surfaces: ["Settings > Skills & Commands", "slash command panel", "project Skills"]
-    generated_entries: ["AGENTS.md", ".trae/commands/{id}.md", ".trae/skills/agent-workflow/SKILL.md", ".trae/skills/{skill_slug}/SKILL.md", ".trae-cn/commands/{id}.md", ".trae-cn/skills/{skill_slug}/SKILL.md"]
-    command_entry_patterns: [".trae/commands/{id}.md", ".trae/skills/{skill_slug}/SKILL.md"]
-    compatibility_entries: [".trae-cn/commands/{id}.md", ".trae-cn/skills/{skill_slug}/SKILL.md"]
+    exact_command_id_slash: "supported"
+    discovery_surfaces: ["Settings > Skills & Commands", "slash command panel"]
+    generated_entries: ["AGENTS.md", ".trae/commands/{id}.md", ".trae/skills/agent-workflow/SKILL.md"]
+    command_entry_patterns: [".trae/commands/{id}.md"]
+    coexistence_note: "When Codex is also enabled, Codex .agents/skills entries may additionally appear in Trae's Skills group. The direct /{id} Command remains the canonical Trae entry."
     documentation_url: "https://docs.trae.ai/ide/skills"
     secondary_documentation_urls: ["https://www.trae.ai/changelog"]
-    official_path_status: "verified-primary; trae-cn-compatibility-unverified"
+    official_path_status: "verified"
     automated_conformance: "covered"
     manual_acceptance: "required-per-release"
     manual_acceptance_evidence: []

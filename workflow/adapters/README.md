@@ -25,16 +25,16 @@ Adapters 是从同一套 workflow core、`command-manifest.yaml` 和 `team-profi
 
 | 工具 | 主要发现方式 | Manifest 命令入口 |
 | --- | --- | --- |
-| Codex | `/` Skills 列表、`/skills`、`$<skill>` | `.agents/skills/{skill_slug}/SKILL.md` |
+| Codex | Desktop `/` 的 Skills 分组；CLI/IDE 用 `/skills`、`$<skill>` | `.agents/skills/{skill_slug}/SKILL.md` |
 | Claude Code | `/` 命令模糊选择 | `.claude/commands/{id}.md` |
 | Cursor | Agent 输入框 `/` 命令模糊选择 | `.cursor/commands/{id}.md` |
 | GitHub Copilot | Prompt 选择器；部分 IDE 支持 `/` prompt 调用 | `.github/prompts/{skill_slug}.prompt.md` |
 | CodeBuddy | `/` 命令模糊选择 | `.codebuddy/commands/{id}.md` |
 | Kiro IDE | `inclusion: manual` steering 出现在 `/` 菜单 | `.kiro/steering/{skill_slug}.md` |
 | Kiro CLI | workspace Skill 自动成为 slash command | `.kiro/skills/{skill_slug}/SKILL.md` |
-| Trae | Settings > Skills & Commands；`/` command panel | `.trae/commands/{id}.md` 与 `.trae/skills/{skill_slug}/SKILL.md` |
+| Trae / Trae CN | Settings > Skills & Commands；`/` command panel | `.trae/commands/{id}.md` |
 
-GitHub Copilot Prompt Files 仍可能受 IDE、版本或预览开关影响，因此它的 `invocation_style` 是 `prompt_fuzzy`，不是笼统声称所有 Copilot 客户端都有相同 slash UI。Kiro IDE 与 CLI 是两条不同的官方发现路径，必须分别验收。Trae 的 `.trae-cn/` 仅作为中文发行版兼容镜像；主 native 证据必须来自 `.trae/`。
+GitHub Copilot Prompt Files 仍可能受 IDE、版本或预览开关影响，因此它的 `invocation_style` 是 `prompt_fuzzy`。Codex 是 `skill_picker_fuzzy`：Desktop 可在 `/` 面板选择 Skill，但不支持项目级字面 `/01-需求讨论` 命令；CLI/IDE 使用 `/skills` 或 `$skill`。Kiro IDE 与 CLI 是两条不同的官方发现路径，必须分别验收。Trae CN 的项目命令与国际版一样读取 `.trae/commands/`。Cursor 和 Trae 也扫描开放标准 `.agents/skills/`，因此与 Codex 共存时可能在 Skills 分组额外显示 Codex 阶段 Skill；不能把这一跨客户端可见性误写成 Trae/Cursor 自己重复生成。
 
 官方路径依据：Codex 的 [Build skills](https://learn.chatgpt.com/docs/build-skills) 与 [Slash commands](https://learn.chatgpt.com/docs/reference/slash-commands) 说明 enabled Skills 会进入 slash 列表；Kiro 的 [Slash commands](https://kiro.dev/docs/chat/slash-commands/) 与 [Steering](https://kiro.dev/docs/steering/) 说明 `inclusion: manual` steering 会进入 `/` 菜单，[Kiro CLI slash commands](https://kiro.dev/docs/cli/reference/slash-commands/) 说明 `.kiro/skills/` Skill 会自动成为 slash command；Trae 的 [Skills](https://docs.trae.ai/ide/skills) 与 [Changelog](https://www.trae.ai/changelog) 记录项目级 Skills、Skills & Commands 和 `.trae/commands/`。
 
@@ -44,13 +44,13 @@ GitHub Copilot Prompt Files 仍可能受 IDE、版本或预览开关影响，因
 
 生成入口如下：
 
-- Codex：根 `AGENTS.md`、总入口 Skill、每命令 Skill 和 `agents/openai.yaml` 展示元数据；`invocation_style` 为 `slash_skill_fuzzy`，不生成项目级 `.codex/prompts/`。
+- Codex：根 `AGENTS.md`、总入口 Skill、每命令 Skill 和 `agents/openai.yaml` 展示元数据；`invocation_style` 为 `skill_picker_fuzzy`，不生成项目级 `.codex/prompts/`。
 - Claude Code：`CLAUDE.md`、每命令 `.claude/commands/`、总入口 Skill。
-- Cursor：始终规则和每命令 `.cursor/commands/`。
+- Cursor：始终规则和每命令纯 Markdown `.cursor/commands/`。
 - GitHub Copilot：仓库指令和每命令 `.github/prompts/*.prompt.md`。
-- CodeBuddy：项目规则和每命令 `.codebuddy/commands/`；命令不声明宽泛 `allowed-tools`。
+- CodeBuddy：项目规则和每命令 `.codebuddy/commands/`；命令禁止模型隐式调用，且不声明宽泛 `allowed-tools`。
 - Kiro：始终 steering、每命令 manual steering、每命令 CLI Skill。
-- Trae：每命令 Commands 与 Skills，并生成 `.trae-cn/` 兼容镜像。
+- Trae：每命令只生成 `.trae/commands/`；总工作流 Skill 单独保留，不生成重复阶段 Skill 或 `.trae-cn/` 项目镜像。
 
 ## 自动一致性与人工验收
 

@@ -25,6 +25,10 @@ function write(rel, content) {
   fs.writeFileSync(file, content);
 }
 
+function legacyV01Adapter(toolName, id) {
+  return `# ${toolName} adapter for /${id}\n\n这是薄 adapter。执行时必须按顺序读取：\n\n1. \`AGENTS.md\`\n2. \`workflow/team-profile.yaml\`\n3. \`workflow/core/commands/${id}.md\`\n\n不得加入与 workflow/core 冲突的工具特定行为。\n`;
+}
+
 function run(args, options = {}) {
   const result = spawnSync(process.execPath, [init, ...args], {
     cwd: tmp,
@@ -96,9 +100,7 @@ for (const rel of [
   '.kiro/steering/workflow-04-code-implementation.md',
   '.kiro/skills/workflow-04-code-implementation/SKILL.md',
   '.trae/commands/04-代码实现.md',
-  '.trae/skills/workflow-04-code-implementation/SKILL.md',
-  '.trae-cn/commands/04-代码实现.md',
-  '.trae-cn/skills/workflow-04-code-implementation/SKILL.md',
+  '.trae/skills/agent-workflow/SKILL.md',
   'workflow/team-profile.yaml',
   'workflow/local/.gitignore',
   'workflow/local/team-profile.local.yaml',
@@ -178,8 +180,7 @@ for (const rel of [
   '.claude/commands',
   '.cursor/commands',
   '.codebuddy/commands',
-  '.trae/commands',
-  '.trae-cn/commands'
+  '.trae/commands'
 ]) {
   const count = fs.readdirSync(path.join(tmp, rel)).filter((name) => name.endsWith('.md')).length;
   if (count !== commands.length) throw new Error(`${rel} 命令数量应为 ${commands.length}，当前 ${count}`);
@@ -205,10 +206,20 @@ for (const command of commands) {
   assertContains(`.kiro/steering/${command.skill_slug}.md`, coreReference);
   assertContains(`.kiro/skills/${command.skill_slug}/SKILL.md`, coreReference);
   assertContains(`.trae/commands/${command.id}.md`, coreReference);
-  assertContains(`.trae/skills/${command.skill_slug}/SKILL.md`, coreReference);
-  assertContains(`.trae-cn/commands/${command.id}.md`, coreReference);
+  if (fs.existsSync(path.join(tmp, `.trae/skills/${command.skill_slug}`))) {
+    throw new Error(`Trae 不得为 ${command.id} 生成重复的分阶段 Skill`);
+  }
+}
+if (fs.existsSync(path.join(tmp, '.trae-cn'))) throw new Error('kit 不应生成项目级 .trae-cn 镜像');
+const cursorCommand = fs.readFileSync(path.join(tmp, '.cursor/commands/04-代码实现.md'), 'utf8');
+if (cursorCommand.startsWith('---\n')) {
+  throw new Error('Cursor 命令必须使用纯 Markdown，不能把 frontmatter 注入 prompt');
+}
+if (!cursorCommand.startsWith('# /04-代码实现 代码实现总览\n\n在准入通过后')) {
+  throw new Error('Cursor 命令首段必须提供可读标题与描述，不能让 managed marker 进入菜单描述');
 }
 assertContains('.codebuddy/commands/04-代码实现.md', 'argument-hint: "<功能名称>"');
+assertContains('.codebuddy/commands/04-代码实现.md', 'disable-model-invocation: true');
 assertContains('.codebuddy/commands/04-代码实现.md', '$ARGUMENTS');
 if (fs.readFileSync(path.join(tmp, '.codebuddy/commands/04-代码实现.md'), 'utf8').includes('allowed-tools:')) {
   throw new Error('CodeBuddy 阶段命令不得声明 allowed-tools');
@@ -344,7 +355,11 @@ write('workflow/local/test-credentials.env', 'PLACEHOLDER_ONLY=1\n');
 assertContains('workflow/adapters/support-matrix.yaml', 'claim: "7 official project-level adapters; generated conformance is not real-tool certification"');
 assertContains('workflow/adapters/support-matrix.yaml', 'support_level: "native"');
 assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "slash_fuzzy"');
-assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "slash_skill_fuzzy"');
+assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "skill_picker_fuzzy"');
+assertContains('workflow/adapters/support-matrix.yaml', 'exact_command_id_slash: "unsupported"');
+assertContains('workflow/adapters/support-matrix.yaml', 'multi_tool_coexistence_note: "Codex requires shared .agents/skills');
+assertContains('workflow/adapters/support-matrix.yaml', 'Codex .agents/skills entries may additionally appear in Cursor');
+assertContains('workflow/adapters/support-matrix.yaml', 'Codex .agents/skills entries may additionally appear in Trae');
 assertContains('workflow/adapters/support-matrix.yaml', 'invocation_style: "prompt_fuzzy"');
 {
   const generatedCommandCheck = path.join(tmp, 'workflow/bin/check-command-manifest.cjs');
@@ -457,7 +472,26 @@ write('.claude/commands/removed-stage.md', '<!-- generated-by: open-workflow-kit
 write('.agents/skills/workflow-removed-stage/SKILL.md', '本 Skill 是由 workflow/core/command-manifest.yaml 生成的分阶段发现入口。\n读取 AGENTS.md 与 workflow/core/commands/removed-stage.md。\n');
 write('.agents/skills/workflow-removed-stage/agents/openai.yaml', 'interface:\n  display_name: "removed"\n  default_prompt: "AGENTS.md"\npolicy:\n  allow_implicit_invocation: false\n');
 write('.cursor/commands/my-team-command.md', '# 用户自定义 Cursor 命令\n不应被 kit 删除。\n');
-run(['--target', tmp, '--tools', 'codex,claude,cursor', '--upgrade', '--force', '--yes']);
+// openone-workflow-kit 0.1.0 的旧 08/09/10 命令没有 managed marker；升级时
+// 必须精确识别并删除，不能让新旧阶段同时出现在 slash 菜单。
+for (const [dir, toolName] of [
+  ['.claude/commands', 'Claude Code'],
+  ['.cursor/commands', 'Cursor'],
+  ['.codebuddy/commands', 'CodeBuddy']
+]) {
+  for (const id of ['08-发布准备', '09-发布执行', '10-复盘总结']) {
+    write(`${dir}/${id}.md`, legacyV01Adapter(toolName, id));
+  }
+}
+write('workflow/core/commands/08-发布准备.md', '# /08-发布准备\nCreate or update workspace-level `features/{feature}/08-发布准备.md`.\n进入 /09-发布执行。\n');
+write('workflow/core/commands/09-发布执行.md', '# /09-发布执行\nCreate or update workspace-level `features/{feature}/09-发布执行.md`.\n需要用户明确授权。\n');
+write('workflow/core/commands/10-复盘总结.md', '# /10-复盘总结\nCreate or update workspace-level `features/{feature}/10-复盘总结.md`.\n沉淀可复用规则。\n');
+write('workflow/core/capabilities/knowledge-capture-maintainer.md', '# Knowledge Capture Maintainer\n读取 features/{feature}/10-复盘总结.md，可选 Obsidian Vault。\n');
+write('workflow/core/capabilities/personal-git-operator.md', '# Personal Git Operator\n## Agent-Allowed Local Actions\n进入 /08-发布准备。\n');
+write('workflow/core/capabilities/personal-release-checklist.md', '# Personal Release Checklist\n## Channel Checks\n## Authorization Boundary\n');
+write('.cursor/commands/custom-core-reference.md', '# 用户自定义命令\n读取 AGENTS.md 与 workflow/core，但不是历史固定模板。\n');
+write('.cursor/commands/custom-retained-stage.md', legacyV01Adapter('Cursor', 'custom-retained-stage'));
+run(['--target', tmp, '--tools', 'codex,claude,cursor,codebuddy,trae', '--upgrade', '--force', '--yes']);
 const profileAfter = fs.readFileSync(path.join(tmp, 'workflow/team-profile.yaml'), 'utf8');
 if (!profileAfter.includes('# user note')) {
   throw new Error('upgrade must preserve user-maintained team-profile.yaml');
@@ -477,6 +511,25 @@ if (fs.existsSync(path.join(tmp, '.agents/skills/workflow-removed-stage'))) {
   throw new Error('manifest 已移除的 Codex skill 不得在 upgrade 后残留');
 }
 assertFile('.cursor/commands/my-team-command.md');
+assertFile('.cursor/commands/custom-core-reference.md');
+assertFile('.cursor/commands/custom-retained-stage.md');
+for (const dir of ['.claude/commands', '.cursor/commands', '.codebuddy/commands']) {
+  for (const id of ['08-发布准备', '09-发布执行', '10-复盘总结']) {
+    if (fs.existsSync(path.join(tmp, dir, `${id}.md`))) {
+      throw new Error(`v0.1 历史 adapter 未清理: ${dir}/${id}.md`);
+    }
+  }
+}
+for (const id of ['08-发布准备', '09-发布执行', '10-复盘总结']) {
+  if (fs.existsSync(path.join(tmp, `workflow/core/commands/${id}.md`))) {
+    throw new Error(`v0.1 历史 core command 未清理: ${id}.md`);
+  }
+}
+for (const name of ['knowledge-capture-maintainer.md', 'personal-git-operator.md', 'personal-release-checklist.md']) {
+  if (fs.existsSync(path.join(tmp, `workflow/core/capabilities/${name}`))) {
+    throw new Error(`v0.1 历史 capability 未清理: ${name}`);
+  }
+}
 
 // v0.8.0 旧路径残留清理：kit 指纹文件自动删除；用户自定义内容保留。
 {
@@ -557,8 +610,7 @@ for (const [tool, required] of [
   ]],
   ['trae', [
     '.trae/commands/04-代码实现.md',
-    '.trae/skills/workflow-04-code-implementation/SKILL.md',
-    '.trae-cn/commands/04-代码实现.md'
+    '.trae/skills/agent-workflow/SKILL.md'
   ]]
 ]) {
   const adapterTmp = fs.mkdtempSync(path.join(os.tmpdir(), `agent-workflow-${tool}-`));

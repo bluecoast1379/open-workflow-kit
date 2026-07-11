@@ -49,7 +49,7 @@ npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 - 必要时的 `workflow/INITIALIZATION_QUESTIONS.md`
 - 每个选中工具的 manifest-driven adapter，例如 `.agents/skills/`、`.claude/commands/`、`.cursor/commands/`、`.github/prompts/`、`.codebuddy/commands/`、`.kiro/` 或 `.trae/`
 
-Command manifest 当前有 23 项。`.trae-cn/` 是兼容镜像，不应被计作独立平台。
+Command manifest 当前有 23 项。Trae 与 Trae CN 都从项目根 `.trae/commands/` 读取同一套入口。
 
 ## 安全边界
 

@@ -18,7 +18,7 @@ All notable changes to Open Workflow Kit are documented here. Versions follow Se
 - Enforced allowed/forbidden path boundaries, preserved-invariant-to-AC traceability and decision-packet scope evidence.
 - `/define-done` and `/deliver-until-done`, increasing the command manifest to 23 entries.
 - Definition-quality rules, policy packs and capabilities covering business value, organization consensus, UX/human factors, performance/cost, reliability/resilience, security/privacy, observability/operations, reversibility/evolution and AI quality.
-- Project-level command adapters for Codex, Claude Code, Cursor, GitHub Copilot, CodeBuddy, Kiro and Trae; `.trae-cn/` is a compatibility mirror.
+- Project-level command adapters for Codex, Claude Code, Cursor, GitHub Copilot, CodeBuddy, Kiro and Trae.
 - Adapter conformance checks and Definition-to-Done positive/negative golden examples.
 
 ### Changed
@@ -27,6 +27,9 @@ All notable changes to Open Workflow Kit are documented here. Versions follow Se
 - API test plan 1.1 adds explicit assertions, captures, bounded retries and response budgets while preserving 1.0 compatibility.
 - Initialization, upgrade, smoke and release validation derive adapter entries from the command manifest rather than a hard-coded command count.
 - Documentation now separates automated completion, human acceptance and release authorization.
+- Codex discovery is documented as Desktop Skill selection or `/skills`/`$skill`, not a Claude-style literal project slash command.
+- Cursor commands are pure Markdown, CodeBuddy commands disable model invocation, and Trae emits one tool-owned `.trae/commands/` entry per stage without `.trae/skills/<stage>` or `.trae-cn/` project mirrors. Multi-tool docs disclose that Cursor/Trae may still display Codex's shared `.agents/skills/` in a separate Skills group.
+- Upgrade recognizes the exact openone-workflow-kit 0.1.0 command template so retired `08/09/10` entries do not survive beside the current manifest.
 
 ### Security
 
@@ -37,7 +40,7 @@ All notable changes to Open Workflow Kit are documented here. Versions follow Se
 ### Migration notes
 
 - Re-run `agent-workflow-init --upgrade` to generate all 23 command entries and the current project-level adapter paths.
-- Replace the legacy single-file Trae instruction entry with `.trae/commands/` and `.trae/skills/`; treat `.trae-cn/` as compatibility-only.
+- Replace legacy Trae instruction, stage Skills and `.trae-cn/` project mirrors with one `.trae/commands/` entry per stage; Trae CN reads the same project path.
 - Do not copy old PASS evidence into a new Contract. Initialize or migrate `features/<feature>/completion/`, then rerun Oracle checks under the new fingerprints.
 - A 1.0.0 tag or registry package may be referenced only after a maintainer explicitly publishes it.
 

@@ -17,6 +17,7 @@ const TOOL_ALIASES = {
 };
 const GENERATED_BY = `open-workflow-kit ${readPackageVersion()}`;
 const MANAGED_ADAPTER_MARKER = 'generated-by: open-workflow-kit; managed-adapter: true';
+const HISTORICAL_V01_RETIRED_COMMAND_IDS = new Set(['08-发布准备', '09-发布执行', '10-复盘总结']);
 
 const REQUIRED_SOURCES = [
   {
@@ -90,6 +91,43 @@ const LEGACY_ARTIFACTS = [
   { rel: '.codebuddy/instructions.md', kind: 'file', reason: 'CodeBuddy 不使用旧 instructions.md 路径（v0.6.0 起）' },
   { rel: '.codebuddy/rules/agent-workflow/RULE.mdc', kind: 'file', reason: 'CodeBuddy 项目规则应为 .codebuddy/rules/*.md（v0.8.0 起）' },
   { rel: '.trae/instructions.md', kind: 'file', reason: 'Trae 官方项目入口已迁移到 .trae/commands/ 与 .trae/skills/' },
+  { rel: '.trae-cn', kind: 'dir', managedOnly: true, reason: 'Trae CN 的项目级命令同样读取 .trae/commands/；.trae-cn/ 不是项目 adapter 路径' },
+  {
+    rel: 'workflow/core/commands/08-发布准备.md',
+    kind: 'file',
+    markers: ['# /08-发布准备', 'features/{feature}/08-发布准备.md', '/09-发布执行'],
+    reason: 'v0.1 发布准备阶段已由 08-验收表格等当前 manifest 阶段替代'
+  },
+  {
+    rel: 'workflow/core/commands/09-发布执行.md',
+    kind: 'file',
+    markers: ['# /09-发布执行', 'features/{feature}/09-发布执行.md', '明确授权'],
+    reason: 'v0.1 发布执行阶段不在当前 manifest，远程发布仍由执行策略和显式授权约束'
+  },
+  {
+    rel: 'workflow/core/commands/10-复盘总结.md',
+    kind: 'file',
+    markers: ['# /10-复盘总结', 'features/{feature}/10-复盘总结.md', '可复用规则'],
+    reason: 'v0.1 复盘阶段已重编号为 12-复盘总结'
+  },
+  {
+    rel: 'workflow/core/capabilities/knowledge-capture-maintainer.md',
+    kind: 'file',
+    markers: ['# Knowledge Capture Maintainer', 'features/{feature}/10-复盘总结.md', 'Obsidian Vault'],
+    reason: 'v0.1 知识沉淀能力已由当前 memory-curator 与复盘阶段替代'
+  },
+  {
+    rel: 'workflow/core/capabilities/personal-git-operator.md',
+    kind: 'file',
+    markers: ['# Personal Git Operator', 'Agent-Allowed Local Actions', '/08-发布准备'],
+    reason: 'v0.1 个人 Git 能力已由当前 branch-gatekeeper 与 worktree-isolator 替代'
+  },
+  {
+    rel: 'workflow/core/capabilities/personal-release-checklist.md',
+    kind: 'file',
+    markers: ['# Personal Release Checklist', '## Channel Checks', '## Authorization Boundary'],
+    reason: 'v0.1 发布清单能力已由当前 release-safety-checker 与 deployment-readiness-checker 替代'
+  },
   {
     rel: 'workflow/core/checklists/rule-catalog.yaml',
     kind: 'file',
@@ -454,7 +492,7 @@ function buildInstallPlan(target, profile, options) {
     add('.cursor/rules/agent-workflow-core.mdc', makeCursorRule());
     // Cursor 1.6+ supports custom slash commands from .cursor/commands/*.md.
     for (const command of COMMANDS) {
-      add(`.cursor/commands/${command.id}.md`, makeSlashCommand('Cursor', command, '命令后附加的用户输入'));
+      add(`.cursor/commands/${command.id}.md`, makeCursorCommand(command));
     }
   }
   if (profile.enabledTools.includes('copilot')) {
@@ -480,14 +518,11 @@ function buildInstallPlan(target, profile, options) {
     }
   }
   if (profile.enabledTools.includes('trae')) {
-    // Trae 的项目级 Commands 与 Skills 是主入口；.trae-cn 是中文发行版兼容镜像，
-    // 不把兼容镜像的文件存在视为真实工具验收。
-    for (const base of ['.trae', '.trae-cn']) {
-      add(`${base}/skills/agent-workflow/SKILL.md`, makeAgentWorkflowSkill());
-      for (const command of COMMANDS) {
-        add(`${base}/commands/${command.id}.md`, makeSlashCommand('Trae', command, '命令后附加的用户输入'));
-        add(`${base}/skills/${command.skill_slug}/SKILL.md`, makeStageSkill(command));
-      }
+    // Trae（含 Trae CN）的项目级手动命令统一从 .trae/commands/ 读取。
+    // 每阶段只生成一份 Command，避免 Commands 与 Skills 分组出现重复入口。
+    add('.trae/skills/agent-workflow/SKILL.md', makeAgentWorkflowSkill());
+    for (const command of COMMANDS) {
+      add(`.trae/commands/${command.id}.md`, makeTraeCommand(command));
     }
   }
 
@@ -607,7 +642,26 @@ function looksManagedAdapter(text) {
   );
 }
 
+// openone-workflow-kit 0.1.0 曾为 Claude/Cursor/CodeBuddy 生成没有 marker 的
+// 固定模板。只在工具目录、文件名、标题与 core 路径四者完全一致时识别，避免
+// 把仅仅引用 AGENTS.md/workflow/core 的用户自定义命令误删。
+function looksHistoricalManagedCommand(text, file) {
+  const normalizedPath = file.split(path.sep).join('/');
+  const toolByRoot = [
+    ['/.claude/commands/', 'Claude Code'],
+    ['/.cursor/commands/', 'Cursor'],
+    ['/.codebuddy/commands/', 'CodeBuddy']
+  ];
+  const match = toolByRoot.find(([root]) => normalizedPath.includes(root));
+  if (!match || path.extname(file) !== '.md') return false;
+  const id = path.basename(file, '.md');
+  if (!HISTORICAL_V01_RETIRED_COMMAND_IDS.has(id)) return false;
+  const expected = `# ${match[1]} adapter for /${id}\n\n这是薄 adapter。执行时必须按顺序读取：\n\n1. \`AGENTS.md\`\n2. \`workflow/team-profile.yaml\`\n3. \`workflow/core/commands/${id}.md\`\n\n不得加入与 workflow/core 冲突的工具特定行为。\n`;
+  return text.replace(/\r\n/g, '\n') === expected;
+}
+
 function looksLegacyGenerated(text, artifact) {
+  if (artifact.markers) return artifact.markers.every((marker) => text.includes(marker));
   if (artifact.marker) return text.includes(artifact.marker);
   return looksKitGenerated(text);
 }
@@ -633,16 +687,20 @@ function planLegacyCleanup(target, options, plannedWrites = [], enabledTools = [
         plan.keep.push({ file: full, reason: artifact.reason });
       }
     } else {
-      let entries = [];
-      try {
-        entries = fs.readdirSync(full).filter((n) => n.endsWith('.md'));
-      } catch {
-        continue;
-      }
-      for (const name of entries) {
-        const file = path.join(full, name);
+      for (const file of listExistingFiles(full)) {
         const text = safeReadFile(file, 256 * 1024);
-        (looksKitGenerated(text) ? plan.remove : plan.keep).push({ file, reason: artifact.reason });
+        const generated = artifact.managedOnly
+          ? text.includes(MANAGED_ADAPTER_MARKER)
+          : looksKitGenerated(text) || looksManagedAdapter(text) || looksKitGeneratedMetadata(text, file);
+        (generated ? plan.remove : plan.keep).push({ file, reason: artifact.reason });
+        if (generated) {
+          let directory = path.dirname(file);
+          while (directory.startsWith(path.resolve(full))) {
+            plan.dirs.push(directory);
+            if (directory === path.resolve(full)) break;
+            directory = path.dirname(directory);
+          }
+        }
       }
       plan.dirs.push(full);
     }
@@ -660,7 +718,7 @@ function planOrphanAdapterCleanup(target, plannedWrites, enabledTools, plan) {
     copilot: ['.github/prompts'],
     codebuddy: ['.codebuddy/commands'],
     kiro: ['.kiro/steering', '.kiro/skills'],
-    trae: ['.trae/commands', '.trae/skills', '.trae-cn/commands', '.trae-cn/skills']
+    trae: ['.trae/commands', '.trae/skills']
   };
   const scanRoots = [...new Set(enabledTools.flatMap((tool) => rootsByTool[tool] || []))];
   const alreadyPlanned = new Set([...plan.remove, ...plan.keep].map((item) => path.resolve(item.file)));
@@ -672,7 +730,7 @@ function planOrphanAdapterCleanup(target, plannedWrites, enabledTools, plan) {
       if (expected.has(resolved) || alreadyPlanned.has(resolved)) continue;
       const text = safeReadFile(resolved, 256 * 1024);
       const reason = 'manifest 已删除或重命名该 adapter 入口';
-      if (looksManagedAdapter(text) || looksKitGeneratedMetadata(text, resolved)) {
+      if (looksManagedAdapter(text) || looksHistoricalManagedCommand(text, resolved) || looksKitGeneratedMetadata(text, resolved)) {
         plan.remove.push({ file: resolved, reason });
         alreadyPlanned.add(resolved);
         let directory = path.dirname(resolved);
@@ -1279,15 +1337,17 @@ function makeToolUsage(profile) {
     blocks.push(`### Codex
 
 - Codex 会自动读取本 \`AGENTS.md\`（官方项目级指令机制）。
-- 本 kit 同时生成总入口和 ${COMMANDS.length} 个分阶段 \`.agents/skills/workflow-*/\`。这些 Skill 会出现在支持的 \`/\` 列表中，也可用 \`/skills\` 或 \`$\` 按编号、英文 slug 或中文展示名模糊选择。
+- 本 kit 同时生成总入口和 ${COMMANDS.length} 个分阶段 \`.agents/skills/workflow-*/\`。Codex Desktop 可在 \`/\` 面板的 Skills 分组按中文展示名搜索；CLI/IDE 的稳定入口是 \`/skills\` 选择器或 \`$<skill-slug>\`。
+- Codex 的项目 Skill 不是 Claude 式字面自定义命令：不能把 \`/01-需求讨论\` 当作可直接提交的命令 ID；在 Desktop 中输入 \`/01\` 是搜索并选择 Skill。
 - Codex Desktop 通过 Skills 入口选择分阶段 Skill；所有阶段 Skill 默认禁止隐式调用，必须由用户显式选择。
-- 注意：项目级 \`.codex/prompts/\` 不会被 Codex 加载（custom prompts 仅支持全局 \`~/.codex/prompts/\`），本 kit 不生成该目录。`);
+- 注意：项目级 \`.codex/prompts/\` 不会被 Codex 加载；旧的全局 custom prompts 已弃用，本 kit 不生成该目录。`);
   }
 
   if (tools.includes('cursor')) {
     blocks.push(`### Cursor
 
-- 本 kit 会在 \`.cursor/commands/\` 生成 Cursor 自定义斜杠命令（Cursor 1.6+）。在 Agent 输入框输入 \`/\`，选择 \`/04-代码实现\` 等阶段，再描述功能。
+- 本 kit 会在 \`.cursor/commands/\` 生成纯 Markdown 的 Cursor 自定义斜杠命令。在 Agent 输入框输入 \`/\`，选择 \`/04-代码实现\` 等阶段，再描述功能。
+- 与 Codex 同时启用时，Cursor 也可能在 Skills 分组显示共享的 \`.agents/skills/\`；\`/{id}\` 直接命令仍以 \`.cursor/commands/\` 为准。
 - \`.cursor/rules/agent-workflow-core.mdc\` 会自动应用到每次请求。
 - 兜底方式：直接 @ 阶段契约，例如 \`@workflow/core/commands/04-代码实现.md\`。
 - agent 会读取阶段契约、\`workflow/team-profile.yaml\` 和前序 \`features/<feature>/\` 文档，再写阶段产物。
@@ -1321,8 +1381,10 @@ function makeToolUsage(profile) {
   if (tools.includes('trae')) {
     blocks.push(`### Trae
 
-- 每个 manifest 命令都会生成 \`.trae/commands/<id>.md\` 与 \`.trae/skills/<skill-slug>/SKILL.md\`，可从 Settings > Skills & Commands 或输入 \`/\` 后按编号、名称、slug 模糊选择。
-- 同步生成 \`.trae-cn/\` 兼容镜像；它不属于主官方路径，不能单独作为 native 验收证据。
+- 每个 manifest 命令只生成一份 \`.trae/commands/<id>.md\` 手动入口，可从 Settings > Skills & Commands 或输入 \`/\` 后按编号、名称模糊选择。
+- Trae CN 的项目命令也读取 \`.trae/commands/\`；\`.trae-cn/\` 是用户级数据目录命名，不生成项目兼容镜像。
+- \`.trae/skills/agent-workflow/\` 只保留总工作流 Skill，不生成 Trae 自己的重复阶段 Skill。
+- 与 Codex 同时启用时，Trae 仍可能在 Skills 分组显示 Codex 必需的共享 \`.agents/skills/\`；\`/{id}\` 直接命令以 \`.trae/commands/\` 为准。
 - 文件生成只证明结构一致性；具体版本的命令面板、参数传递与硬闸门仍需真机验收。`);
   }
 
@@ -1397,7 +1459,7 @@ workflow core 是共享的。工具 adapter 可按当前工具能力增强或降
 - L3：hooks 或前置检查
 - L4：subagents 或多 agent 路由
 
-对外口径为 Codex、Claude Code、Cursor、GitHub Copilot、CodeBuddy、Kiro、Trae 7 个官方项目级 adapter。所有 adapter 都必须保持 \`native_not_yet_manually_certified\`，直到当前发布版本完成真实工具人工验收。命令发现方式分为 \`slash_fuzzy\`、\`slash_skill_fuzzy\` 和 \`prompt_fuzzy\`；详细路径和差异见 \`workflow/adapters/support-matrix.yaml\`。不要承诺所有工具体验完全一致。
+对外口径为 Codex、Claude Code、Cursor、GitHub Copilot、CodeBuddy、Kiro、Trae 7 个官方项目级 adapter。所有 adapter 都必须保持 \`native_not_yet_manually_certified\`，直到当前发布版本完成真实工具人工验收。命令发现方式分为 \`slash_fuzzy\`、\`skill_picker_fuzzy\` 和 \`prompt_fuzzy\`；详细路径和差异见 \`workflow/adapters/support-matrix.yaml\`。不要承诺所有工具体验完全一致。
 
 ## 工具使用方式
 
@@ -1446,6 +1508,55 @@ argument-hint: ${yamlQuote(command.argument_hint)}
 4. \`workflow/core/commands/${command.id}.md\`
 
 不得加入与 workflow/core 冲突的工具特定行为，不得把命令调用本身当成实现、高风险写操作或发布授权。
+`;
+}
+
+function makeCursorCommand(command) {
+  return `# /${command.id} ${command.title}
+
+${command.description}
+
+<!-- ${MANAGED_ADAPTER_MARKER} -->
+
+这是由 \`workflow/core/command-manifest.yaml\` 生成的纯 Markdown 薄 adapter。Cursor 将命令后附加的用户输入作为功能名称或阶段参数。
+
+- 阶段作用：${command.description}
+- 参数提示：\`${command.argument_hint}\`
+
+执行时必须按顺序读取：
+
+1. \`AGENTS.md\`
+2. \`workflow/team-profile.yaml\`
+3. \`workflow/core/command-manifest.yaml\`
+4. \`workflow/core/commands/${command.id}.md\`
+
+不得加入与 workflow/core 冲突的工具特定行为，不得把命令调用本身当成实现、高风险写操作或发布授权。
+`;
+}
+
+function makeTraeCommand(command) {
+  return `---
+name: ${yamlQuote(command.id)}
+description: ${yamlQuote(`${command.title}：${command.description}`)}
+---
+
+<!-- ${MANAGED_ADAPTER_MARKER} -->
+
+# Trae adapter for /${command.id}
+
+这是由 \`workflow/core/command-manifest.yaml\` 生成的单一手动命令入口。命令后附加的用户输入视为功能名称或阶段参数。
+
+- 阶段作用：${command.description}
+- 参数提示：\`${command.argument_hint}\`
+
+执行时必须按顺序读取：
+
+1. \`AGENTS.md\`
+2. \`workflow/team-profile.yaml\`
+3. \`workflow/core/command-manifest.yaml\`
+4. \`workflow/core/commands/${command.id}.md\`
+
+不得覆盖 workflow/core 的实现闸门、Git 闸门或高风险执行策略。
 `;
 }
 
@@ -1518,6 +1629,7 @@ function makeCodeBuddyCommand(command) {
   return `---
 description: ${yamlQuote(command.description)}
 argument-hint: ${yamlQuote(command.argument_hint)}
+disable-model-invocation: true
 ---
 
 <!-- ${MANAGED_ADAPTER_MARKER} -->

@@ -77,9 +77,11 @@ agent-workflow-init --target . --tools codex,claude,cursor --upgrade
 | GitHub Copilot | `.github/copilot-instructions.md`、`.github/prompts/` |
 | CodeBuddy | `.codebuddy/rules/agent-workflow.md`、`.codebuddy/commands/` |
 | Kiro | `.kiro/steering/`、`.kiro/skills/` |
-| Trae | `.trae/commands/`、`.trae/skills/`，另生成 `.trae-cn/` 兼容镜像 |
+| Trae | 每阶段 `.trae/commands/`；`.trae/skills/agent-workflow/` 仅保留总入口 |
 
-七个平台的 `verification_status` 当前均为 `native_not_yet_manually_certified`：生成路径与自动 conformance 通过，不代表已经在每个真实客户端版本完成人工认证。Copilot 使用 Prompt picker 或客户端支持的 slash prompt；`.trae-cn/` 不能替代 `.trae/` 主路径验收。
+七个平台的 `verification_status` 当前均为 `native_not_yet_manually_certified`：生成路径与自动 conformance 通过，不代表已经在每个真实客户端版本完成人工认证。Copilot 使用 Prompt picker 或客户端支持的 slash prompt；Trae 与 Trae CN 的项目命令都使用 `.trae/commands/`。
+
+多工具共存时，Codex 必需的 `.agents/skills/` 也可能被 Cursor 或 Trae 显示在 Skills 分组；它与各工具的直接 `/{id}` Command 是不同入口，当前没有可移植的项目字段能让开放标准 Skill 只对 Codex 可见。
 
 ## 工具别名
 
@@ -89,7 +91,7 @@ agent-workflow-init --target . --tools codex,claude,cursor --upgrade
 agent-workflow-init --target . --tools trea --yes
 ```
 
-当前版本生成 `.trae/commands/` 与 `.trae/skills/`；旧版单文件 Trae instruction 入口不再是 1.0 的命令路径。
+当前版本为每阶段生成一份 `.trae/commands/` 入口，并只保留总工作流 Skill；旧版 `.trae-cn/` 项目镜像与单文件 instruction 入口都不再生成。
 
 ## 初始化 Completion Contract
 
@@ -139,7 +141,7 @@ node workflow/bin/check-completion-contract.cjs \
 - `workflow/local/` 已被 Git 忽略；
 - 待补资料没有被遗漏；
 - 选中平台的全部 23 个命令入口已生成；
-- `.trae-cn/` 被视为兼容镜像，不被算作独立平台；
+- Trae CN 复用项目 `.trae/commands/`，不会生成独立 `.trae-cn/` adapter；
 - 已有文件没有被意外覆盖；
 - 初始化期间没有远程 Git、分支、部署、数据库或生产配置动作；
 - `node workflow/bin/check-command-manifest.cjs` 与 `node workflow/bin/check-support-matrix.cjs` 通过；

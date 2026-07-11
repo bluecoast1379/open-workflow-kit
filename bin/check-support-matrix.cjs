@@ -16,7 +16,8 @@ try {
 
 const expectedRoot = {
   schema_version: '2.0',
-  claim: '7 official project-level adapters; generated conformance is not real-tool certification'
+  claim: '7 official project-level adapters; generated conformance is not real-tool certification',
+  multi_tool_coexistence_note: 'Codex requires shared .agents/skills; Cursor, Trae and other Agent Skills clients may also display those Skills beside their direct Commands. The kit removes tool-owned duplicate stage Skills but cannot hide an open-standard repo Skill from peer clients.'
 };
 for (const [field, expectedValue] of Object.entries(expectedRoot)) {
   const value = parseRootScalar(text, field);
@@ -26,26 +27,30 @@ for (const [field, expectedValue] of Object.entries(expectedRoot)) {
 const tools = parseTools(text);
 const expected = {
   codex: {
-    invocation: 'slash_skill_fuzzy',
+    invocation: 'skill_picker_fuzzy',
+    exactSlash: 'unsupported',
     documentation: 'https://learn.chatgpt.com/docs/build-skills',
     patterns: ['.agents/skills/{skill_slug}/SKILL.md', '.agents/skills/{skill_slug}/agents/openai.yaml'],
-    surfaces: ['slash skill list', '/skills', '$<skill-slug>'],
+    surfaces: ['Codex Desktop slash Skills group', '/skills', '$<skill-slug>'],
     secondaryDocs: ['https://learn.chatgpt.com/docs/reference/slash-commands']
   },
   claude: {
     invocation: 'slash_fuzzy',
+    exactSlash: 'supported',
     documentation: 'https://code.claude.com/docs/en/slash-commands',
     patterns: ['.claude/commands/{id}.md'],
     surfaces: ['slash command menu']
   },
   cursor: {
     invocation: 'slash_fuzzy',
+    exactSlash: 'supported',
     documentation: 'https://docs.cursor.com/en/agent/chat/commands',
     patterns: ['.cursor/commands/{id}.md'],
     surfaces: ['Agent slash command menu']
   },
   copilot: {
     invocation: 'prompt_fuzzy',
+    exactSlash: 'client-dependent',
     documentation: 'https://docs.github.com/en/copilot/reference/customization-cheat-sheet',
     patterns: ['.github/prompts/{skill_slug}.prompt.md'],
     surfaces: ['Prompt picker', 'IDE slash prompt invocation where supported'],
@@ -53,12 +58,14 @@ const expected = {
   },
   codebuddy: {
     invocation: 'slash_fuzzy',
+    exactSlash: 'supported',
     documentation: 'https://www.codebuddy.ai/docs/cli/slash-commands',
     patterns: ['.codebuddy/commands/{id}.md'],
     surfaces: ['slash command menu']
   },
   kiro: {
     invocation: 'slash_fuzzy',
+    exactSlash: 'unsupported-use-skill-slug',
     documentation: 'https://kiro.dev/docs/chat/slash-commands/',
     patterns: ['.kiro/steering/{skill_slug}.md', '.kiro/skills/{skill_slug}/SKILL.md'],
     surfaces: ['IDE manual steering slash menu', 'CLI skill slash command'],
@@ -66,9 +73,10 @@ const expected = {
   },
   trae: {
     invocation: 'slash_fuzzy',
+    exactSlash: 'supported',
     documentation: 'https://docs.trae.ai/ide/skills',
-    patterns: ['.trae/commands/{id}.md', '.trae/skills/{skill_slug}/SKILL.md'],
-    surfaces: ['Settings > Skills & Commands', 'slash command panel', 'project Skills'],
+    patterns: ['.trae/commands/{id}.md'],
+    surfaces: ['Settings > Skills & Commands', 'slash command panel'],
     secondaryDocs: ['https://www.trae.ai/changelog']
   }
 };
@@ -86,6 +94,9 @@ for (const [name, expectedTool] of Object.entries(expected)) {
   if (tool.support_level !== 'native') errors.push(`${name} support_level 应为 native`);
   if (tool.invocation_style !== expectedTool.invocation) {
     errors.push(`${name} invocation_style 应为 ${expectedTool.invocation}`);
+  }
+  if (tool.exact_command_id_slash !== expectedTool.exactSlash) {
+    errors.push(`${name} exact_command_id_slash 应为 ${expectedTool.exactSlash}`);
   }
   assertArrayContains(name, 'command_entry_patterns', tool.command_entry_patterns, expectedTool.patterns);
   assertArrayContains(name, 'discovery_surfaces', tool.discovery_surfaces, expectedTool.surfaces);
@@ -124,7 +135,7 @@ for (const [name, expectedTool] of Object.entries(expected)) {
     }
   }
 
-  const deprecated = ['RULE.mdc', '.codex/prompts', '.trae/instructions.md'];
+  const deprecated = ['RULE.mdc', '.codex/prompts', '.trae/instructions.md', '.trae-cn/'];
   const allEntries = [...(tool.generated_entries || []), ...(tool.command_entry_patterns || [])];
   if (allEntries.some((entry) => deprecated.some((value) => entry.includes(value)))) {
     errors.push(`${name} 引用已废弃 adapter 路径`);
@@ -133,10 +144,16 @@ for (const [name, expectedTool] of Object.entries(expected)) {
 
 const trae = tools.trae;
 if (trae) {
-  const expectedCompatibility = ['.trae-cn/commands/{id}.md', '.trae-cn/skills/{skill_slug}/SKILL.md'];
-  assertArrayContains('trae', 'compatibility_entries', trae.compatibility_entries, expectedCompatibility);
-  if (!String(trae.official_path_status).includes('trae-cn-compatibility-unverified')) {
-    errors.push('trae 必须明确 .trae-cn 只是未验证兼容镜像');
+  const allTraeEntries = [...(trae.generated_entries || []), ...(trae.command_entry_patterns || [])];
+  if (allTraeEntries.some((entry) => entry.includes('.trae-cn/') || entry.includes('.trae/skills/{skill_slug}'))) {
+    errors.push('trae 每阶段只能生成 .trae/commands/{id}.md，不能生成 .trae-cn 镜像或重复的阶段 Skill');
+  }
+}
+
+for (const name of ['cursor', 'trae']) {
+  const note = tools[name] && tools[name].coexistence_note;
+  if (typeof note !== 'string' || !note.includes('Codex .agents/skills')) {
+    errors.push(`${name} 必须披露与 Codex 共存时的共享 Skill 可见性`);
   }
 }
 

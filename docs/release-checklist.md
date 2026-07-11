@@ -20,7 +20,7 @@
 - 生成的 `workflow/team-profile.yaml` 不包含绝对路径、私有端点、账号、凭证或原始审计记录。
 - `workflow/local/team-profile.local.yaml`、`workflow/local/rule-provenance.private.yaml` 和 `workflow/local/execution-audit.jsonl` 已被 Git 忽略。
 - `workflow/adapters/support-matrix.yaml` 中七个平台的路径和 manifest entry 均通过自动 conformance；缺少当前版本真实工具验收时必须保持 `native_not_yet_manually_certified`，不能阻塞本地候选但必须明确披露。
-- `.trae-cn/` 只作为兼容镜像检查，不计为独立 adapter 或 `.trae/` 的认证证据。
+- Trae 与 Trae CN 都以 `.trae/commands/` 验收；确认没有 `.trae-cn/` 项目镜像或分阶段重复 Skill。
 - 共享 API runner 的环境白名单、显式 host 授权、生产阻断和脱敏输出已有回归测试。
 - Completion Contract 正例 lint 通过；模糊验收、非法 waiver、stale evidence、ledger/anchor tamper、placeholder environment 与无效/开放 findings 负例按预期失败或失效。
 - `run-until-done` 只输出 `READY_FOR_HUMAN_ACCEPTANCE`、`BLOCKED_WITH_DECISION_PACKET` 或 `BUDGET_EXHAUSTED`，从不代替 evaluator 输出 `ACCEPTED`。

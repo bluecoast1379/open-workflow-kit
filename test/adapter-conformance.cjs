@@ -57,17 +57,8 @@ const toolSpecs = {
     primaryEntry: (command) => `.kiro/steering/${command.skill_slug}.md`
   },
   trae: {
-    staticEntries: [
-      'AGENTS.md',
-      '.trae/skills/agent-workflow/SKILL.md',
-      '.trae-cn/skills/agent-workflow/SKILL.md'
-    ],
-    commandEntries: (command) => [
-      `.trae/commands/${command.id}.md`,
-      `.trae/skills/${command.skill_slug}/SKILL.md`,
-      `.trae-cn/commands/${command.id}.md`,
-      `.trae-cn/skills/${command.skill_slug}/SKILL.md`
-    ],
+    staticEntries: ['AGENTS.md', '.trae/skills/agent-workflow/SKILL.md'],
+    commandEntries: (command) => [`.trae/commands/${command.id}.md`],
     primaryEntry: (command) => `.trae/commands/${command.id}.md`
   }
 };
@@ -111,10 +102,21 @@ function verifyTraeLegacyCleanup() {
   fs.writeFileSync(orphan, '<!-- generated-by: open-workflow-kit; managed-adapter: true -->\n读取 AGENTS.md 与 workflow/core/commands/removed-stage.md。\n');
   const customCommand = path.join(generatedTarget, '.trae/commands/my-team-command.md');
   fs.writeFileSync(customCommand, '# 用户自定义 Trae 命令\n');
+  const duplicateSkill = path.join(generatedTarget, '.trae/skills/workflow-removed-stage/SKILL.md');
+  fs.mkdirSync(path.dirname(duplicateSkill), { recursive: true });
+  fs.writeFileSync(duplicateSkill, '<!-- generated-by: open-workflow-kit; managed-adapter: true -->\n读取 AGENTS.md 与 workflow/core/commands/removed-stage.md。\n');
+  const oldCnCommand = path.join(generatedTarget, '.trae-cn/commands/removed-stage.md');
+  fs.mkdirSync(path.dirname(oldCnCommand), { recursive: true });
+  fs.writeFileSync(oldCnCommand, '<!-- generated-by: open-workflow-kit; managed-adapter: true -->\n读取 AGENTS.md 与 workflow/core/commands/removed-stage.md。\n');
+  const customCnFile = path.join(generatedTarget, '.trae-cn/team-note.md');
+  fs.writeFileSync(customCnFile, '# 用户自己的历史说明\n读取 AGENTS.md、workflow/core 与 command-manifest.yaml，但没有 kit managed marker。\n');
   runUpgrade(generatedTarget, 'trae');
   if (fs.existsSync(legacy)) throw new Error('upgrade 未清理 kit 生成的旧 .trae/instructions.md');
   if (fs.existsSync(orphan)) throw new Error('upgrade 未清理 manifest 已移除的 Trae command');
+  if (fs.existsSync(duplicateSkill)) throw new Error('upgrade 未清理重复的 Trae 分阶段 Skill');
+  if (fs.existsSync(oldCnCommand)) throw new Error('upgrade 未清理旧 .trae-cn 项目命令镜像');
   if (!fs.existsSync(customCommand)) throw new Error('upgrade 误删用户自定义 Trae command');
+  if (!fs.existsSync(customCnFile)) throw new Error('upgrade 误删用户自定义 .trae-cn 文件');
 
   const customTarget = installTool('trae');
   const custom = path.join(customTarget, '.trae/instructions.md');
@@ -189,6 +191,13 @@ function validateAdapterRoot(target, tool, commandList = commands) {
       if (content.includes('.codex/prompts') || content.includes('.trae/instructions.md')) {
         errors.push(`${rel} 引用了已废弃路径`);
       }
+      if (tool === 'cursor' && content.startsWith('---\n')) errors.push(`${rel} Cursor 项目命令必须是纯 Markdown，不能注入 frontmatter`);
+      if (tool === 'codebuddy' && !content.includes('disable-model-invocation: true')) {
+        errors.push(`${rel} CodeBuddy 命令必须禁止模型隐式调用`);
+      }
+      if (tool === 'trae' && !content.includes(`name: "${command.id}"`)) {
+        errors.push(`${rel} Trae 命令必须声明与文件名一致的 Unicode name`);
+      }
     }
 
     const primary = spec.primaryEntry(command);
@@ -201,6 +210,14 @@ function validateAdapterRoot(target, tool, commandList = commands) {
 
   if (fs.existsSync(path.join(target, '.codex/prompts'))) errors.push('不得生成项目级 .codex/prompts');
   if (fs.existsSync(path.join(target, '.trae/instructions.md'))) errors.push('不得保留旧 .trae/instructions.md');
+  if (tool === 'trae' && fs.existsSync(path.join(target, '.trae-cn'))) errors.push('不得生成项目级 .trae-cn 镜像');
+  if (tool === 'trae') {
+    for (const command of commandList) {
+      if (fs.existsSync(path.join(target, `.trae/skills/${command.skill_slug}`))) {
+        errors.push(`Trae 不得为 ${command.id} 重复生成阶段 Skill`);
+      }
+    }
+  }
 
   const expectedPrimary = new Set(commandList.map((command) => spec.primaryEntry(command)));
   if (expectedPrimary.size !== commandList.length) {

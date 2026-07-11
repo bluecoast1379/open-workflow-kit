@@ -34,4 +34,4 @@ A typical feature moves through:
 
 ## Adapter outcome
 
-Codex, Claude Code, Cursor, GitHub Copilot, CodeBuddy, Kiro and Trae receive manifest-driven project entries. `.trae-cn/` is a compatibility mirror. The current support state is `native_not_yet_manually_certified` for all seven platforms: generated conformance is covered, but real-client certification remains a versioned manual activity.
+Codex, Claude Code, Cursor, GitHub Copilot, CodeBuddy, Kiro and Trae receive manifest-driven project entries. Trae and Trae CN use the same project `.trae/commands/` path. The current support state is `native_not_yet_manually_certified` for all seven platforms: generated conformance is covered, but real-client certification remains a versioned manual activity.
