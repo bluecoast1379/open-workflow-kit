@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc">
+  <title id="title">Open Workflow Kit 30-second Quick Demo</title>
+  <desc id="desc">A terminal-style illustration with three actions: clone the repository, enter it and run the initializer in dry-run mode. Expected output lists the target, enabled tools, detected repository and planned files without writing them.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#070B14"/><stop offset="1" stop-color="#0B1220"/></linearGradient>
+    <linearGradient id="accent"><stop stop-color="#6D7CFF"/><stop offset="1" stop-color="#48D7FF"/></linearGradient>
+  </defs>
+  <rect width="1440" height="720" rx="32" fill="url(#bg)"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">
+    <text x="72" y="88" fill="#F8FAFC" font-size="52" font-weight="750">30 秒 Quick Demo</text>
+    <text x="72" y="130" fill="#A7B0C0" font-size="22">3 个动作 · dry-run 不写文件 · 下载时间不计入 30 秒</text>
+    <g transform="translate(72 178)">
+      <rect width="1296" height="462" rx="28" fill="#0B101C" stroke="#27344C" stroke-width="2"/>
+      <rect width="1296" height="62" rx="28" fill="#111A2C"/>
+      <rect y="34" width="1296" height="28" fill="#111A2C"/>
+      <circle cx="34" cy="31" r="8" fill="#FB7185"/><circle cx="62" cy="31" r="8" fill="#F59E0B"/><circle cx="90" cy="31" r="8" fill="#48D7FF"/>
+      <text x="648" y="38" text-anchor="middle" fill="#A7B0C0" font-size="17">terminal · open-workflow-kit</text>
+      <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="23">
+        <text x="38" y="112" fill="#6D7CFF" font-weight="700">01</text><text x="92" y="112" fill="#48D7FF">$</text><text x="122" y="112" fill="#F8FAFC">git clone https://github.com/bluecoast1379/open-workflow-kit.git</text>
+        <text x="38" y="164" fill="#6D7CFF" font-weight="700">02</text><text x="92" y="164" fill="#48D7FF">$</text><text x="122" y="164" fill="#F8FAFC">cd open-workflow-kit</text>
+        <text x="38" y="216" fill="#6D7CFF" font-weight="700">03</text><text x="92" y="216" fill="#48D7FF">$</text><text x="122" y="216" fill="#F8FAFC">node bin/init-workspace.cjs --target . --dry-run</text>
+        <path d="M38 252h1220" stroke="#27344C"/>
+        <text x="38" y="304" fill="#48D7FF">✓</text><text x="80" y="304" fill="#A7B0C0">Dry run 目标目录: .../open-workflow-kit</text>
+        <text x="38" y="348" fill="#48D7FF">✓</text><text x="80" y="348" fill="#A7B0C0">启用工具: codex, claude, cursor, copilot, codebuddy, kiro, trae</text>
+        <text x="38" y="392" fill="#48D7FF">✓</text><text x="80" y="392" fill="#A7B0C0">已识别仓库: 1</text>
+        <text x="38" y="436" fill="#48D7FF">✓</text><text x="80" y="436" fill="#A7B0C0">计划写入: workflow core + project-level adapters</text>
+      </g>
+    </g>
+    <rect x="1072" y="68" width="296" height="54" rx="27" fill="url(#accent)" opacity=".16" stroke="#48D7FF"/>
+    <text x="1220" y="102" text-anchor="middle" fill="#D7F8FF" font-size="20" font-weight="700">deterministic · zero write</text>
+  </g>
+</svg>

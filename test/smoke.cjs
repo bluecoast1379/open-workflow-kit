@@ -10,10 +10,17 @@ const commandCheck = path.join(root, 'bin', 'check-command-manifest.cjs');
 const supportCheck = path.join(root, 'bin', 'check-support-matrix.cjs');
 const sanitizedCheck = path.join(root, 'bin', 'check-sanitized.cjs');
 const historyCheck = path.join(root, 'bin', 'check-history.cjs');
-const { classifySourcePaths } = require(init);
+const { classifySourcePaths, toPortablePath } = require(init);
 const { loadCommandManifest } = require(path.join(root, 'bin', 'command-manifest.cjs'));
 const commands = loadCommandManifest(path.join(root, 'workflow/core/command-manifest.yaml')).commands;
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-smoke-'));
+
+// Windows path.relative() emits backslashes. Generated team-profile/toolchain
+// paths are portable identifiers and must always use POSIX separators.
+const windowsRepoPath = path.win32.relative('C:\\workspace', 'C:\\workspace\\apps\\web');
+if (toPortablePath(windowsRepoPath) !== 'apps/web') {
+  throw new Error(`Windows relative path was not normalized: ${windowsRepoPath}`);
+}
 
 function mkdir(rel) {
   fs.mkdirSync(path.join(tmp, rel), { recursive: true });

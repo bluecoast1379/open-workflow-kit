@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "project": "open-workflow-kit",
+  "generator": "deterministic hand-authored SVG",
+  "external_resources": false,
+  "palette": {
+    "background": ["#070B14", "#0B1220"],
+    "text": ["#F8FAFC", "#A7B0C0"],
+    "accent": ["#6D7CFF", "#48D7FF"]
+  },
+  "assets": [
+    { "file": "hero.svg", "width": 1440, "height": 720, "purpose": "README hero", "sha256": "ffe7b085fa61e793e528feb6fc649fab7b4feb9d30c08d2ae714e3a25ad1cbc8" },
+    { "file": "architecture.svg", "width": 1440, "height": 900, "purpose": "architecture and evidence flow", "sha256": "f298ef818fd29ea3b7b1bff533826036aeced5796e75c90b53acf8d84098c977" },
+    { "file": "quick-demo.svg", "width": 1440, "height": 720, "purpose": "three-action Quick Demo", "sha256": "76b47f7778825ab93d06f60a7c5cecc589187f4d3b4888feeb629f93f0b0bffb" },
+    { "file": "social-preview.svg", "width": 1280, "height": 640, "purpose": "source for GitHub social preview export", "sha256": "d09fe32dcafffab6a4b9d8a9d9112fb3d8371f319cd7b4212136df18a9f0192d" }
+  ],
+  "exports": [
+    {
+      "filename": "social-preview.png",
+      "format": "png",
+      "width": 1280,
+      "height": 640,
+      "source": "social-preview.svg",
+      "purpose": "GitHub repository social preview upload",
+      "tracked": false,
+      "sha256": "6f9cfa10396274c8f18712e602022cea01392bd60212b3b1f6ad715c18e3f5b7"
+    }
+  ]
+}

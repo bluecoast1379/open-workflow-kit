@@ -25,7 +25,7 @@ npm install "git+https://github.com/<owner>/open-workflow-kit.git#<audited-commi
 npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 ```
 
-`<owner>` 与 `<audited-commit-sha>` 必须替换为实际公开仓库和完整审核结果。首次发布前，文档不假设 `v1.0.0` 或其他 tag 已存在。若后续使用 tag，也必须先核对 tag 指向的 commit 与 release manifest。
+`<owner>` 与 `<audited-commit-sha>` 必须替换为实际公开仓库和完整审核结果。历史 `v1.0.0` tag 只代表对应旧提交，不能替代当前 1.0.1 修复候选的审核结果；若后续使用 `v1.0.1` tag，必须先核对 tag 指向的 commit 与 release manifest。
 
 ## 从 package registry 安装
 

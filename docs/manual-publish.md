@@ -2,7 +2,7 @@
 
 agent 不得自动创建远程仓库、push commits、创建 tags 或发布 package。本指南只作为 `npm run build:release` 通过后的人工清单。
 
-文档中的 `<version>` 与 `<reviewed-commit>` 都是占位符。只有维护者完成本页验证并真实创建远程对象后，才能在安装文档中引用它；不能因为 `package.json` 写了 1.0.0 就声称 `v1.0.0` tag 或 registry package 已存在。
+文档中的 `<version>` 与 `<reviewed-commit>` 都是占位符。只有维护者完成本页验证并真实创建远程对象后，才能在安装文档中引用它；不能因为 `package.json` 写了 1.0.1 就声称 `v1.0.1` tag、GitHub Release 或 registry package 已存在。历史 `v1.0.0` tag 不得移动。
 
 ## 当前本地发布
 

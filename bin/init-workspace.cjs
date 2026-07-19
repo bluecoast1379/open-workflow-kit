@@ -259,8 +259,15 @@ function parseArgs(argv) {
 
 module.exports = {
   classifySourcePaths,
-  extractGitHost
+  extractGitHost,
+  toPortablePath
 };
+
+// Paths persisted in generated workflow artifacts are workspace-relative
+// identifiers, not host-OS paths. Keep them stable across Windows/macOS/Linux.
+function toPortablePath(value) {
+  return String(value).replace(/\\/g, '/');
+}
 
 function printHelp() {
   console.log(`用法: node bin/init-workspace.cjs [options]
@@ -330,7 +337,7 @@ function scanRepos(root) {
       return;
     }
 
-    const rel = path.relative(root, dir) || '.';
+    const rel = toPortablePath(path.relative(root, dir)) || '.';
     const marker = detectRepoMarker(dir);
     if (marker && !seen.has(rel)) {
       seen.add(rel);
@@ -399,7 +406,7 @@ function scanRequiredSources(root) {
   walkFiles(root, 4, (file) => {
     const ext = path.extname(file).toLowerCase();
     if (!['.md', '.txt', '.docx', '.pdf', '.yaml', '.yml', '.json'].includes(ext)) return;
-    candidates.push(path.relative(root, file));
+    candidates.push(toPortablePath(path.relative(root, file)));
   });
 
   const result = {};
@@ -816,7 +823,7 @@ function classifySourcePaths(target, values) {
       local.push(value);
       continue;
     }
-    shared.push((rel || '.').split(path.sep).join('/'));
+    shared.push(toPortablePath(rel) || '.');
   }
   return { shared: [...new Set(shared)], local: [...new Set(local)] };
 }
@@ -1116,7 +1123,7 @@ function detectToolchain(root, repos) {
   const bases = ['.'];
   for (const repo of repos) if (!bases.includes(repo.path)) bases.push(repo.path);
   for (const base of bases) {
-    const p = (rel) => (base === '.' ? rel : path.join(base, rel));
+    const p = (rel) => toPortablePath(base === '.' ? rel : path.join(base, rel));
     if (existsRel(p('Jenkinsfile'))) addHit('ci_cd', 'jenkins', p('Jenkinsfile'));
     if (existsRel(p('.github/workflows'))) addHit('ci_cd', 'github-actions', p('.github/workflows/'));
     if (existsRel(p('.gitlab-ci.yml'))) addHit('ci_cd', 'gitlab-ci', p('.gitlab-ci.yml'));
@@ -1166,7 +1173,7 @@ function detectToolchain(root, repos) {
   // 子目录里的 CI / 容器文件靠这里的按名扫描补检。
   walkFiles(root, 4, (file) => {
     const name = path.basename(file).toLowerCase();
-    const rel = path.relative(root, file);
+    const rel = toPortablePath(path.relative(root, file));
     if (name === 'jenkinsfile') addHit('ci_cd', 'jenkins', rel);
     if (name === '.gitlab-ci.yml') addHit('ci_cd', 'gitlab-ci', rel);
     if (name === 'dockerfile') addHit('deploy_runtime', 'docker', rel);

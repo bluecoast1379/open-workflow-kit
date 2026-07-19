@@ -1,6 +1,40 @@
 # Open Workflow Kit
 
-Open Workflow Kit 1.0 把“什么叫完成”编译成可检查、可执行、可复验、可失效的研发契约。它保留完整阶段工作流，并新增 Completion Contract、Evidence Ledger 和有预算的 `run-until-done` 收敛循环，让 agent 只能在明确范围内持续交付，不能靠降低标准宣布完成。
+![Open Workflow Kit：面向团队级 AI Coding 的交付治理，连接 Completion Contract、Evidence Ledger 与 Delivery Gates](./docs/assets/hero.svg)
+
+[![Check](https://github.com/bluecoast1379/open-workflow-kit/actions/workflows/check.yml/badge.svg)](https://github.com/bluecoast1379/open-workflow-kit/actions/workflows/check.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-6D7CFF.svg)](./LICENSE)
+[![Node.js 18+](https://img.shields.io/badge/Node.js-18%2B-48D7FF.svg)](./package.json)
+
+**面向团队级 AI Coding 的交付治理。** Open Workflow Kit 把“什么叫完成”编译成可检查、可执行、可复验、会在输入变化时失效的研发契约。Completion Contract 冻结标准，Evidence Ledger 保存证据，有预算的 `run-until-done` 只在授权范围内收敛；自动完成、人工验收与发布始终是不同状态。
+
+## 如何选择三套开源项目
+
+| 项目 | 最适合谁 | 解决什么问题 |
+| --- | --- | --- |
+| **[open-workflow-kit](https://github.com/bluecoast1379/open-workflow-kit)**（本项目） | 使用多个 AI Coding 工具的研发团队 | 用完成合同、证据账本和交付闸门治理“定义完成 → 自动验证 → 人工验收” |
+| [business-agent](https://github.com/bluecoast1379/business-agent) | 构建业务 Agent 的产品与工程团队 | 提供业务 Agent 的规划、网关、评测与运行骨架 |
+| [openone-workflow-kit](https://github.com/bluecoast1379/openone-workflow-kit) | 独立开发者与小型产品团队 | 用研发轨 + 商业化轨把个人产品从想法推进到发布和复盘 |
+
+## 30 秒 Quick Demo
+
+> 下面是 3 个动作；下载时间不计入 30 秒。`--dry-run` 只输出计划，不写入文件。
+
+```bash
+git clone https://github.com/bluecoast1379/open-workflow-kit.git
+cd open-workflow-kit
+node bin/init-workspace.cjs --target . --dry-run
+```
+
+预期看到 `Dry run 目标目录`、`启用工具`、`已识别仓库` 和 `计划写入`，说明同一套 workflow core 已为各工具解析出确定性安装计划。需要安装到真实工作区时，请改用目标目录并先阅读[快速开始](#快速开始)。
+
+![Open Workflow Kit Quick Demo：克隆仓库、进入目录、执行 dry-run，并看到确定性计划摘要](./docs/assets/quick-demo.svg)
+
+## 架构一览
+
+![Open Workflow Kit 架构：从完成定义、合同校验、受控执行、证据账本到人工验收的单向证据流](./docs/assets/architecture.svg)
+
+关键事实不依赖图片：`workflow/core/` 是工具无关的单一事实源；初始化器生成各平台 adapter；Completion Contract 与 Owner-signed permit 限定执行范围；Oracle 结果写入 Evidence Ledger；只有当前证据满足自动 AC 时才进入 `READY_FOR_HUMAN_ACCEPTANCE`，人工签收后才可能成为 `ACCEPTED`。
 
 ## 1.0 的核心能力
 
