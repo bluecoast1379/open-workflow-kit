@@ -39,6 +39,20 @@ main().catch((error) => {
 });
 
 async function main() {
+  const attributesFile = path.join(root, '.gitattributes');
+  if (fs.existsSync(path.join(root, '.git'))) {
+    assert.ok(fs.existsSync(attributesFile), 'source checkouts must retain .gitattributes');
+    assert.match(
+      fs.readFileSync(attributesFile, 'utf8'),
+      /^\* text=auto eol=lf$/m,
+      'hash-bound Oracle fixtures require LF checkout normalization on Windows'
+    );
+  }
+  assert.ok(
+    !fs.readFileSync(path.join(exampleDir, 'oracle.cjs'), 'utf8').includes('\r\n'),
+    'the checked-out Oracle fixture must retain LF bytes on every CI platform'
+  );
+
   const valid = loadData(path.join(exampleDir, 'valid-contract.yaml'));
   const executionKeys = crypto.generateKeyPairSync('ed25519');
   const executionPublicKey = executionKeys.publicKey.export({ type: 'spki', format: 'pem' });
@@ -115,7 +129,11 @@ async function main() {
     listChangedPaths: () => ({ measurable: true, paths: [] }),
     measureDiff: () => ({ measurable: true, lines: 0 })
   });
-  assert.strictEqual(run.outcome, 'READY_FOR_HUMAN_ACCEPTANCE');
+  assert.strictEqual(run.outcome, 'READY_FOR_HUMAN_ACCEPTANCE', JSON.stringify({
+    outcome: run.outcome,
+    reason: run.reason,
+    blockers: run.evaluation && run.evaluation.blockers
+  }, null, 2));
   assert.strictEqual(run.evaluation.accepted, false);
   assert.strictEqual(readLedger(ledger)[0].attestation.key_id, automationKeyId);
 

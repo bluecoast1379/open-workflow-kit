@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc">
+  <title id="title">Open Workflow Kit — team-level AI Coding delivery governance</title>
+  <desc id="desc">A dark blue visual connecting a completion contract, evidence ledger and delivery gates. The project provides governed, reproducible and cross-tool AI Coding delivery.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070B14"/>
+      <stop offset="1" stop-color="#0B1220"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6D7CFF"/>
+      <stop offset="1" stop-color="#48D7FF"/>
+    </linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#A7B0C0" stroke-opacity=".07"/>
+    </pattern>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="28"/>
+    </filter>
+  </defs>
+  <rect width="1440" height="720" rx="32" fill="url(#bg)"/>
+  <rect width="1440" height="720" rx="32" fill="url(#grid)"/>
+  <circle cx="1180" cy="122" r="164" fill="#6D7CFF" opacity=".14" filter="url(#glow)"/>
+  <circle cx="1280" cy="590" r="150" fill="#48D7FF" opacity=".10" filter="url(#glow)"/>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">
+    <g transform="translate(88 76)">
+      <rect width="64" height="64" rx="18" fill="url(#accent)"/>
+      <path d="M19 21h26M19 32h18M19 43h22" stroke="#070B14" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <text x="88" y="204" fill="#F8FAFC" font-size="72" font-weight="760" letter-spacing="-2">Open Workflow Kit</text>
+    <text x="88" y="258" fill="#A7B0C0" font-size="30">面向团队级 AI Coding 的交付治理</text>
+    <text x="88" y="310" fill="#F8FAFC" font-size="28" font-weight="600">Define completion. Bind evidence. Ship with proof.</text>
+
+    <g transform="translate(88 370)">
+      <rect width="228" height="54" rx="27" fill="#6D7CFF" fill-opacity=".13" stroke="#6D7CFF"/>
+      <text x="114" y="35" text-anchor="middle" fill="#D9DEFF" font-size="21" font-weight="650">Completion Contract</text>
+      <rect x="248" width="198" height="54" rx="27" fill="#48D7FF" fill-opacity=".10" stroke="#48D7FF"/>
+      <text x="347" y="35" text-anchor="middle" fill="#C9F5FF" font-size="21" font-weight="650">Evidence Ledger</text>
+      <rect x="466" width="190" height="54" rx="27" fill="#F8FAFC" fill-opacity=".06" stroke="#A7B0C0"/>
+      <text x="561" y="35" text-anchor="middle" fill="#F8FAFC" font-size="21" font-weight="650">Delivery Gates</text>
+    </g>
+
+    <g transform="translate(788 164)">
+      <path d="M196 108h16M412 108h16" stroke="url(#accent)" stroke-width="5" stroke-linecap="round"/>
+      <path d="M204 98l10 10-10 10M420 98l10 10-10 10" fill="none" stroke="#48D7FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <g>
+        <rect width="192" height="216" rx="28" fill="#111A2C" stroke="#6D7CFF" stroke-width="2"/>
+        <rect x="28" y="28" width="58" height="58" rx="16" fill="#6D7CFF" fill-opacity=".18"/>
+        <path d="M45 48h24M45 59h18M45 70h21" stroke="#8D98FF" stroke-width="4" stroke-linecap="round"/>
+        <text x="28" y="126" fill="#F8FAFC" font-size="23" font-weight="700">Contract</text>
+        <text x="28" y="160" fill="#A7B0C0" font-size="18">Scope · AC</text>
+        <text x="28" y="188" fill="#A7B0C0" font-size="18">Budget bound</text>
+      </g>
+      <g transform="translate(216)">
+        <rect width="192" height="216" rx="28" fill="#111A2C" stroke="#48D7FF" stroke-width="2"/>
+        <rect x="28" y="28" width="58" height="58" rx="16" fill="#48D7FF" fill-opacity=".14"/>
+        <circle cx="47" cy="57" r="6" fill="#48D7FF"/>
+        <circle cx="68" cy="46" r="6" fill="#48D7FF"/>
+        <circle cx="68" cy="69" r="6" fill="#48D7FF"/>
+        <path d="M52 54l11-6M52 60l11 6" stroke="#48D7FF" stroke-width="3"/>
+        <text x="28" y="126" fill="#F8FAFC" font-size="23" font-weight="700">Evidence</text>
+        <text x="28" y="160" fill="#A7B0C0" font-size="18">Signed · Fresh</text>
+        <text x="28" y="188" fill="#A7B0C0" font-size="18">Input-bound</text>
+      </g>
+      <g transform="translate(432)">
+        <rect width="192" height="216" rx="28" fill="#111A2C" stroke="#A7B0C0" stroke-width="2"/>
+        <rect x="28" y="28" width="58" height="58" rx="16" fill="#F8FAFC" fill-opacity=".08"/>
+        <path d="M45 58l10 10 18-22" fill="none" stroke="#48D7FF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="28" y="126" fill="#F8FAFC" font-size="23" font-weight="700">Acceptance</text>
+        <text x="28" y="160" fill="#A7B0C0" font-size="18">Human gate</text>
+        <text x="28" y="188" fill="#A7B0C0" font-size="18">Release approval</text>
+      </g>
+    </g>
+
+    <text x="88" y="650" fill="#A7B0C0" font-size="18">One workflow core · Seven project-level adapters · No external visual resources</text>
+  </g>
+</svg>

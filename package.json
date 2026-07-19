@@ -1,6 +1,6 @@
 {
   "name": "open-workflow-kit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "将完成定义编译为 Completion Contract、可复现证据与多 Agent 交付闸门的零依赖工作流 kit。",
   "keywords": [

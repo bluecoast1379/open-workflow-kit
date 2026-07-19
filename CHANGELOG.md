@@ -2,7 +2,20 @@
 
 All notable changes to Open Workflow Kit are documented here. Versions follow Semantic Versioning; a section does not imply that a remote tag or registry release already exists.
 
-## 1.0.0 - Unreleased
+## 1.0.1 - 2026-07-19
+
+### Fixed
+
+- Normalize tracked text to LF through `.gitattributes`, so the Contract-pinned Oracle integrity fingerprint is identical on Linux, macOS and Windows checkouts.
+- Add an explicit cross-platform line-ending regression assertion and include the runner blocker detail in end-to-end assertion failures.
+
+### Changed
+
+- Reframe the README first screen around team-level AI Coding delivery governance, add a three-project selector, a three-step Quick Demo and deterministic visual assets.
+
+`v1.0.0` already points to an earlier immutable commit, so this corrective source change uses the next patch version rather than moving the existing tag.
+
+## 1.0.0 - 2026-07-13
 
 ### Added
 
@@ -42,7 +55,7 @@ All notable changes to Open Workflow Kit are documented here. Versions follow Se
 - Re-run `agent-workflow-init --upgrade` to generate all 23 command entries and the current project-level adapter paths.
 - Replace legacy Trae instruction, stage Skills and `.trae-cn/` project mirrors with one `.trae/commands/` entry per stage; Trae CN reads the same project path.
 - Do not copy old PASS evidence into a new Contract. Initialize or migrate `features/<feature>/completion/`, then rerun Oracle checks under the new fingerprints.
-- A 1.0.0 tag or registry package may be referenced only after a maintainer explicitly publishes it.
+- The immutable `v1.0.0` tag records the original 1.0 source baseline; cross-platform checkout normalization is delivered in the later 1.0.1 patch line.
 
 ## 0.9.x
 
