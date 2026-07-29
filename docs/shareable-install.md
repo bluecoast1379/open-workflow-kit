@@ -49,7 +49,7 @@ npx agent-workflow-init --target . --tools codex,claude,cursor --yes
 - 必要时的 `workflow/INITIALIZATION_QUESTIONS.md`
 - 每个选中工具的 manifest-driven adapter，例如 `.agents/skills/`、`.claude/commands/`、`.cursor/commands/`、`.github/prompts/`、`.codebuddy/commands/`、`.kiro/` 或 `.trae/`
 
-Command manifest 当前有 23 项。Trae 与 Trae CN 都从项目根 `.trae/commands/` 读取同一套入口。
+Command manifest 当前有 24 项。Trae 与 Trae CN 都从项目根 `.trae/commands/` 读取同一套入口。
 
 ## 安全边界
 
@@ -67,7 +67,7 @@ node workflow/bin/check-completion-contract.cjs --help
 
 接收方确认：
 
-- 七个平台（或所选子集）的项目入口与 23 个 manifest 命令一致；
+- 七个平台（或所选子集）的项目入口与 24 个 manifest 命令一致；
 - support matrix 中当前状态仍为 `native_not_yet_manually_certified`，除非有本版本真实工具证据；
 - 升级没有覆盖 `workflow/team-profile.yaml` 或用户自定义文件；
 - 初始化没有产生远程或生产写操作；

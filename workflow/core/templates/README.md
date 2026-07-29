@@ -17,7 +17,7 @@
 - `completion-run-state.template.yaml` / `completion-decision-packet.template.json` / `completion-evidence-entry.template.json`：checkpoint、停止决策与 append-only 证据的格式样例。Decision packet 必须通过 `../schemas/completion-decision-packet.schema.json`，不得临时增删字段规避结构验证。
 - `api-test-plan.example.json`：schema 1.1、无凭证的机器可读 API 计划，含显式断言、capture 和 bounded retry。
 - `api-test-plan.md` / `ui-test-plan.md`：API / UI 双轨测试计划；用例必须引用 `AC-###`。
-- `prototype-page.html`：可选的单文件交互原型骨架，受 design tokens / components 约束。
+- `prototype-page.html`：默认单文件 HTML 交互原型骨架，受 design tokens/components 约束；02C 同时生成 canonical model/provenance，02D target renderer 不从 HTML 反解析。
 
 ## 约束
 

@@ -24,7 +24,7 @@ HTML 可点击原型: 在 `/02-产品文档` 与 `/02B-UI设计` 基线之上，
 
 ## 原型产出要求（前端开发级）
 
-- 产物：`features/{feature}/prototype/index.html`，**单文件自包含**（内嵌 tokens CSS 与最小 JS），双击即可在浏览器打开演示。
+- 事实源产物：先生成 `features/{feature}/prototype/model.json` 与 `provenance.json`；随后由 `workflow/bin/render-html-prototype.cjs` 从该 model 渲染 `index.html`。HTML 仍是默认用户可见产物，单文件自包含（内嵌 tokens CSS 与最小 JS），双击即可在浏览器打开演示。
 - 可点击：内置微型 hash 路由实现页面跳转；核心流程（进入 → 操作 → 结果）可以真实点过去。
 - 四态齐全：关键页面覆盖正常态、空态、错误态、加载态，用可见开关切换演示。
 - 全部视觉取值来自 `tokens.css` 的 CSS 变量：**禁止出现 token 之外的硬编码颜色、字号、间距**；组件写法必须匹配 `components.md` 清单。
@@ -42,12 +42,14 @@ HTML 可点击原型: 在 `/02-产品文档` 与 `/02B-UI设计` 基线之上，
 ## 执行规则
 
 - 本阶段不授权修改业务代码；原型只写在 `features/{feature}/prototype/`。
+- 不从任意 HTML 反解析 model；历史 HTML 缺少 model 时仍可浏览，但后续 02D 必须 BLOCKED 并提示重新执行 02C。
 - 未真实打开验证过的交互不得写成"可点击"；至少记录一次浏览器打开与关键流程点击的验证结果（有浏览器自动化 MCP 时截图存证到 `features/{feature}/screenshots/`）。
 - 原型是沟通产物不是实现代码：不引入框架、构建步骤或外部 CDN 依赖。
 
 ## Required Structure
 
-- 原型文件顶部记录 feature、PRD / 02B / Completion Contract 版本与 `AC-###` 映射。
+- `model.json` 记录稳定 entity ID、feature、sources、pages/nodes/tokens/components 与 `REQ-###` / `AC-###` 映射；`provenance.json` 记录 canonical model hash、生成器版本与 source documents。
+- 原型文件顶部记录 feature、model hash、PRD / 02B / Completion Contract 版本与 `AC-###` 映射。
 - 页面、组件、design tokens、核心路由、四态、响应式、长文本 / 小屏、键盘与 accessibility 演示完整。
 - 每个交互演示都有进入条件、用户动作、预期反馈、失败 / 恢复和对应 AC；纯静态跳转不得冒充业务已实现。
 - 验证记录包含真实浏览器 / 视口、关键点击路径、截图或等价证据与已知偏差。
@@ -61,7 +63,8 @@ HTML 可点击原型: 在 `/02-产品文档` 与 `/02B-UI设计` 基线之上，
 
 ## 必要输出
 
-- `features/{feature}/prototype/index.html`（及必要的分页面文件）。
+- `features/{feature}/prototype/model.json`、`provenance.json` 与默认 `index.html`。
+- 用户显式要求 Figma/Sketch/Axure 时，下一步执行 `/02D-可编辑原型交付`；未要求时不自动推断 target。
 - 更新 `features/{feature}/02B-UI设计.md`：登记原型路径与 tokens 反查结论。
 - 更新 `features/{feature}/00-工作流状态.md`。
 

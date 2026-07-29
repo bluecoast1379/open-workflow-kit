@@ -81,3 +81,4 @@ The `02B-UI设计.md` output should include:
 - design tokens、组件状态、响应式 / 平台适配、多语言和 accessibility 约束足以让 04A 不靠猜测实现。
 - 体验中的“流畅、克制、可信、美观”等词已转成反馈阈值、禁止模式、参考基线或有权 Owner 的人工 rubric。
 - 设计引用、待确认项与豁免均有来源、Owner 和到期日；不存在阻断性设计歧义。
+- 如需可编辑设计工具交付，页面、可见文本、主要组件与已知属性损失具备稳定 ID/映射口径，可由 02C model 与显式 02D target 消费；02B 本身不自动推断或生成 target 文件。

@@ -79,7 +79,7 @@ npm publish --access public
 - 运行 `npm run check`。
 - 运行 `npm run check:history`。
 - 确认 `npm run check:commands`、`npm run check:rules` 和 `npm run check:adapters` 通过（它们也由 `npm run check` 调用）。
-- 确认 command manifest 为 23 项，七个平台状态按当前真实证据披露；没有人工证据时保持 `native_not_yet_manually_certified`。
+- 确认 command manifest 为 24 项，七个平台状态按当前真实证据披露；没有人工证据时保持 `native_not_yet_manually_certified`。
 - 运行 Completion Contract 正例与模糊标准、非法 waiver、stale evidence 负例，确认自动完成不能越过人工验收。
 - 运行 `npm run build:release`。
 - 使用 `bin/check-sanitized.cjs --extra-banned <private-file>` 执行私有 denylist 扫描。

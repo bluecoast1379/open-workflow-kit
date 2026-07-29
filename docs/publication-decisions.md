@@ -32,7 +32,7 @@ Open Workflow Kit 可以进行本地验证和本地打包。远程发布仍必�
 3. 运行 `npm run build:release`。
 4. 使用 Open Workflow Kit 仓库外部的私有 denylist 扫描。
 5. 人工检查全部可分发文件和 `dist/RELEASE_MANIFEST.md`。
-6. 确认 23 个命令、七个平台 adapter 和 Completion Contract 正负例均按当前口径通过。
+6. 确认 24 个命令、七个平台 adapter、editable prototype 与 Completion Contract 正负例均按当前口径通过。
 7. 由维护者手动创建干净 release tag；只有创建成功后才在安装文档中引用。
 
 agent 不得执行 publish、push、tag 或远程仓库创建动作。

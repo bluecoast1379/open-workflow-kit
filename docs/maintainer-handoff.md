@@ -96,7 +96,7 @@ agent-workflow-init --target . --tools codex,claude,cursor,copilot,codebuddy,kir
 - `bin/init-workspace.cjs`: 本地初始化逻辑。
 - `bin/check-sanitized.cjs`: 发布安全检查。
 - `bin/check-rule-catalog.cjs`: 37 条规则 / 79 个清单 item 映射与可选私有 provenance 检查。
-- `bin/check-command-manifest.cjs`: 23 个命令、core command、Completion Contract 引用和实现闸门映射检查。
+- `bin/check-command-manifest.cjs`: 24 个命令、core command、Completion Contract 引用和实现闸门映射检查。
 - `bin/check-support-matrix.cjs`: 七个平台项目级路径、发现方式、conformance 和人工验收状态检查。
 - `bin/check-completion-contract.cjs`: Contract 结构、traceability、量化标准、governance 和 Oracle 安全 lint。
 - `bin/evidence-ledger.cjs`: append-only evidence；chain 与 HMAC 验证结果分开报告。

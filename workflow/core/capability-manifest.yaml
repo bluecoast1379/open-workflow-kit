@@ -1,6 +1,6 @@
 schema_version: "1.0"
-manifest_version: "1.0.0"
-capability_count: 31
+manifest_version: "1.1.0"
+capability_count: 32
 
 activation:
   essential: "always-required"
@@ -270,6 +270,15 @@ capabilities:
     executor: "agent"
     blocking: true
     evidence_types: ["token-audit", "component-map", "visual-diff"]
+
+  - id: "editable-export-reviewer"
+    tier: "optional"
+    stages: ["02C-HTML原型", "02D-可编辑原型交付", "04A-前端代码实现", "06-测试用例", "07-测试执行"]
+    applies_when: { any_keywords: ["Figma", "Sketch", "Axure", "可编辑原型", "prototype exporter"], contract_paths: ["quality_budgets.ux", "acceptance"] }
+    required_inputs: ["prototype/model.json", "prototype/provenance.json", "target report", "client evidence"]
+    executor: "agent"
+    blocking: true
+    evidence_types: ["mapping-report", "loss-report", "client-editability-evidence"]
 
   - id: "memory-curator"
     tier: "optional"

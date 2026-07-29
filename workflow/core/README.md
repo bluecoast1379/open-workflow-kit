@@ -15,7 +15,7 @@
 
 ## 目录地图
 
-- `command-manifest.yaml`: 23 个工作流命令的 ID、展示信息、参数提示、Skill slug 和实现闸门标记，包含 `/define-done` 与 `/deliver-until-done`。
+- `command-manifest.yaml`: 24 个工作流命令的 ID、展示信息、参数提示、Skill slug 和实现闸门标记，包含显式 `/02D-可编辑原型交付`、`/define-done` 与 `/deliver-until-done`。
 - `commands/`: 每个阶段的契约。
 - `templates/`: 通用文档模板（含 api/ui-test-plan 与 prototype-page.html）。
 - `capabilities/`: 可复用检查能力。
@@ -23,6 +23,7 @@
 - `rules/`: 37 条规则到 79 个清单 item、capability、stage 和公开证据的审计级映射。
 - `execution-policy.md`: 高风险写操作的分级执行策略。
 - `testing-automation-guide.md`: 接口/功能测试双轨自动化接入指引。
+- `../prototype-targets/`: Figma、Sketch、Axure bridge 的能力边界与真实客户端认证口径。
 
 ## 团队特化
 

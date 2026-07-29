@@ -1,0 +1,31 @@
+schema_version: "1.0"
+claim: "model-first local editable handoff; structural conformance is not native-client certification"
+default_target: "html"
+targets:
+  html:
+    delivery_mode: "SINGLE_FILE"
+    source: "prototype model"
+    client_validation: "browser-required"
+    external_write: false
+  figma:
+    priority: 1
+    delivery_mode: "LOCAL_PLUGIN"
+    capability_ceiling: "SUPPORTED"
+    source: "prototype model"
+    initial_capability: "NOT_VERIFIED"
+    external_write: false
+  sketch:
+    priority: 2
+    delivery_mode: "NATIVE_FILE"
+    capability_ceiling: "SUPPORTED"
+    source: "prototype model"
+    initial_capability: "NOT_VERIFIED"
+    external_write: false
+  axure:
+    priority: 3
+    delivery_mode: "BRIDGE_ONLY"
+    capability_ceiling: "DEGRADED"
+    source: "verified Figma run with the same model hash"
+    native_rp: false
+    initial_capability: "NOT_VERIFIED"
+    external_write: false

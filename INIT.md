@@ -1,6 +1,6 @@
 # 初始化指南
 
-本文说明如何把 Open Workflow Kit 1.0 安装到目标工作区。初始化只负责扫描本地资料、生成 workflow core、team profile 和选中平台的项目级 adapter；它不授权实现、远程 Git、部署或生产写入。
+本文说明如何把 Open Workflow Kit 1.1 安装到目标工作区。初始化只负责扫描本地资料、生成 workflow core、team profile 和选中平台的项目级 adapter；它不授权实现、远程 Git、部署或生产写入。
 
 ## 推荐流程
 
@@ -47,9 +47,11 @@ agent-workflow-init --target . --tools codex,claude,cursor --upgrade
 
 升级规则：
 
-- 默认不覆盖已有文件；冲突内容写入 `.agent-workflow-new`。
-- 只有显式 `--force` 才覆盖一般生成文件。
+- 安装器先 preflight 完整 cohort，再以 journaled transaction 写入、校验和 commit；失败或中断回滚 previous cohort。
+- 已识别的 1.0.1 managed baseline 可 non-force 原子升级；不识别的受管文件冲突会在写入前整体失败，避免 23/24 混合态。
+- 只有显式 `--force` 才覆盖发生冲突的一般受管文件。
 - `workflow/team-profile.yaml` 是团队维护的共享契约，即使 `--force` 也不会原地覆盖。
+- team-profile/local 等 preserve 文件的候选内容写入 `.agent-workflow-new`，不进入 active cohort。
 - 旧版生成文件仅在内容匹配 kit 指纹时自动清理；用户自定义内容保留并提示人工处理。
 - `--dry-run` 只列出写入、清理与冲突计划。
 
@@ -140,7 +142,7 @@ node workflow/bin/check-completion-contract.cjs \
 - `workflow/team-profile.yaml` 已人工检查，且只含可提交内容；
 - `workflow/local/` 已被 Git 忽略；
 - 待补资料没有被遗漏；
-- 选中平台的全部 23 个命令入口已生成；
+- 选中平台的全部 24 个命令入口已生成；
 - Trae CN 复用项目 `.trae/commands/`，不会生成独立 `.trae-cn/` adapter；
 - 已有文件没有被意外覆盖；
 - 初始化期间没有远程 Git、分支、部署、数据库或生产配置动作；

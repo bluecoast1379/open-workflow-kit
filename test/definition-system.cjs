@@ -11,7 +11,7 @@ const checker = path.join(root, 'bin/check-definition-system.cjs');
 assert.strictEqual(run(root).status, 0, run(root).stderr);
 
 const countRoot = fixture();
-replace(countRoot, 'workflow/core/capability-manifest.yaml', 'capability_count: 31', 'capability_count: 30');
+replace(countRoot, 'workflow/core/capability-manifest.yaml', 'capability_count: 32', 'capability_count: 31');
 assert.notStrictEqual(run(countRoot).status, 0, 'capability_count mismatch must fail');
 
 const referenceRoot = fixture();

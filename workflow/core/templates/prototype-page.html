@@ -55,7 +55,8 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 .screen[data-state="normal"]  .state-normal,
 .screen[data-state="empty"]   .state-empty,
 .screen[data-state="error"]   .state-error,
-.screen[data-state="loading"] .state-loading { display: block; }
+.screen[data-state="loading"] .state-loading,
+.screen[data-state="permission"] .state-permission { display: block; }
 .anno { font-size: var(--font-size-caption); color: var(--color-text-secondary);
   padding: var(--space-2) var(--space-3); background: var(--color-surface);
   border-left: var(--border-w-accent) solid var(--color-primary); margin-bottom: var(--space-4); }
@@ -85,6 +86,7 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
     <button data-state="empty">空态</button>
     <button data-state="error">错误</button>
     <button data-state="loading">加载</button>
+    <button data-state="permission">权限</button>
   </span>
 </nav>
 
@@ -101,6 +103,7 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   <div class="state-panel state-empty"><div class="card empty">暂无数据 —— 空态文案与引导按 02B 定义</div></div>
   <div class="state-panel state-error"><div class="card error-box">加载失败 —— 错误提示与重试入口按 02B 定义</div></div>
   <div class="state-panel state-loading"><div class="card loading-box">加载中…</div></div>
+  <div class="state-panel state-permission"><div class="card error-box">无访问权限 —— 权限说明与申请入口按 02B 定义</div></div>
 </section>
 
 <!-- 屏幕：详情页 -->
@@ -115,6 +118,7 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   <div class="state-panel state-empty"><div class="card empty">暂无数据</div></div>
   <div class="state-panel state-error"><div class="card error-box">加载失败</div></div>
   <div class="state-panel state-loading"><div class="card loading-box">加载中…</div></div>
+  <div class="state-panel state-permission"><div class="card error-box">无访问权限</div></div>
 </section>
 
 <script>

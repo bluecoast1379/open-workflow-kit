@@ -36,7 +36,7 @@ node bin/init-workspace.cjs --target . --dry-run
 
 关键事实不依赖图片：`workflow/core/` 是工具无关的单一事实源；初始化器生成各平台 adapter；Completion Contract 与 Owner-signed permit 限定执行范围；Oracle 结果写入 Evidence Ledger；只有当前证据满足自动 AC 时才进入 `READY_FOR_HUMAN_ACCEPTANCE`，人工签收后才可能成为 `ACCEPTED`。
 
-## 1.0 的核心能力
+## 1.1 的核心能力
 
 | 能力 | 作用 |
 | --- | --- |
@@ -46,8 +46,8 @@ node bin/init-workspace.cjs --target . --dry-run
 | 可恢复收敛循环 | `run-until-done` 持久化 checkpoint，受迭代、时间、命令次数、diff、重复失败和无进展预算约束 |
 | 防作弊完成判定 | contract/source/environment 任一变化都会使旧证据失效；findings snapshot 变化会使 permit/checkpoint/anchor 失配；agent 不能自行降阈值、删除 AC、扩大 waiver 或把人工闸门改为自动通过 |
 | 安全 Oracle 执行 | 命令固定使用 `shell:false` 的 `command + args`，工作目录不能越出 workspace；Owner-signed permit 绑定完整 command spec、Oracle/executable integrity、environment/findings、scope、base 与预算 |
-| 31 个检查能力、24 条 Definition 规则、6 个 policy packs | 将商业价值、组织共识、UX、人因、性能成本、韧性、安全隐私、可观测性、可逆演进和 AI 质量纳入 Definition of Done |
-| 23 个统一命令 | `workflow/core/command-manifest.yaml` 是跨工具入口的单一事实源，包含 `/define-done` 与 `/deliver-until-done` |
+| 32 个检查能力、24 条 Definition 规则、6 个 policy packs | 将商业价值、组织共识、UX、人因、可编辑原型交付、性能成本、韧性、安全隐私、可观测性、可逆演进和 AI 质量纳入 Definition of Done |
+| 24 个统一命令 | `workflow/core/command-manifest.yaml` 是跨工具入口的单一事实源，新增显式 `/02D-可编辑原型交付`，并保留 `/define-done` 与 `/deliver-until-done` |
 | 7 个项目级 adapter | Codex、Claude Code、Cursor、GitHub Copilot、CodeBuddy、Kiro、Trae 都生成项目级入口；自动 conformance 不等于真实工具认证 |
 
 本 kit 的四层结构：
@@ -221,12 +221,12 @@ node workflow/bin/run-until-done.cjs \
 
 Permit 用 Ed25519 签名同时绑定 contract、environment/fixture/runtime、显式 findings review snapshot、base commit、scope、完整 command specs、resolved executable fingerprints 与预算；公开 hash 本身不再被当作授权。`findings.yaml` 的空数组表示“Owner 已检查且当前无 finding”，缺失、过期或 owner/source 不匹配都会阻断。Evidence HMAC key 至少 32 bytes、按 principal 分权，并在读取后从进程环境移除。循环只会到达 `READY_FOR_HUMAN_ACCEPTANCE`、`BLOCKED_WITH_DECISION_PACKET` 或 `BUDGET_EXHAUSTED`，并用 HMAC checkpoint 锚定累计时间、成本、ledger head/count 与恢复点。它不隐含人工签收、push、merge、deploy、生产写入、数据库写入或 package publish 权限。详细边界见 [自主交付与恢复](./docs/autonomous-delivery.md)。
 
-## 23 个工作流命令
+## 24 个工作流命令
 
 建议路径如下；阶段可按项目裁剪，但硬闸门不能被 adapter 降级：
 
 1. `/init-workspace`、`/connect-toolchain`、`/new-feature`
-2. `/01-需求讨论`、`/02-产品文档`、`/02B-UI设计`，需要时追加 `/02C-HTML原型`
+2. `/01-需求讨论`、`/02-产品文档`、`/02B-UI设计`；需要时追加默认 `/02C-HTML原型`，再按需显式执行 `/02D-可编辑原型交付 <feature> <figma|sketch|axure>`
 3. `/03-06-研发准备`；手动路径则依次完成 `/03-技术架构` 与 `/06-测试用例`（全部 Oracle 保持 `NOT_RUN`）
 4. `/define-done` 最终复核并冻结 Completion Contract、environment 与 findings 边界
 5. `/deliver-until-done`；手动路径则推进 `/04-代码实现`（含适用的 04A/04B）→ `/05-代码审查` → `/07-测试执行`
@@ -236,6 +236,16 @@ Permit 用 Ed25519 签名同时绑定 contract、environment/fixture/runtime、�
 9. 随时使用 `/workflow-status`
 
 涉及 UI 或前端时，`/02B-UI设计` 是 `/04A-前端代码实现` 的设计闸门。`/03-06-研发准备` 只授权分析和文档；它先产出 03/06 draft，再由 `/define-done` 冻结，不能直接跳到实现。业务代码修改还必须通过功能分支、阶段和 worktree 隔离检查。
+
+## HTML 默认、可编辑原型按需交付
+
+`/02C-HTML原型` 继续是默认原型入口：它生成同源 `model.json`、`provenance.json` 与单文件 `index.html`，不要求第三方账号、网络或外部写入。需要设计师二次编辑时，再显式选择 `/02D-可编辑原型交付`：
+
+- `figma`：生成离线 headless development-plugin bundle；local plugin ID 只来自被忽略的 local config。
+- `sketch`：生成确定性 ZIP-based `.sketch` 文件，页面、artboard、text、shape/symbol 可独立检查。
+- `axure`：只生成基于已验证 Figma run 的官方 bridge handoff，`native_rp=false`，能力上限为 `DEGRADED`。
+
+每个 target 都生成 immutable run、append-only attempt、机器 report 和≤8 步人工 handoff。文件生成与结构检查不会冒充真实客户端 edit/save/reopen 认证；未验证时保持 `NOT_VERIFIED`。命令示例与人工清单见 [可编辑原型交付](./docs/editable-prototype-handoff.md)。
 
 ## 七个平台的入口
 
@@ -271,7 +281,7 @@ npm run check:links
 npm run build:release
 ```
 
-`npm run check` 覆盖语法、脱敏、规则、23 命令、Definition-to-Done、七个平台 adapter、API runner 和安装/升级 smoke。`check:history` 单独扫描 Git 历史。`build:release` 只生成本地归档与 manifest，不创建远程仓库、不 push、不打 tag、不发布 package。
+`npm run check` 覆盖语法、脱敏、规则、24 命令、Definition-to-Done、七个平台 adapter、editable prototype、原子安装/升级、API runner 和 smoke。`check:history` 单独扫描 Git 历史。`build:release` 只生成本地归档与 manifest，不创建远程仓库、不 push、不打 tag、不发布 package。
 
 ## 维护与发布
 

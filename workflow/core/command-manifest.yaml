@@ -1,5 +1,5 @@
 schema_version: "1.0"
-command_count: 23
+command_count: 24
 commands:
   - id: "init-workspace"
     skill_slug: "workflow-init-workspace"
@@ -48,6 +48,12 @@ commands:
     title: "HTML 可点击原型"
     description: "在 02B 设计基线上，用 design tokens 与组件清单产出前端开发级的单文件可点击 HTML 原型。"
     argument_hint: "<功能名称>"
+    implementation_gate: false
+  - id: "02D-可编辑原型交付"
+    skill_slug: "workflow-02d-editable-prototype"
+    title: "可编辑原型交付"
+    description: "从 02C 的同源 prototype model 按需生成 Figma、Sketch 或 Axure bridge 本地可编辑交付与损失报告。"
+    argument_hint: "<功能名称> <figma|sketch|axure>"
     implementation_gate: false
   - id: "03-技术架构"
     skill_slug: "workflow-03-technical-architecture"

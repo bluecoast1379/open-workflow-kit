@@ -9,6 +9,18 @@ const commandsDir = path.join(root, 'workflow/core/commands');
 const errors = [];
 let manifest;
 
+const transactionFile = path.join(root, 'workflow/.open-workflow-kit-transaction.json');
+if (fs.existsSync(transactionFile)) {
+  try {
+    const transaction = JSON.parse(fs.readFileSync(transactionFile, 'utf8'));
+    if (['planned', 'applying', 'validating', 'rolling_back'].includes(transaction.status)) {
+      errors.push(`安装事务仍处于 ${transaction.status}，请先运行升级 recovery`);
+    }
+  } catch (error) {
+    errors.push(`安装事务标记无法解析: ${error.message}`);
+  }
+}
+
 try {
   manifest = loadCommandManifest(manifestFile);
 } catch (error) {
@@ -31,6 +43,7 @@ const completionAwareCommands = new Set([
   '02-产品文档',
   '02B-UI设计',
   '02C-HTML原型',
+  '02D-可编辑原型交付',
   '03-技术架构',
   '03-06-研发准备',
   'deliver-until-done',

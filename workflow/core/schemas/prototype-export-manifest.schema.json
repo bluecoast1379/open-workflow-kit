@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.local/schemas/prototype-export-manifest.schema.json",
+  "title": "Prototype Export Manifest",
+  "type": "object",
+  "required": ["schema_version", "target", "run_id", "model_hash", "provenance_hash", "exporter_version", "target_config_hash", "files"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "target": { "enum": ["figma", "sketch", "axure"] },
+    "run_id": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "model_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "provenance_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "exporter_version": { "type": "string" },
+    "target_config_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "files": { "type": "array", "items": { "type": "object", "required": ["path", "sha256", "bytes"] } }
+  }
+}

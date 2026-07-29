@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.local/schemas/install-transaction.schema.json",
+  "title": "Open Workflow Kit Install Transaction",
+  "type": "object",
+  "required": ["schema_version", "transaction_id", "status", "token_hash", "target_fingerprint", "kit_version", "entries"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "transaction_id": { "type": "string", "pattern": "^[a-f0-9]{24}$" },
+    "status": { "enum": ["planned", "applying", "validating", "committed", "rolling_back", "rolled_back"] },
+    "token_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "target_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "kit_version": { "type": "string" },
+    "entries": { "type": "array", "items": { "type": "object", "required": ["rel", "kind", "existed"] } }
+  }
+}

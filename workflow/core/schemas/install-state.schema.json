@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.local/schemas/install-state.schema.json",
+  "title": "Open Workflow Kit Install State",
+  "type": "object",
+  "required": ["schema_version", "kit_version", "command_count", "cohort_hash", "committed_transaction_id"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "kit_version": { "type": "string" },
+    "command_count": { "type": "integer", "minimum": 1 },
+    "cohort_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "committed_transaction_id": { "type": "string", "pattern": "^[a-f0-9]{24}$" }
+  },
+  "additionalProperties": false
+}

@@ -6,7 +6,9 @@
 
 - `npm run check` 通过。
 - `npm run check:history` 通过。
-- `npm run check:commands` 通过，确认 manifest、23 个 core command、Completion Contract 引用和实现闸门映射一致。
+- `npm run check:commands` 通过，确认 manifest、24 个 core command、Completion Contract 引用和实现闸门映射一致。
+- `npm run check:editable-prototype` 通过；Figma/Sketch/Axure 的结构 PASS 与真实客户端认证状态分开记录。
+- 1.0.1 non-force、冲突 fail-closed、force 与中断恢复 fixture 均未留下可运行的 23/24 混合 cohort。
 - `npm run check:schemas` 通过，确认 Draft 2020-12 结构、runtime golden fixtures、run-state/permit/anchor/environment/findings/decision-packet 关键不变量一致，且 `workflow/core/schemas/completion-decision-packet.schema.json` 与生成的停止包对齐。
 - `npm run check:rules` 通过，确认 37 条规则 / 79 个清单 item 无孤儿、无重复映射。
 - `npm run check:adapters` 与 `npm run check:links` 通过。

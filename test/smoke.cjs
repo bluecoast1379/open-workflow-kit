@@ -182,7 +182,7 @@ assertContains('workflow/INSTALL_REPORT.md', '初始化器没有执行远程 Git
 assertContains('workflow/core/command-manifest.yaml', `command_count: ${commands.length}`);
 
 // 同一 manifest 必须为各平台生成数量一致的命令/skill 入口。
-if (commands.length < 23) throw new Error(`源命令清单应包含 Definition-to-Done 命令，当前 ${commands.length}`);
+if (commands.length < 24) throw new Error(`源命令清单应包含 02D 与 Definition-to-Done 命令，当前 ${commands.length}`);
 for (const rel of [
   '.claude/commands',
   '.cursor/commands',

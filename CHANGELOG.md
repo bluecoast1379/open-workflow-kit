@@ -2,6 +2,31 @@
 
 All notable changes to Open Workflow Kit are documented here. Versions follow Semantic Versioning; a section does not imply that a remote tag or registry release already exists.
 
+## 1.1.0 - 2026-07-29
+
+### Added
+
+- Canonical prototype model/provenance with deterministic hashing, runtime limits and separate entity/property coverage.
+- Explicit `/02D-可编辑原型交付`, increasing the manifest to 24 commands and generating matching entries for all seven project-level adapters.
+- Offline Figma headless development-plugin bundle, deterministic ZIP-based Sketch document and Figma-to-Axure `BRIDGE_ONLY` handoff.
+- Immutable content-addressed target runs, append-only attempts, atomic current pointers, reason-coded failure recovery and path/symlink containment.
+- Editable export reviewer, target support matrix, machine reports and ≤8-step Figma/Sketch/Axure client handoffs.
+- Failure-atomic install/upgrade transaction with preflight conflict detection, journaled apply, validation, rollback/recovery and install-state fingerprints.
+- Structural, negative, security, determinism, benchmark and 1.0.1 upgrade fixtures; runtime dependency count remains zero.
+
+### Changed
+
+- `/02C-HTML原型` remains the default visible prototype but now generates model/provenance before rendering the single-file HTML.
+- Capability manifest increases from 31 to 32; command manifest increases from 23 to 24.
+- Non-force upgrade accepts the recognized 1.0.1 managed baseline, while an unrecognized managed conflict fails before any active-cohort write. Team-maintained profile files remain preserved.
+- Package version is prepared as 1.1.0 locally; this changelog does not claim a remote tag, registry publish or release.
+
+### Migration notes
+
+- Run `agent-workflow-init --target . --upgrade`; a successful upgrade ends at a complete 24-command cohort, while conflict or interruption leaves/reconstructs the complete 23-command baseline.
+- Re-run 02C for historical HTML-only prototypes before requesting 02D; the kit deliberately does not reverse-parse arbitrary HTML.
+- Real Figma, Sketch and Axure edit/save/reopen evidence is still required before capability certification. Generated structure alone remains `NOT_VERIFIED`.
+
 ## 1.0.1 - 2026-07-19
 
 ### Fixed

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-workflow-kit.local/schemas/prototype-export-report.schema.json",
+  "title": "Prototype Export Report",
+  "type": "object",
+  "required": ["schema_version", "target", "run_id", "model_hash", "generation_status", "structural_validation_status", "client_validation_status", "execution_status", "capability_status", "entity_coverage", "property_coverage", "external_write"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "target": { "enum": ["figma", "sketch", "axure"] },
+    "run_id": { "type": "string" },
+    "model_hash": { "type": "string" },
+    "generation_status": { "enum": ["PASS", "FAIL", "BLOCKED"] },
+    "structural_validation_status": { "enum": ["PASS", "FAIL", "NOT_RUN"] },
+    "client_validation_status": { "enum": ["PASS", "FAIL", "NOT_RUN", "STALE"] },
+    "execution_status": { "enum": ["NOT_RUN", "PASS", "FAIL", "BLOCKED", "STALE", "AWAITING_EXTERNAL_AUTHORIZATION"] },
+    "capability_status": { "enum": ["NOT_VERIFIED", "SUPPORTED", "DEGRADED", "UNSUPPORTED"] },
+    "entity_coverage": { "$ref": "#/$defs/coverage" },
+    "property_coverage": { "$ref": "#/$defs/coverage" },
+    "external_write": { "type": "boolean" }
+  },
+  "$defs": { "coverage": { "type": "object", "required": ["total", "mapped", "loss", "unknown", "items"] } }
+}

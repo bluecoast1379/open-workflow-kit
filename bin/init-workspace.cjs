@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { loadCommandManifest } = require('./command-manifest.cjs');
+const { applyInstallTransaction, recoverIncompleteTransaction } = require('./install-transaction-core.cjs');
 
 const KIT_ROOT = path.resolve(__dirname, '..');
 const COMMAND_MANIFEST = loadCommandManifest(path.join(KIT_ROOT, 'workflow/core/command-manifest.yaml'));
@@ -169,6 +170,7 @@ async function main() {
     throw new Error(`目标目录不存在: ${requestedTarget}`);
   }
   const target = fs.realpathSync(requestedTarget);
+  if (options.upgrade) recoverIncompleteTransaction(target);
 
   const detectedTools = detectTools(target);
   let enabledTools = options.tools ? normalizeTools(options.tools) : detectedTools;
@@ -226,10 +228,18 @@ async function main() {
   }
 
   assertSafeWritePlan(target, plannedWrites);
-  for (const write of plannedWrites) {
-    writeManagedFile(write, { ...options, target });
+  const transaction = applyInstallTransaction({
+    target,
+    writes: plannedWrites,
+    removes: legacyPlan.remove,
+    cleanupDirs: legacyPlan.dirs,
+    options,
+    kitVersion: readPackageVersion()
+  });
+  for (const item of legacyPlan.keep) {
+    console.log(`kept-unrecognized ${item.file}（内容不匹配 kit 指纹，疑似用户自定义，请手动确认后删除）`);
   }
-  executeLegacyCleanup(legacyPlan);
+  console.log(`install-transaction ${transaction.transaction_id} ${transaction.status} (${transaction.action_count} actions)`);
 
   console.log(`已在 ${target} 初始化 agent 工作流`);
   console.log(`启用工具: ${enabledTools.join(', ')}`);
@@ -1412,7 +1422,7 @@ function makeAgentsEntry(profile) {
 1. 先读取 \`workflow/team-profile.yaml\`，加载当前团队的仓库、分支模型和资料来源。
 2. 首次接入建议执行 \`/connect-toolchain\`：按 \`workflow/TOOLCHAIN_MCP_PLAN.md\` 把团队的日志、CI/CD、部署、配置中心、数据库等工具接成只读证据链。
 3. 用 \`/new-feature <name>\` 初始化需求，它会创建 \`features/<name>/\`、Completion Contract 骨架、Evidence Ledger 与状态文件。
-4. 先完成 \`/01-需求讨论\` -> \`/02-产品文档\` -> \`/02B-UI设计\`；需要可点击原型时在 02B 后显式执行 \`/02C-HTML原型\`。随后运行 \`/03-06-研发准备\`，或手动依次完成 \`/03-技术架构\` -> \`/06-测试用例\`，此时 Oracle 全部保持 \`NOT_RUN\`。
+4. 先完成 \`/01-需求讨论\` -> \`/02-产品文档\` -> \`/02B-UI设计\`；需要原型时显式执行默认 \`/02C-HTML原型\`，需要设计工具二次编辑时再按需执行 \`/02D-可编辑原型交付\`。随后运行 \`/03-06-研发准备\`，或手动依次完成 \`/03-技术架构\` -> \`/06-测试用例\`，此时 Oracle 全部保持 \`NOT_RUN\`。
 5. 用 \`/define-done <name>\` 最终复核并冻结目标、边界、质量预算、验收 Oracle、environment 与 findings。合同未冻结或 Definition Lint 未通过，不得进入自主实现。
 6. 可选择 \`/deliver-until-done <name>\` 在授权边界内执行实现、独立审查、验证、修复与全量复验，也可逐阶段运行 \`/04-代码实现\` -> \`/05-代码审查\` -> \`/07-测试执行\`。两条路径都消费同一份 06 Oracle 并产出同一 Evidence Ledger，且都不包含 push、部署或生产写入授权。
 7. 自动 blocking AC 达到 \`READY_FOR_HUMAN_ACCEPTANCE\` 后，再推进 \`/08-验收表格\` -> \`/09-验收\` -> \`/10-培训文档\` -> \`/11-上线邮件通知\` -> \`/12-复盘总结\`。
@@ -1782,7 +1792,7 @@ agent 随后读取阶段契约、\`workflow/team-profile.yaml\` 和前序
 
 ## 阶段顺序
 
-new-feature -> 01-需求讨论 -> 02-产品文档 -> 02B-UI设计 -> (可选 02C-HTML原型) ->
+new-feature -> 01-需求讨论 -> 02-产品文档 -> 02B-UI设计 -> (可选 02C-HTML原型 -> 按需 02D-可编辑原型交付) ->
 (03-06-研发准备 或 03-技术架构 -> 06-测试用例[NOT_RUN]) -> define-done ->
 (deliver-until-done 或 04-代码实现 -> 05-代码审查 -> 07-测试执行) -> 08-验收表格 -> 09-验收 ->
 10-培训文档 -> 11-上线邮件通知 -> 12-复盘总结

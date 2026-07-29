@@ -4,3 +4,8 @@ Copyright 2026 Open Workflow Kit contributors
 
 This product includes software and documentation developed for a
 tool-agnostic Definition-to-Done workflow kit.
+
+The deterministic Sketch writer in version 1.1.0 is an original zero-dependency
+implementation informed by Sketch's public file-format documentation. No Sketch
+source code, schema bundle, binary asset, trademark artwork, or proprietary SDK is
+vendored in this package.

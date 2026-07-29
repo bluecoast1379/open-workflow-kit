@@ -1,6 +1,6 @@
 {
   "name": "open-workflow-kit",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": false,
   "description": "将完成定义编译为 Completion Contract、可复现证据与多 Agent 交付闸门的零依赖工作流 kit。",
   "keywords": [
@@ -60,10 +60,12 @@
     "agent-workflow-run-until-done": "bin/run-until-done.cjs",
     "agent-workflow-sign-execution-permit": "bin/sign-execution-permit.cjs",
     "agent-workflow-sign-ledger-anchor": "bin/sign-ledger-anchor.cjs",
-    "agent-workflow-done-cockpit": "bin/generate-done-cockpit.cjs"
+    "agent-workflow-done-cockpit": "bin/generate-done-cockpit.cjs",
+    "open-workflow-render-html-prototype": "bin/render-html-prototype.cjs",
+    "open-workflow-export-editable-prototype": "bin/export-editable-prototype.cjs"
   },
   "scripts": {
-    "check": "npm run check:syntax && node bin/check-sanitized.cjs && node bin/check-prototype-tokens.cjs workflow/core/templates/prototype-page.html && npm run check:commands && npm run check:rules && npm run check:definition && npm run check:schemas && npm run check:adapters && npm run check:links && npm run check:api && npm run check:completion && node test/smoke.cjs",
+    "check": "npm run check:syntax && node bin/check-sanitized.cjs && node bin/check-prototype-tokens.cjs workflow/core/templates/prototype-page.html && npm run check:commands && npm run check:rules && npm run check:definition && npm run check:schemas && npm run check:adapters && npm run check:links && npm run check:api && npm run check:completion && npm run check:editable-prototype && node test/smoke.cjs",
     "check:syntax": "node scripts/check-syntax.cjs",
     "check:commands": "node bin/check-command-manifest.cjs",
     "check:history": "node bin/check-history.cjs",
@@ -74,6 +76,11 @@
     "check:links": "node bin/check-markdown-links.cjs",
     "check:api": "node test/api-runner.cjs",
     "check:completion": "node test/completion-core.cjs && node test/definition-to-done-e2e.cjs && node test/definition-to-done-cli-e2e.cjs",
+    "check:editable-prototype": "node test/editable-prototype.cjs && node test/editable-prototype-upgrade.cjs && node test/editable-prototype-benchmark.cjs",
+    "check:editable-prototype:security": "node test/editable-prototype.cjs --group path-security,sensitive-data",
+    "test:editable-prototype": "node test/editable-prototype.cjs",
+    "test:editable-prototype:benchmark": "node test/editable-prototype-benchmark.cjs",
+    "test:editable-prototype:upgrade": "node test/editable-prototype-upgrade.cjs",
     "build:release": "node scripts/build-release.cjs",
     "init:dry-run": "node bin/init-workspace.cjs --target . --dry-run"
   },
